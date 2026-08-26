@@ -793,124 +793,94 @@ def create_job():
         return jsonify({'error': str(e)}), 500
 
 
+
 @api.route('/api/jobs', methods=['GET'])
 def get_jobs():
+    conn = None
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
 
         cursor.execute("""
             SELECT 
-                job_id,
-                title,
-                department,
-                location,
-                description,
-                mandatory_skills,
-                required_skills,
-                min_exp,
-                min_salary,
-                max_salary,
-                due_date,
-                interview_mode,
-                created_at,
-                'Active' AS status,              -- Default status placeholder
-                0 AS candidate_count             -- Candidate count placeholder
-            FROM Jobs
-            ORDER BY created_at DESC
+                j.job_id,
+                j.title,
+                j.department,
+                j.location,
+                j.description,
+                j.mandatory_skills,
+                j.required_skills,
+                j.min_exp,
+                j.min_salary,
+                j.max_salary,
+                j.due_date,
+                j.interview_mode,
+                j.created_at,
+
+                (
+                    SELECT COUNT(*)
+                    FROM Candidates c
+                    WHERE c.job_id = j.job_id
+                ) AS candidate_count
+
+            FROM Jobs j
+
+            ORDER BY j.created_at DESC
         """)
 
         columns = [column[0] for column in cursor.description]
         rows = cursor.fetchall()
-        conn.close()
 
         jobs = []
+
         for row in rows:
             job_dict = dict(zip(columns, row))
+
             if job_dict.get('created_at'):
                 job_dict['created_at'] = job_dict['created_at'].isoformat()
+
             if job_dict.get('due_date'):
                 job_dict['due_date'] = str(job_dict['due_date'])
+
             jobs.append(job_dict)
 
         return jsonify(jobs), 200
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print("ERROR IN GET /api/jobs:", str(e))
 
-# ==========================================
-# GET ALL JOBS (With Active Candidate Count)
-# ==========================================
-# @api.route('/api/jobs', methods=['GET'])
-# def get_jobs():
-#     try:
-#         conn = get_connection()
-#         cursor = conn.cursor()
+        return jsonify({
+            "error": str(e)
+        }), 500
 
-#         cursor.execute("""
-#             SELECT 
-#                 j.job_id,
-#                 j.title,
-#                 j.department,
-#                 j.location,
-#                 j.description,
-#                 j.mandatory_skills,
-#                 j.required_skills,
-#                 j.min_exp,
-#                 j.min_salary,
-#                 j.max_salary,
-#                 j.due_date,
-#                 j.interview_mode,
-#                 j.created_at,
-#                 'Active' AS status,
-#                 COUNT(CASE WHEN c.current_status != 'Rejected' THEN 1 END) AS candidate_count
-#             FROM Jobs j
-#             LEFT JOIN Candidates c ON j.title = c.applied_role
-#             GROUP BY 
-#                 j.job_id, j.title, j.department, j.location, j.description,
-#                 j.mandatory_skills, j.required_skills, j.min_exp, j.min_salary,
-#                 j.max_salary, j.due_date, j.interview_mode, j.created_at
-#             ORDER BY j.created_at DESC
-#         """)
-
-#         columns = [column[0] for column in cursor.description]
-#         rows = cursor.fetchall()
-#         conn.close()
-
-#         jobs = []
-#         for row in rows:
-#             job_dict = dict(zip(columns, row))
-#             if job_dict.get('created_at'):
-#                 job_dict['created_at'] = job_dict['created_at'].isoformat()
-#             if job_dict.get('due_date'):
-#                 job_dict['due_date'] = str(job_dict['due_date'])
-#             jobs.append(job_dict)
-
-#         return jsonify(jobs), 200
-
-#     except Exception as e:
-#         return jsonify({'error': str(e)}), 500
-
+    finally:
+        if conn:
+            conn.close()
 # ==========================================
 # GET CANDIDATES FOR A SPECIFIC JOB
 # ==========================================
 @api.route('/api/jobs/<int:job_id>/candidates', methods=['GET'])
 def get_job_candidates(job_id):
+    conn = None
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Get job title first to filter candidates by applied_role
-        cursor.execute("SELECT job_id, title FROM Jobs WHERE job_id = ?", (job_id,))
+        # Check whether the job exists
+        cursor.execute("""
+            SELECT job_id, title
+            FROM Jobs
+            WHERE job_id = ?
+        """, (job_id,))
+
         job = cursor.fetchone()
-        
+
         if not job:
-            conn.close()
             return jsonify({'error': 'Job not found'}), 404
 
-        job_title = job[1]
-
-        # Fetch candidates matching the exact candidate schema
+        # Get candidates using job_id
         cursor.execute("""
             SELECT 
                 candidate_id,
@@ -924,32 +894,43 @@ def get_job_candidates(job_id):
                 current_ctc,
                 current_status,
                 ai_score,
+                notice_period,
+                skills,
+                interview_notes,
+                job_id,
                 created_at
             FROM Candidates
-            WHERE applied_role = ?
+            WHERE job_id = ?
             ORDER BY created_at DESC
-        """, (job_title,))
+        """, (job_id,))
 
         columns = [column[0] for column in cursor.description]
         rows = cursor.fetchall()
-        conn.close()
 
         candidates = []
+
         for row in rows:
-            c_dict = dict(zip(columns, row))
-            if c_dict.get('created_at'):
-                c_dict['created_at'] = c_dict['created_at'].isoformat()
-            candidates.append(c_dict)
+            candidate = dict(zip(columns, row))
+
+            if candidate.get('created_at'):
+                candidate['created_at'] = candidate['created_at'].isoformat()
+
+            candidates.append(candidate)
 
         return jsonify({
-            'job_id': job[0],
-            'job_title': job_title,
+            'job_id': job.job_id,
+            'job_title': job.title,
+            'candidate_count': len(candidates),
             'candidates': candidates
         }), 200
 
     except Exception as e:
+        print("ERROR IN GET JOB CANDIDATES:", str(e))
         return jsonify({'error': str(e)}), 500
 
+    finally:
+        if conn:
+            conn.close()
 # ==========================================
 # GET SINGLE JOB BY ID
 # ==========================================
