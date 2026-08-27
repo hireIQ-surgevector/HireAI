@@ -1,37 +1,12 @@
-import { useMemo, useState } from 'react'
 import {
   BrowserRouter,
   Routes,
   Route,
   Navigate,
-  Link,
-  NavLink,
-  useNavigate,
   useLocation,
 } from "react-router-dom";
 import { Toaster } from 'react-hot-toast';
-import {
-  ArrowRight,
-  BarChart3,
-  Bell,
-  BriefcaseBusiness,
-  CalendarDays,
-  Check,
-  CircleUserRound,
-  Eye,
-  FileText,
-  Home,
-  LayoutGrid,
-  LogOut,
-  MessageCircleMore,
-  Plus,
-  Search,
-  Settings,
-  ShieldCheck,
-  Sparkles,
-  Upload,
-  Users,
-} from 'lucide-react'
+
 import './App.css'
 import LoginPage from './components/LoginPage';
 import { getSession } from './utils/auth';
@@ -64,8 +39,6 @@ import OfferAcceptedPage from './components/OfferAcceptedPage';
 import OfferDeclinedPage from './components/OfferDeclinedPage';
 import OnboardingPage from './components/OnboardingPage';
 
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5001'
 
 function ProtectedRoute({ children }) {
   const session = getSession();

@@ -1,68 +1,117 @@
 from flask import Blueprint, request, jsonify
-from config.db import get_connection
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import create_access_token
 
+from config.db import get_connection
+from utils.schema import ensure_schema
+from utils.auth_helpers import (
+    normalize_role_name,
+    user_permissions,
+    has_password_change_column,
+)
+
+
 auth = Blueprint('auth', __name__)
+
 bcrypt = Bcrypt()
-
-
-def has_password_change_column(cursor):
-    cursor.execute("""
-        SELECT COUNT(*)
-        FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE TABLE_NAME = 'Users' AND COLUMN_NAME = 'password_change_required'
-    """)
-    return cursor.fetchone()[0] > 0
 
 
 @auth.route('/api/signup', methods=['POST'])
 def signup():
     try:
-        data = request.get_json()
+        ensure_schema()
+
+        data = request.get_json() or {}
+
         full_name = data.get('full_name', '').strip()
         email = data.get('email', '').strip().lower()
         password = data.get('password', '')
-        role_name = data.get('role', '').strip().lower()
-        company_name = data.get('company_name', None)
+        role_name = normalize_role_name(data.get('role', ''))
+        company_name = data.get('company_name')
 
         if not full_name or not email or not password or not role_name:
-            return jsonify({'error': 'All fields are required'}), 400
+            return jsonify({
+                'error': 'All fields are required'
+            }), 400
 
-        if role_name not in ['employer', 'candidate', 'interviewer']:
-            return jsonify({'error': 'Invalid role'}), 400
+        if role_name not in [
+            'manager',
+            'candidate',
+            'interviewer'
+        ]:
+            return jsonify({
+                'error': 'Invalid role'
+            }), 400
 
-        hashed = bcrypt.generate_password_hash(password).decode('utf-8')
+        hashed = bcrypt.generate_password_hash(
+            password
+        ).decode('utf-8')
+
         conn = get_connection()
         cursor = conn.cursor()
 
-        cursor.execute('SELECT email FROM Users WHERE email = ?', (email,))
+        cursor.execute(
+            'SELECT email FROM dbo.Users WHERE email = ?',
+            (email,)
+        )
+
         if cursor.fetchone():
             conn.close()
-            return jsonify({'error': 'Email already registered. Please login.'}), 400
 
-        cursor.execute('SELECT role_id FROM Roles WHERE role_name = ?', (role_name,))
+            return jsonify({
+                'error': 'Email already registered. Please login.'
+            }), 400
+
+        cursor.execute(
+            'SELECT role_id FROM dbo.Roles WHERE role_name = ?',
+            (role_name,)
+        )
+
         role = cursor.fetchone()
+
         if not role:
             conn.close()
-            return jsonify({'error': 'Role not found in database'}), 400
+
+            return jsonify({
+                'error': 'Role not found in database'
+            }), 400
 
         cursor.execute("""
-            INSERT INTO Users (full_name, email, password_hash, role_id, company_name, password_change_required)
+            INSERT INTO dbo.Users (
+                full_name,
+                email,
+                password_hash,
+                role_id,
+                company_name,
+                password_change_required
+            )
             VALUES (?, ?, ?, ?, ?, 1)
-        """, (full_name, email, hashed, role.role_id, company_name))
+        """, (
+            full_name,
+            email,
+            hashed,
+            role.role_id,
+            company_name
+        ))
+
         conn.commit()
+
         cursor.execute('SELECT @@IDENTITY')
         user_id = cursor.fetchone()[0]
+
         conn.close()
 
-        token = create_access_token(identity=str(user_id))
+        token = create_access_token(
+            identity=str(user_id)
+        )
+
         return jsonify({
             'message': 'Account created successfully!',
             'token': token,
             'role': role_name,
             'name': full_name,
-            'company_name': company_name or ''
+            'company_name': company_name or '',
+            'permissions': user_permissions(role_name)
         }), 201
 
     except Exception as e:
@@ -72,65 +121,106 @@ def signup():
 @auth.route('/api/login', methods=['POST'])
 def login():
     try:
-        data = request.get_json()
+        ensure_schema()
+
+        data = request.get_json() or {}
+
         email = data.get('email', '').strip().lower()
         password = data.get('password', '')
-        role = data.get('role', '').strip().lower()
 
         if not email or not password:
-            return jsonify({'error': 'Email and password are required'}), 400
+            return jsonify({
+                'error': 'Email and password are required'
+            }), 400
 
         conn = get_connection()
         cursor = conn.cursor()
-        password_change_column_exists = has_password_change_column(cursor)
+
+        password_change_column_exists = (
+            has_password_change_column(cursor)
+        )
 
         if password_change_column_exists:
+
             cursor.execute("""
-                SELECT u.user_id, u.full_name, u.email, u.password_hash, u.company_name,
-                       u.password_change_required, r.role_name
-                FROM Users u
-                JOIN Roles r ON u.role_id = r.role_id
-                WHERE u.email = ? AND u.is_active = 1
+                SELECT
+                    u.user_id,
+                    u.full_name,
+                    u.email,
+                    u.password_hash,
+                    u.company_name,
+                    u.password_change_required,
+                    r.role_name
+                FROM dbo.Users u
+                JOIN dbo.Roles r
+                    ON u.role_id = r.role_id
+                WHERE u.email = ?
+                AND u.is_active = 1
             """, (email,))
+
         else:
+
             cursor.execute("""
-                SELECT u.user_id, u.full_name, u.email, u.password_hash, u.company_name,
-                       0 AS password_change_required, r.role_name
-                FROM Users u
-                JOIN Roles r ON u.role_id = r.role_id
-                WHERE u.email = ? AND u.is_active = 1
+                SELECT
+                    u.user_id,
+                    u.full_name,
+                    u.email,
+                    u.password_hash,
+                    u.company_name,
+                    0 AS password_change_required,
+                    r.role_name
+                FROM dbo.Users u
+                JOIN dbo.Roles r
+                    ON u.role_id = r.role_id
+                WHERE u.email = ?
+                AND u.is_active = 1
             """, (email,))
 
         user = cursor.fetchone()
+
         conn.close()
 
         if not user:
-            return jsonify({'error': 'Email not found'}), 404
+            return jsonify({
+                'error': 'Email not found'
+            }), 404
 
-        if user.role_name != role:
-            return jsonify({'error': f'User registered as {user.role_name}'}), 403
+        if not bcrypt.check_password_hash(
+            user.password_hash,
+            password
+        ):
+            return jsonify({
+                'error': 'Wrong password'
+            }), 401
 
-        if not bcrypt.check_password_hash(user.password_hash, password):
-            return jsonify({'error': 'Wrong password'}), 401
+        normalized_role = normalize_role_name(
+            user.role_name
+        )
 
-        token = create_access_token(identity=str(user.user_id))
+        token = create_access_token(
+            identity=str(user.user_id)
+        )
+
         response = {
             'message': 'Login successful',
             'token': token,
-            'role': user.role_name,
+            'role': normalized_role,
             'name': user.full_name,
-            'company_name': user.company_name or ''
+            'company_name': user.company_name or '',
+            'permissions': user_permissions(normalized_role)
         }
 
         if user.password_change_required:
             response['require_password_change'] = True
-            response['message'] = 'Temporary password accepted. Please set a new password.'
+            response['message'] = (
+                'Temporary password accepted. '
+                'Please set a new password.'
+            )
 
         return jsonify(response), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 
 @auth.route('/api/forgot-password', methods=['POST'])
 def forgot_password():
