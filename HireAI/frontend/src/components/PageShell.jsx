@@ -18,7 +18,6 @@
 //   isManager,
 // } from "../utils/auth";
 
-
 // /* =========================
 //    NAVIGATION CONFIGURATION
 // ========================= */
@@ -75,7 +74,6 @@
 //   },
 // ];
 
-
 // /* =========================
 //    USER AVATAR INITIALS
 // ========================= */
@@ -93,7 +91,6 @@
 //     .toUpperCase();
 // }
 
-
 // /* =========================
 //    PAGE SHELL
 // ========================= */
@@ -107,7 +104,6 @@
 //   const navigate = useNavigate();
 
 //   const [session, setSession] = useState(() => getSession());
-
 
 //   /* =========================
 //      SYNC CURRENT USER
@@ -143,7 +139,6 @@
 //     syncCurrentUser();
 //   }, []);
 
-
 //   /* =========================
 //      ROLE-BASED NAVIGATION
 //   ========================= */
@@ -156,7 +151,6 @@
 //     );
 //   }, [session]);
 
-
 //   /* =========================
 //      LOGOUT
 //   ========================= */
@@ -165,7 +159,6 @@
 //     clearSession();
 //     navigate("/login", { replace: true });
 //   };
-
 
 //   /* =========================
 //      USER DETAILS
@@ -176,7 +169,6 @@
 //   const userRole = (
 //     session?.role || "User"
 //   ).toUpperCase();
-
 
 //   return (
 //     <div className="screen layout active">
@@ -198,7 +190,6 @@
 //             HireIQ
 //           </span>
 //         </div>
-
 
 //         {/* NAVIGATION */}
 
@@ -227,7 +218,6 @@
 //             );
 //           })}
 //         </nav>
-
 
 //         {/* USER FOOTER */}
 
@@ -266,7 +256,6 @@
 
 //       </aside>
 
-
 //       {/* =========================
 //           MAIN AREA
 //       ========================= */}
@@ -296,7 +285,6 @@
 
 //         </header>
 
-
 //         {/* PAGE CONTENT */}
 
 //         <div className="content">
@@ -310,7 +298,6 @@
 // }
 
 // export default PageShell;
-
 
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
@@ -332,7 +319,6 @@ import {
   getSession,
   isManager,
 } from "../utils/auth";
-
 
 /* =========================
    NAVIGATION CONFIGURATION
@@ -375,14 +361,7 @@ const NAV_ITEMS = [
     icon: FileText,
     managerOnly: true,
   },
-  {
-    to: "/settings",
-    label: "Settings",
-    icon: Settings,
-    managerOnly: true,
-  },
 ];
-
 
 /* =========================
    HELPER
@@ -401,21 +380,14 @@ function getInitials(name) {
     .toUpperCase();
 }
 
-
 /* =========================
    PAGE SHELL
 ========================= */
 
-function PageShell({
-  title,
-  actions,
-  children,
-  backTo,
-}) {
+function PageShell({ title, actions, children, backTo }) {
   const navigate = useNavigate();
 
   const [session, setSession] = useState(() => getSession());
-
 
   /* =========================
      REFRESH USER SESSION
@@ -436,10 +408,7 @@ function PageShell({
           setSession(updatedSession);
         }
       } catch (error) {
-        console.error(
-          "Failed to refresh current user:",
-          error
-        );
+        console.error("Failed to refresh current user:", error);
 
         setSession(currentSession);
       }
@@ -448,7 +417,6 @@ function PageShell({
     syncCurrentUser();
   }, []);
 
-
   /* =========================
      ROLE BASED NAVIGATION
   ========================= */
@@ -456,11 +424,8 @@ function PageShell({
   const navItems = useMemo(() => {
     const manager = isManager(session);
 
-    return NAV_ITEMS.filter(
-      (item) => !item.managerOnly || manager
-    );
+    return NAV_ITEMS.filter((item) => !item.managerOnly || manager);
   }, [session]);
-
 
   /* =========================
      LOGOUT
@@ -473,51 +438,33 @@ function PageShell({
     });
   };
 
-
   const userName = session?.name || "User";
 
-  const userRole = (
-    session?.role || "User"
-  ).toUpperCase();
-
+  const userRole = (session?.role || "User").toUpperCase();
 
   return (
     <div className="app-layout">
-
       {/* =========================
           SIDEBAR
       ========================= */}
 
       <aside className="app-sidebar">
-
         {/* LOGO */}
 
         <div className="app-sidebar-header">
-          <Link
-            to="/dashboard"
-            className="app-logo"
-          >
-            <div className="app-logo-mark">
-              HI
-            </div>
+          <Link to="/dashboard" className="app-logo">
+            <div className="app-logo-mark">HI</div>
 
-            <span className="app-logo-text">
-              HireIQ
-            </span>
+            <span className="app-logo-text">HireIQ</span>
           </Link>
         </div>
-
 
         {/* NAVIGATION */}
 
         <nav className="app-navigation">
-
-          <div className="app-nav-label">
-            MENU
-          </div>
+          <div className="app-nav-label">MENU</div>
 
           <div className="app-nav-items">
-
             {navItems.map((item) => {
               const Icon = item.icon;
 
@@ -526,56 +473,30 @@ function PageShell({
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    `app-nav-item ${
-                      isActive
-                        ? "app-nav-item-active"
-                        : ""
-                    }`
+                    `app-nav-item ${isActive ? "app-nav-item-active" : ""}`
                   }
                 >
-                  <Icon
-                    size={19}
-                    strokeWidth={1.8}
-                  />
+                  <Icon size={19} strokeWidth={1.8} />
 
-                  <span>
-                    {item.label}
-                  </span>
-
+                  <span>{item.label}</span>
                 </NavLink>
               );
             })}
-
           </div>
-
         </nav>
-
 
         {/* USER SECTION */}
 
         <div className="app-sidebar-user">
-
           <div className="app-user-profile">
-
-            <div className="app-user-avatar">
-              {getInitials(userName)}
-            </div>
-
+            <div className="app-user-avatar">{getInitials(userName)}</div>
 
             <div className="app-user-details">
+              <div className="app-user-name">{userName}</div>
 
-              <div className="app-user-name">
-                {userName}
-              </div>
-
-              <div className="app-user-role">
-                {userRole}
-              </div>
-
+              <div className="app-user-role">{userRole}</div>
             </div>
-
           </div>
-
 
           <button
             type="button"
@@ -585,76 +506,40 @@ function PageShell({
           >
             <LogOut size={18} />
           </button>
-
         </div>
-
       </aside>
-
 
       {/* =========================
           MAIN APPLICATION AREA
       ========================= */}
 
       <main className="app-main">
-
-
         {/* TOPBAR */}
 
         <header className="app-topbar">
-
           <div className="app-page-heading">
-
             {backTo && (
-
-              <Link
-                to={backTo}
-                className="app-back-button"
-              >
+              <Link to={backTo} className="app-back-button">
                 <ArrowLeft size={18} />
 
-                <span>
-                  Back
-                </span>
-
+                <span>Back</span>
               </Link>
-
             )}
 
-
             <div>
-
-              <h1 className="app-page-title">
-                {title}
-              </h1>
-
+              <h1 className="app-page-title">{title}</h1>
             </div>
-
           </div>
 
-
-          {actions && (
-
-            <div className="app-page-actions">
-              {actions}
-            </div>
-
-          )}
-
+          {actions && <div className="app-page-actions">{actions}</div>}
         </header>
-
 
         {/* PAGE CONTENT */}
 
         <section className="app-content">
-
-          <div className="app-content-inner">
-            {children}
-          </div>
-
+          <div className="app-content-inner">{children}</div>
         </section>
-
       </main>
-
     </div>
   );
 }
