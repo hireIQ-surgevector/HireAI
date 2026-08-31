@@ -82,7 +82,7 @@ function InterviewsPage() {
       try {
         const token = localStorage.getItem('token')
 
-        const response = await fetch(`${API_URL}/api/interviews`, {
+        const response = await fetch(`http://localhost:5001/api/interviews`, {
           headers: {
             'Content-Type': 'application/json',
             ...(token

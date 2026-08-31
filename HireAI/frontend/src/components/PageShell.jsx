@@ -9,6 +9,7 @@ import {
   FileText,
   LogOut,
   ArrowLeft,
+  ScanSearch,
 } from "lucide-react";
 
 import {
@@ -40,6 +41,12 @@ const NAV_ITEMS = [
     label: "Candidates",
     icon: Users,
     managerOnly: false,
+  },
+  {
+    to: "/candidate-matcher",
+    label: "Candidate Matcher",
+    icon: ScanSearch,
+    managerOnly: true,
   },
   {
     to: "/interviews",
@@ -92,37 +99,34 @@ function PageShell({ title, actions, children, backTo }) {
   ========================= */
 
   useEffect(() => {
-  let isMounted = true;
+    let isMounted = true;
 
-  const syncCurrentUser = async () => {
-    const currentSession = getSession();
+    const syncCurrentUser = async () => {
+      const currentSession = getSession();
 
-    if (!currentSession) {
-      return;
-    }
-
-    try {
-      await fetchCurrentUser();
-
-      const updatedSession = getSession();
-
-      if (isMounted && updatedSession) {
-        setSession(updatedSession);
+      if (!currentSession) {
+        return;
       }
-    } catch (error) {
-      console.error(
-        "Failed to refresh current user:",
-        error
-      );
-    }
-  };
 
-  syncCurrentUser();
+      try {
+        await fetchCurrentUser();
 
-  return () => {
-    isMounted = false;
-  };
-}, []);
+        const updatedSession = getSession();
+
+        if (isMounted && updatedSession) {
+          setSession(updatedSession);
+        }
+      } catch (error) {
+        console.error("Failed to refresh current user:", error);
+      }
+    };
+
+    syncCurrentUser();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   /* =========================
      ROLE BASED NAVIGATION
@@ -142,7 +146,7 @@ function PageShell({ title, actions, children, backTo }) {
     clearSession();
 
     setSession(null);
-    
+
     navigate("/login", {
       replace: true,
     });

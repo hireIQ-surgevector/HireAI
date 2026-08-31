@@ -15,6 +15,7 @@ import JobsPage from './components/JobsPage';
 import PostJobPage from './components/PostJobPage';
 import EditJobPage from './components/EditJobPage';
 import JobCandidatesPage from './components/JobCandidatesPage';
+import CandidateMatcherPage from "./components/CandidateMatcherPage";
 import ResetSentPage from './components/ResetSentPage';
 import ChangePasswordPage from './components/ChangePasswordPage';
 import DashboardPage from './components/DashboardPage';
@@ -22,6 +23,7 @@ import CandidatesPage from './components/CandidatesPage';
 import CandidateDetailPage from './components/CandidateDetailPage';
 import UploadResumePage from './components/UploadResumePage';
 import InterviewsPage from './components/InterviewsPage';
+import EditInterviewSchedulePage from "./components/EditInterviewSchedulePage";
 import InterviewRoomPage from './components/InterviewRoomPage';
 import ScheduleInterviewPage from './components/ScheduleInterviewPage';
 import EvaluationsPage from './components/EvaluationsPage';
@@ -69,11 +71,13 @@ function App() {
           <Route path="/post-job" element={<ProtectedRoute><PostJobPage /></ProtectedRoute>} />
           <Route path="/edit-job/:jobId" element={<ProtectedRoute><EditJobPage /></ProtectedRoute>} />
           <Route path="/jobs/:jobId/candidates" element={<JobCandidatesPage />} />
+          <Route path="/candidate-matcher" element={<ProtectedRoute><CandidateMatcherPage /></ProtectedRoute>} />
           <Route path="/candidates" element={<ProtectedRoute><CandidatesPage /></ProtectedRoute>} />
           <Route path="/candidate-detail/:candidateId?" element={<ProtectedRoute><CandidateDetailPage /></ProtectedRoute>} />
           <Route path="/upload-resume" element={<ProtectedRoute><UploadResumePage /></ProtectedRoute>} />
           <Route path="/interviews" element={<ProtectedRoute><InterviewsPage /></ProtectedRoute>} />
           <Route path="/schedule-interview" element={<ProtectedRoute><ScheduleInterviewPage /></ProtectedRoute>} />
+          {/* <Route path='' */}
           <Route path="/interview-room" element={<ProtectedRoute><InterviewRoomPage /></ProtectedRoute>} />
           <Route path="/evaluations" element={<ProtectedRoute><EvaluationsPage /></ProtectedRoute>} />
           <Route path="/reject-candidate" element={<ProtectedRoute><RejectCandidatePage /></ProtectedRoute>} />
