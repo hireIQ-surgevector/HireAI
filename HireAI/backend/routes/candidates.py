@@ -1,8 +1,12 @@
+import os
+import uuid
+
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 
 from config.db import get_connection
 from utils.schema import ensure_schema
+from utils.resume_parser import parse_resume
 
 from utils.auth_helpers import (
     get_candidate_select_clause,
@@ -161,3 +165,393 @@ def update_candidate_stage(candidate_id):
         return jsonify({
             'error': str(e)
         }), 500
+
+
+# ============================================================
+# UPLOAD MULTIPLE RESUMES
+# ============================================================
+
+@candidates.route(
+    '/api/candidates/upload',
+    methods=['POST']
+)
+def upload_candidates():
+
+    conn = None
+
+    try:
+
+        ensure_schema()
+
+        # ----------------------------------------------------
+        # GET JOB ID
+        # ----------------------------------------------------
+
+        job_id = request.form.get(
+            'job_id'
+        )
+
+        if not job_id:
+
+            return jsonify({
+                'error': 'job_id is required'
+            }), 400
+
+        try:
+
+            job_id = int(job_id)
+
+        except ValueError:
+
+            return jsonify({
+                'error': 'Invalid job_id'
+            }), 400
+
+        # ----------------------------------------------------
+        # GET FILES
+        # ----------------------------------------------------
+
+        files = request.files.getlist(
+            'resumes'
+        )
+
+        if not files:
+
+            return jsonify({
+                'error': 'No resumes uploaded'
+            }), 400
+
+        # ----------------------------------------------------
+        # UPLOAD DIRECTORY
+        # ----------------------------------------------------
+
+        upload_dir = os.path.join(
+            os.getcwd(),
+            'uploads',
+            'resumes'
+        )
+
+        os.makedirs(
+            upload_dir,
+            exist_ok=True
+        )
+
+        # ----------------------------------------------------
+        # DATABASE
+        # ----------------------------------------------------
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # ----------------------------------------------------
+        # VERIFY JOB EXISTS
+        # ----------------------------------------------------
+
+        cursor.execute(
+            """
+            SELECT job_id, title
+            FROM dbo.Jobs
+            WHERE job_id = ?
+            """,
+            (job_id,)
+        )
+
+        job = cursor.fetchone()
+
+        if not job:
+
+            return jsonify({
+                'error': 'Selected job does not exist'
+            }), 404
+
+        job_title = job[1]
+
+        # ----------------------------------------------------
+        # PROCESS EACH RESUME
+        # ----------------------------------------------------
+
+        created_candidates = []
+        failed_files = []
+
+        allowed_extensions = {
+            '.pdf',
+            '.docx',
+            '.txt'
+        }
+
+        for file in files:
+
+            if not file or not file.filename:
+
+                continue
+
+            original_filename = file.filename
+
+            extension = os.path.splitext(
+                original_filename
+            )[1].lower()
+
+            if extension not in allowed_extensions:
+
+                failed_files.append({
+
+                    'fileName':
+                        original_filename,
+
+                    'error':
+                        'Unsupported file type'
+                })
+
+                continue
+
+            # ------------------------------------------------
+            # UNIQUE FILE NAME
+            # ------------------------------------------------
+
+            unique_filename = (
+                str(uuid.uuid4())
+                + extension
+            )
+
+            file_path = os.path.join(
+                upload_dir,
+                unique_filename
+            )
+
+            file.save(
+                file_path
+            )
+
+            # ------------------------------------------------
+            # PARSE RESUME
+            # ------------------------------------------------
+
+            try:
+
+                parsed = parse_resume(
+                    file_path
+                )
+
+            except Exception as e:
+
+                failed_files.append({
+
+                    'fileName':
+                        original_filename,
+
+                    'error':
+                        f'Resume parsing failed: {str(e)}'
+                })
+
+                continue
+
+            # ------------------------------------------------
+            # VALIDATION
+            # ------------------------------------------------
+
+            full_name = parsed.get(
+                'full_name'
+            ) or None
+
+            email = parsed.get(
+                'email'
+            ) or None
+
+            phone = parsed.get(
+                'phone'
+            ) or None
+
+            current_role = parsed.get(
+                'current_role'
+            ) or None
+
+            location = parsed.get(
+                'location'
+            ) or None
+
+            experience_years = parsed.get(
+                'experience_years'
+            )
+
+            current_ctc = parsed.get(
+                'current_ctc'
+            )
+
+            notice_period = parsed.get(
+                'notice_period'
+            )
+
+            skills = parsed.get(
+                'skills'
+            ) or []
+
+            # ------------------------------------------------
+            # SKILLS → STRING
+            # ------------------------------------------------
+
+            skills_string = ", ".join(
+                skills
+            )
+
+            # ------------------------------------------------
+            # INSERT CANDIDATE
+            # ------------------------------------------------
+
+            cursor.execute(
+                """
+                INSERT INTO dbo.Candidates
+                (
+                    full_name,
+                    email,
+                    phone,
+                    current_role,
+                    applied_role,
+                    location,
+                    experience_years,
+                    current_ctc,
+                    current_status,
+                    ai_score,
+                    job_id,
+                    notice_period,
+                    skills
+                )
+                OUTPUT INSERTED.candidate_id
+                VALUES
+                (
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?
+                )
+                """,
+                (
+                    full_name,
+                    email,
+                    phone,
+                    current_role,
+                    job_title,
+                    location,
+                    experience_years,
+                    current_ctc,
+                    'New',
+                    None,
+                    job_id,
+                    notice_period,
+                    skills_string
+                )
+            )
+
+            result = cursor.fetchone()
+
+            candidate_id = (
+                result[0]
+                if result
+                else None
+            )
+
+            created_candidates.append({
+
+                'candidate_id':
+                    candidate_id,
+
+                'full_name':
+                    full_name,
+
+                'email':
+                    email,
+
+                'phone':
+                    phone,
+
+                'current_role':
+                    current_role,
+
+                'applied_role':
+                    job_title,
+
+                'location':
+                    location,
+
+                'experience_years':
+                    experience_years,
+
+                'current_ctc':
+                    current_ctc,
+
+                'notice_period':
+                    notice_period,
+
+                'skills':
+                    skills,
+
+                'job_id':
+                    job_id,
+
+                'job_title':
+                    job_title,
+
+                'file_name':
+                    original_filename
+            })
+
+        # ----------------------------------------------------
+        # COMMIT
+        # ----------------------------------------------------
+
+        conn.commit()
+
+        return jsonify({
+
+            'message':
+                'Resume processing completed',
+
+            'job_id':
+                job_id,
+
+            'job_title':
+                job_title,
+
+            'created_count':
+                len(created_candidates),
+
+            'failed_count':
+                len(failed_files),
+
+            'candidates':
+                created_candidates,
+
+            'failed':
+                failed_files
+
+        }), 201
+
+    except Exception as e:
+
+        if conn:
+            conn.rollback()
+
+        print(
+            "ERROR IN POST /api/candidates/upload:",
+            str(e)
+        )
+
+        return jsonify({
+
+            'error':
+                str(e)
+
+        }), 500
+
+    finally:
+
+        if conn:
+            conn.close()

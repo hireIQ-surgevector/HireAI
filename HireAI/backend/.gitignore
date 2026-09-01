@@ -49,3 +49,5 @@ ENV/
 *.swp
 *.swo
 .DS_Store
+
+resumes/

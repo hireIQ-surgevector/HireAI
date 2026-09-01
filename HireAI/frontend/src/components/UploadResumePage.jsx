@@ -1,122 +1,442 @@
-// import PageShell from './PageShell'
-// import { Upload } from 'lucide-react'
-
-// const UploadIcon = (props) => <Upload {...props} />
-
-// function UploadResumePage() {
-//   return (
-//     <PageShell title="AI Resume Screening & ATS" active="candidates" backTo="/candidates">
-//       <div className="card large-card">
-//         <h3>Upload Resumes</h3>
-//         <div className="upload-zone">
-//           <UploadIcon size={32} style={{ marginBottom: '8px' }} />
-//           <p style={{ fontWeight: 600, color: 'var(--text)' }}>Drag & Drop Resumes Here</p>
-//           <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Supports PDF, DOCX, or TXT</span>
-//         </div>
-//         <button type="button" className="btn btn-primary full-width btn-lg">
-//           ✨ Run AI Screening
-//         </button>
-//       </div>
-//     </PageShell>
-//   )
-// }
-
-// export default UploadResumePage
-
-import { useRef, useState } from 'react'
-import PageShell from './PageShell'
-import { Upload, FileText, X } from 'lucide-react'
+import { useEffect, useRef, useState } from "react";
+import PageShell from "./PageShell";
+import { Upload, FileText, X, Briefcase, Loader2 } from "lucide-react";
 
 function UploadResumePage() {
-  const fileInputRef = useRef(null)
-  const [selectedFiles, setSelectedFiles] = useState([])
+  const fileInputRef = useRef(null);
 
-  // Trigger browser file picker
+  const [jobs, setJobs] = useState([]);
+  const [selectedJobId, setSelectedJobId] = useState("");
+
+  const [selectedFiles, setSelectedFiles] = useState([]);
+
+  const [loadingJobs, setLoadingJobs] = useState(true);
+  const [jobsError, setJobsError] = useState("");
+
+  // ============================================================
+  // LOAD JOBS
+  // ============================================================
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        setLoadingJobs(true);
+        setJobsError("");
+
+        const response = await fetch("http://localhost:5001/api/jobs");
+
+        if (!response.ok) {
+          throw new Error("Failed to load jobs");
+        }
+
+        const data = await response.json();
+
+        setJobs(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Error loading jobs:", error);
+        setJobsError("Unable to load jobs. Please try again.");
+      } finally {
+        setLoadingJobs(false);
+      }
+    };
+
+    fetchJobs();
+  }, []);
+
+  // ============================================================
+  // FILE PICKER
+  // ============================================================
+
   const handleBrowseClick = () => {
-    fileInputRef.current?.click()
-  }
+    fileInputRef.current?.click();
+  };
 
-  // Handle selected files
+  // ============================================================
+  // ADD FILES
+  // ============================================================
+
+  const addFiles = (files) => {
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    const validFiles = Array.from(files).filter((file) => {
+      const fileName = file.name.toLowerCase();
+
+      return (
+        fileName.endsWith(".pdf") ||
+        fileName.endsWith(".docx") ||
+        fileName.endsWith(".doc") ||
+        fileName.endsWith(".txt")
+      );
+    });
+
+    setSelectedFiles((prev) => {
+      const existingKeys = new Set(
+        prev.map((file) => `${file.name}-${file.size}`),
+      );
+
+      const newFiles = validFiles.filter(
+        (file) => !existingKeys.has(`${file.name}-${file.size}`),
+      );
+
+      return [...prev, ...newFiles];
+    });
+  };
+
+  // ============================================================
+  // FILE CHANGE
+  // ============================================================
+
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files || [])
-    if (files.length > 0) {
-      setSelectedFiles((prev) => [...prev, ...files])
-    }
-  }
+    addFiles(e.target.files);
 
-  // Drag and drop handlers
+    // Allow selecting the same file again
+    e.target.value = "";
+  };
+
+  // ============================================================
+  // DRAG & DROP
+  // ============================================================
+
   const handleDrop = (e) => {
-    e.preventDefault()
-    const files = Array.from(e.dataTransfer.files || [])
-    if (files.length > 0) {
-      setSelectedFiles((prev) => [...prev, ...files])
+    e.preventDefault();
+
+    if (!selectedJobId) {
+      alert("Please select a job first.");
+      return;
     }
-  }
+
+    addFiles(e.dataTransfer.files);
+  };
 
   const handleDragOver = (e) => {
-    e.preventDefault()
-  }
+    e.preventDefault();
+  };
 
-  // Remove a selected file
+  // ============================================================
+  // REMOVE FILE
+  // ============================================================
+
   const removeFile = (index) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
-  }
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // ============================================================
+  // RUN AI SCREENING
+  // ============================================================
+
+  const handleRunScreening = async () => {
+    if (!selectedJobId) {
+      alert("Please select a job first.");
+      return;
+    }
+
+    if (selectedFiles.length === 0) {
+      alert("Please upload at least one resume.");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+
+      // Selected job
+      formData.append("job_id", selectedJobId);
+
+      // Multiple resumes
+      selectedFiles.forEach((file) => {
+        formData.append("resumes", file);
+      });
+
+      const response = await fetch(
+        "http://localhost:5001/api/candidates/upload",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to upload resumes");
+      }
+
+      console.log("Resume processing result:", data);
+
+      alert(`${data.created_count} candidate(s) added successfully.`);
+
+      // Clear selected files after successful upload
+      setSelectedFiles([]);
+    } catch (error) {
+      console.error("Resume upload error:", error);
+
+      alert(error.message || "Failed to process resumes.");
+    }
+  };
 
   return (
-    <PageShell title="AI Resume Screening & ATS" active="candidates" backTo="/candidates">
+    <PageShell
+      title="AI Resume Screening & ATS"
+      active="candidates"
+      backTo="/candidates"
+    >
       <div className="card large-card">
         <h3>Upload Resumes</h3>
 
-        {/* Hidden File Input */}
+        {/* ==================================================
+            JOB SELECTION
+        ================================================== */}
+
+        <div style={{ marginBottom: "20px" }}>
+          <label
+            htmlFor="job-select"
+            style={{
+              display: "block",
+              marginBottom: "8px",
+              fontWeight: 600,
+              color: "var(--text)",
+            }}
+          >
+            Select Job
+          </label>
+
+          <div
+            style={{
+              position: "relative",
+            }}
+          >
+            <Briefcase
+              size={18}
+              style={{
+                position: "absolute",
+                left: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "var(--muted)",
+                pointerEvents: "none",
+              }}
+            />
+
+            <select
+              id="job-select"
+              value={selectedJobId}
+              onChange={(e) => setSelectedJobId(e.target.value)}
+              disabled={loadingJobs}
+              style={{
+                width: "100%",
+                padding: "12px 12px 12px 40px",
+                border: "1px solid var(--border)",
+                borderRadius: "8px",
+                background: "var(--surface)",
+                color: "var(--text)",
+                fontSize: "14px",
+                outline: "none",
+              }}
+            >
+              <option value="">
+                {loadingJobs ? "Loading jobs..." : "Select a job"}
+              </option>
+
+              {jobs.map((job) => (
+                <option key={job.job_id} value={job.job_id}>
+                  {job.title}
+                  {job.location ? ` — ${job.location}` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {jobsError && (
+            <div
+              style={{
+                marginTop: "8px",
+                color: "#dc2626",
+                fontSize: "13px",
+              }}
+            >
+              {jobsError}
+            </div>
+          )}
+
+          {!loadingJobs && !jobsError && jobs.length === 0 && (
+            <div
+              style={{
+                marginTop: "8px",
+                color: "var(--muted)",
+                fontSize: "13px",
+              }}
+            >
+              No jobs available.
+            </div>
+          )}
+        </div>
+
+        {/* ==================================================
+            SELECTED JOB INFO
+        ================================================== */}
+
+        {selectedJobId && (
+          <div
+            style={{
+              padding: "12px 14px",
+              marginBottom: "16px",
+              borderRadius: "8px",
+              background: "var(--surface-2, #f5f7fa)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "12px",
+                color: "var(--muted)",
+                marginBottom: "3px",
+              }}
+            >
+              Resumes will be screened against
+            </div>
+
+            <div
+              style={{
+                fontWeight: 600,
+                color: "var(--text)",
+              }}
+            >
+              {
+                jobs.find((job) => String(job.job_id) === String(selectedJobId))
+                  ?.title
+              }
+            </div>
+          </div>
+        )}
+
+        {/* ==================================================
+            HIDDEN FILE INPUT
+        ================================================== */}
+
         <input
           type="file"
           ref={fileInputRef}
           onChange={handleFileChange}
           multiple
           accept=".pdf,.docx,.doc,.txt"
-          style={{ display: 'none' }}
+          style={{ display: "none" }}
         />
 
-        {/* Dropzone Container */}
+        {/* ==================================================
+            DROPZONE
+        ================================================== */}
+
         <div
           className="upload-zone"
-          onClick={handleBrowseClick}
+          onClick={() => {
+            if (selectedJobId) {
+              handleBrowseClick();
+            }
+          }}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
-          style={{ cursor: 'pointer' }}
+          style={{
+            cursor: "pointer",
+            opacity: selectedJobId ? 1 : 0.6,
+          }}
         >
-          <Upload size={36} style={{ marginBottom: '10px', color: 'var(--brand)' }} />
-          <p style={{ fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>
+          <Upload
+            size={36}
+            style={{
+              marginBottom: "10px",
+              color: "var(--brand)",
+            }}
+          />
+
+          <p
+            style={{
+              fontWeight: 600,
+              color: "var(--text)",
+              marginBottom: "4px",
+            }}
+          >
             Drag & Drop Resumes Here
           </p>
-          <span style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '14px' }}>
-            Supports PDF, DOCX, or TXT
+
+          <span
+            style={{
+              fontSize: "12px",
+              color: "var(--muted)",
+              display: "block",
+              marginBottom: "14px",
+            }}
+          >
+            Supports PDF, DOCX, DOC, or TXT
           </span>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={(e) => { e.stopPropagation(); handleBrowseClick(); }}>
+
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={!selectedJobId}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleBrowseClick();
+            }}
+          >
             Browse Files
           </button>
         </div>
 
-        {/* Selected Files List */}
+        {/* ==================================================
+            SELECTED FILES
+        ================================================== */}
+
         {selectedFiles.length > 0 && (
-          <div style={{ marginTop: '16px', marginBottom: '16px' }}>
-            <label style={{ marginBottom: '8px' }}>
+          <div
+            style={{
+              marginTop: "16px",
+              marginBottom: "16px",
+            }}
+          >
+            <label
+              style={{
+                display: "block",
+                marginBottom: "8px",
+                fontWeight: 600,
+              }}
+            >
               Selected Files ({selectedFiles.length})
             </label>
+
             {selectedFiles.map((file, index) => (
-              <div key={`${file.name}-${index}`} className="list-row" style={{ justifyContent: 'space-between' }}>
+              <div
+                key={`${file.name}-${file.size}-${index}`}
+                className="list-row"
+                style={{
+                  justifyContent: "space-between",
+                }}
+              >
                 <div className="flex-row">
-                  <FileText size={18} style={{ color: 'var(--brand)' }} />
+                  <FileText
+                    size={18}
+                    style={{
+                      color: "var(--brand)",
+                    }}
+                  />
+
                   <div>
                     <div className="list-title">{file.name}</div>
-                    <div className="list-sub">{(file.size / 1024).toFixed(1)} KB</div>
+
+                    <div className="list-sub">
+                      {(file.size / 1024).toFixed(1)} KB
+                    </div>
                   </div>
                 </div>
+
                 <button
                   type="button"
                   className="btn-ghost"
                   onClick={() => removeFile(index)}
-                  style={{ padding: '4px', cursor: 'pointer' }}
+                  style={{
+                    padding: "4px",
+                    cursor: "pointer",
+                  }}
                 >
                   <X size={16} />
                 </button>
@@ -125,17 +445,25 @@ function UploadResumePage() {
           </div>
         )}
 
+        {/* ==================================================
+            RUN AI SCREENING
+        ================================================== */}
+
         <button
           type="button"
           className="btn btn-primary full-width btn-lg"
-          disabled={selectedFiles.length === 0}
-          style={{ opacity: selectedFiles.length === 0 ? 0.6 : 1 }}
+          disabled={!selectedJobId || selectedFiles.length === 0}
+          onClick={handleRunScreening}
+          style={{
+            opacity: !selectedJobId || selectedFiles.length === 0 ? 0.6 : 1,
+          }}
         >
-          ✨ Run AI Screening {selectedFiles.length > 0 && `(${selectedFiles.length})`}
+          ✨ Run AI Screening
+          {selectedFiles.length > 0 && ` (${selectedFiles.length})`}
         </button>
       </div>
     </PageShell>
-  )
+  );
 }
 
-export default UploadResumePage
+export default UploadResumePage;
