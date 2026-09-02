@@ -880,7 +880,7 @@ function CandidateMatcherPage() {
 
                     <Link
                       to={
-                        `/candidates/${candidate.candidate_id}`
+                        `/candidate-detail/${candidate.candidate_id}`
                       }
                       className="btn btn-secondary btn-sm"
                     >
