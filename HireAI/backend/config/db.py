@@ -8,22 +8,23 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 def get_connection():
     connection_string = os.getenv('DB_CONNECTION_STRING', '').strip()
+
     if connection_string:
         return pyodbc.connect(connection_string)
 
-    server = os.getenv('DB_SERVER', 'AIPLLTH441\\SQLEXPRESS_2019')
+    server = os.getenv('DB_SERVER', r'AIPLLTH655\SQLEXPRESS')
     database = os.getenv('DB_NAME', 'TalentSyncDB')
-    username = os.getenv('DB_USER', 'sa')
-    password = os.getenv('DB_PASSWORD', 'sa@12345')
 
     conn_str = (
-        'DRIVER={ODBC Driver 17 for SQL Server};'
+        'DRIVER={ODBC Driver 18 for SQL Server};'
         f'SERVER={server};'
         f'DATABASE={database};'
-        f'UID={username};'
-        f'PWD={password};'
+        'Trusted_Connection=yes;'
+        'Persist Security Info=False;'
+        'Pooling=False;'
+        'MultipleActiveResultSets=False;'
         'Encrypt=no;'
-        'TrustServerCertificate=yes;'
+        'TrustServerCertificate=no;'
         'Connection Timeout=30;'
     )
 
