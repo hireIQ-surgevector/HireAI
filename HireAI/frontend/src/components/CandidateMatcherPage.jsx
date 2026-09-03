@@ -135,6 +135,27 @@ const calculateMatchScore = (candidate, job) => {
 };
 
 
+/*
+  Primary skills = mandatory_skills on the job
+  Secondary skills = required_skills on the job
+*/
+
+const getJobPrimarySkills = (job) => {
+  if (!job) return [];
+  return normalizeSkills(job.mandatory_skills);
+};
+
+const getJobSecondarySkills = (job) => {
+  if (!job) return [];
+  return normalizeSkills(job.required_skills);
+};
+
+const isSkillMatched = (skill, jobSkills) =>
+  jobSkills.some(
+    (jobSkill) =>
+      skill.includes(jobSkill) || jobSkill.includes(skill)
+  );
+
 const getMatchDetails = (score) => {
   if (score >= 80) {
     return {
@@ -394,6 +415,21 @@ function CandidateMatcherPage() {
     ).length;
 
 
+  /* =========================================
+     COMBINED JOB SKILLS (for highlighting)
+  ========================================= */
+
+  const jobAllSkills = useMemo(() => {
+    if (!selectedJob) return [];
+
+    return [
+      ...getJobPrimarySkills(selectedJob),
+      ...getJobSecondarySkills(selectedJob),
+    ];
+
+  }, [selectedJob]);
+
+
   return (
     <PageShell
       title="Candidate Matcher"
@@ -570,6 +606,65 @@ function CandidateMatcherPage() {
             <strong>
               {selectedJob.min_exp || 0} years
             </strong>
+
+          </div>
+
+
+          <div className="matcher-job-skills-panel">
+
+            {getJobPrimarySkills(selectedJob).length > 0 && (
+
+              <div className="matcher-job-skill-group">
+
+                <span className="matcher-job-skill-group-label">
+                  Primary Skills
+                </span>
+
+                <div className="matcher-skills">
+
+                  {getJobPrimarySkills(selectedJob).map(
+                    (skill) => (
+                      <span
+                        key={`primary-${skill}`}
+                        className="matcher-skill matcher-skill-primary"
+                      >
+                        {skill}
+                      </span>
+                    )
+                  )}
+
+                </div>
+
+              </div>
+
+            )}
+
+            {getJobSecondarySkills(selectedJob).length > 0 && (
+
+              <div className="matcher-job-skill-group">
+
+                <span className="matcher-job-skill-group-label">
+                  Secondary Skills
+                </span>
+
+                <div className="matcher-skills">
+
+                  {getJobSecondarySkills(selectedJob).map(
+                    (skill) => (
+                      <span
+                        key={`secondary-${skill}`}
+                        className="matcher-skill matcher-skill-secondary"
+                      >
+                        {skill}
+                      </span>
+                    )
+                  )}
+
+                </div>
+
+              </div>
+
+            )}
 
           </div>
 
@@ -815,18 +910,31 @@ function CandidateMatcherPage() {
                         candidate.skills
                       )
                         .slice(0, 5)
-                        .map((skill) => (
+                        .map((skill) => {
 
-                          <span
-                            key={skill}
-                            className="matcher-skill"
-                          >
+                          const matched = isSkillMatched(
+                            skill,
+                            jobAllSkills
+                          );
 
-                            {skill}
+                          return (
 
-                          </span>
+                            <span
+                              key={skill}
+                              className={
+                                matched
+                                  ? "matcher-skill matcher-skill-matched"
+                                  : "matcher-skill"
+                              }
+                            >
 
-                        ))}
+                              {skill}
+
+                            </span>
+
+                          );
+
+                        })}
 
 
                       {normalizeSkills(
