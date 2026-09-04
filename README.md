@@ -111,8 +111,13 @@ at the beginning of the terminal path.
 After activating the virtual environment, install the required Python packages using:
 
 ```bash
-pip install bcrypt beautifulsoup4 blinker certifi cffi charset-normalizer click colorama cryptography Flask Flask-Bcrypt Flask-Cors Flask-JWT-Extended greenlet idna itsdangerous Jinja2 lxml MarkupSafe pdfminer.six pdfplumber pillow playwright pycparser pyee PyJWT pyodbc pypdfium2 python-docx python-dotenv requests soupsieve typing_extensions urllib3 Werkzeug
+pip install bcrypt beautifulsoup4 blinker certifi cffi charset-normalizer click \
+colorama cryptography Flask Flask-Bcrypt Flask-Cors Flask-JWT-Extended \
+greenlet idna itsdangerous Jinja2 lxml MarkupSafe pdfminer.six pdfplumber \
+pillow playwright pycparser pyee PyJWT pyodbc pypdfium2 python-docx \
+python-dotenv requests soupsieve typing_extensions urllib3 Werkzeug
 ```
+
 
 ---
 
