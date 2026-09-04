@@ -77,7 +77,6 @@ function App() {
           <Route path="/upload-resume" element={<ProtectedRoute><UploadResumePage /></ProtectedRoute>} />
           <Route path="/interviews" element={<ProtectedRoute><InterviewsPage /></ProtectedRoute>} />
           <Route path="/schedule-interview" element={<ProtectedRoute><ScheduleInterviewPage /></ProtectedRoute>} />
-          {/* <Route path='' */}
           <Route path="/interview-room" element={<ProtectedRoute><InterviewRoomPage /></ProtectedRoute>} />
           <Route path="/evaluations" element={<ProtectedRoute><EvaluationsPage /></ProtectedRoute>} />
           <Route path="/reject-candidate" element={<ProtectedRoute><RejectCandidatePage /></ProtectedRoute>} />

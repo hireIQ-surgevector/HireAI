@@ -20,16 +20,36 @@ const EvaluationsIcon = (props) => <BarChart3 {...props} />;
 const OffersIcon = (props) => <FileText {...props} />;
 const SettingsIcon = (props) => <Settings {...props} />;
 const LogoutIcon = (props) => <LogOut {...props} />;
-const HomeIcon = (props) => <Home {...props} />
-const FeedbackIcon = (props) => <MessageCircleMore {...props} />
-const DocumentIcon = (props) => <FileText {...props} />
+const HomeIcon = (props) => <Home {...props} />;
+const FeedbackIcon = (props) => <MessageCircleMore {...props} />;
+const DocumentIcon = (props) => <FileText {...props} />;
 
 const candidateNavItems = [
-  { to: '/candidate-home', key: 'candidate-home', label: 'My Applications', icon: <HomeIcon size={15} /> },
-  { to: '/candidate-interview', key: 'candidate-interview', label: 'Upcoming Interview', icon: <InterviewsIcon size={15} /> },
-  { to: '/candidate-feedback', key: 'candidate-feedback', label: 'My Feedback', icon: <FeedbackIcon size={15} /> },
-  { to: '/candidate-offer', key: 'candidate-offer', label: 'Offer Letter', icon: <DocumentIcon size={15} /> },
-]
+  {
+    to: "/candidate-home",
+    key: "candidate-home",
+    label: "My Applications",
+    icon: <HomeIcon size={15} />,
+  },
+  {
+    to: "/candidate-interview",
+    key: "candidate-interview",
+    label: "Upcoming Interview",
+    icon: <InterviewsIcon size={15} />,
+  },
+  {
+    to: "/candidate-feedback",
+    key: "candidate-feedback",
+    label: "My Feedback",
+    icon: <FeedbackIcon size={15} />,
+  },
+  {
+    to: "/candidate-offer",
+    key: "candidate-offer",
+    label: "Offer Letter",
+    icon: <DocumentIcon size={15} />,
+  },
+];
 
 function CandidateLayout({ title, active, children }) {
   const location = useLocation();

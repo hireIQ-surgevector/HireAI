@@ -12,4 +12,4 @@ function scoreBar(score) {
   );
 }
 
-export default scoreBar
+export default scoreBar;

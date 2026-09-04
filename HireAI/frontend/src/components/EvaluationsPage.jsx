@@ -76,7 +76,6 @@
 
 // export default EvaluationsPage;
 
-
 import { Link } from "react-router-dom";
 import PageShell from "./PageShell";
 import {
@@ -131,13 +130,10 @@ function EvaluationsPage() {
       active="evaluations"
     >
       <div className="evaluation-page">
-
         {/* HEADER */}
         <div className="evaluation-header">
           <div>
-            <p className="evaluation-eyebrow">
-              INTERVIEW EVALUATION
-            </p>
+            <p className="evaluation-eyebrow">INTERVIEW EVALUATION</p>
 
             <h2>Candidate Performance Overview</h2>
 
@@ -154,10 +150,8 @@ function EvaluationsPage() {
         </div>
 
         <div className="evaluation-layout">
-
           {/* LEFT SIDE */}
           <div className="evaluation-main-card">
-
             <div className="evaluation-card-header">
               <div>
                 <h3>Score Breakdown</h3>
@@ -170,44 +164,34 @@ function EvaluationsPage() {
             </div>
 
             <div className="evaluation-scores">
-              {evaluationScores.map(
-                ({ label, value, icon, className }) => (
-                  <div
-                    key={label}
-                    className="evaluation-score-row"
-                  >
-                    <div className="evaluation-score-top">
-
-                      <div className="evaluation-score-label">
-                        <div
-                          className={`evaluation-score-icon ${className}`}
-                        >
-                          {icon}
-                        </div>
-
-                        <span>{label}</span>
+              {evaluationScores.map(({ label, value, icon, className }) => (
+                <div key={label} className="evaluation-score-row">
+                  <div className="evaluation-score-top">
+                    <div className="evaluation-score-label">
+                      <div className={`evaluation-score-icon ${className}`}>
+                        {icon}
                       </div>
 
-                      <strong>{value}%</strong>
+                      <span>{label}</span>
                     </div>
 
-                    <div className="evaluation-progress">
-                      <div
-                        className={`evaluation-progress-fill ${className}`}
-                        style={{
-                          width: `${value}%`,
-                        }}
-                      />
-                    </div>
+                    <strong>{value}%</strong>
                   </div>
-                )
-              )}
+
+                  <div className="evaluation-progress">
+                    <div
+                      className={`evaluation-progress-fill ${className}`}
+                      style={{
+                        width: `${value}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
 
             <div className="evaluation-summary">
-
               <div className="overall-score">
-
                 <div className="overall-score-circle">
                   <span>84.6</span>
                   <small>/100</small>
@@ -221,11 +205,10 @@ function EvaluationsPage() {
                   <strong>Strong Candidate</strong>
 
                   <p>
-                    Priya has demonstrated strong technical and
-                    problem-solving abilities.
+                    Priya has demonstrated strong technical and problem-solving
+                    abilities.
                   </p>
                 </div>
-
               </div>
 
               <div className="evaluation-recommendation">
@@ -236,35 +219,23 @@ function EvaluationsPage() {
                   Recommended to Advance
                 </div>
               </div>
-
             </div>
 
             <div className="evaluation-actions">
-
-              <Link
-                to="/send-offer"
-                className="evaluation-advance-btn"
-              >
+              <Link to="/send-offer" className="evaluation-advance-btn">
                 <Check size={17} />
                 Advance Candidate
               </Link>
 
-              <Link
-                to="/reject-candidate"
-                className="evaluation-reject-btn"
-              >
+              <Link to="/reject-candidate" className="evaluation-reject-btn">
                 <X size={17} />
                 Reject Candidate
               </Link>
-
             </div>
-
           </div>
-
 
           {/* RIGHT SIDE */}
           <div className="evaluation-feedback-card">
-
             <div className="evaluation-card-header">
               <div>
                 <h3>Evaluation Feedback</h3>
@@ -272,9 +243,7 @@ function EvaluationsPage() {
               </div>
             </div>
 
-
             <div className="feedback-section">
-
               <div className="feedback-label success">
                 <Check size={15} />
                 Strengths
@@ -283,12 +252,9 @@ function EvaluationsPage() {
               <div className="feedback-box feedback-success">
                 Strong React internals and hooks understanding.
               </div>
-
             </div>
 
-
             <div className="feedback-section">
-
               <div className="feedback-label warning">
                 <TrendingUp size={15} />
                 Areas of Improvement
@@ -297,45 +263,27 @@ function EvaluationsPage() {
               <div className="feedback-box feedback-warning">
                 System design depth could be stronger.
               </div>
-
             </div>
 
-
             <div className="final-recommendation-section">
-
-              <label>
-                Final Recommendation
-              </label>
+              <label>Final Recommendation</label>
 
               <textarea
                 rows="5"
                 defaultValue="Priya demonstrates strong senior-level frontend skills. She has excellent knowledge of React, component architecture, and problem-solving. She is recommended to proceed to the next stage."
               />
-
             </div>
 
-
             <div className="evaluation-save-area">
+              <p>Changes will be saved to the candidate's evaluation record.</p>
 
-              <p>
-                Changes will be saved to the candidate's evaluation
-                record.
-              </p>
-
-              <button
-                type="button"
-                className="evaluation-save-btn"
-              >
+              <button type="button" className="evaluation-save-btn">
                 <Save size={15} />
                 Save Evaluation
               </button>
-
             </div>
-
           </div>
-
         </div>
-
       </div>
     </PageShell>
   );

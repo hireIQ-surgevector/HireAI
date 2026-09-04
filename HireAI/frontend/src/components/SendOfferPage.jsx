@@ -3,11 +3,7 @@ import PageShell from "./PageShell";
 
 function SendOfferPage() {
   return (
-    <PageShell
-      title="Create Offer Letter"
-      active="offers"
-      backTo="/candidates"
-    >
+    <PageShell title="Create Offer Letter" active="offers" backTo="/candidates">
       <div className="card large-card">
         <h3>Offer Details</h3>
         <div className="grid2">

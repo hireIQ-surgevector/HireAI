@@ -97,9 +97,7 @@ function formatInterviewDateTime(dateValue) {
 function DashboardPage() {
   const dispatch = useDispatch();
 
-  const { summary, loading } = useSelector(
-    (state) => state.dashboard,
-  );
+  const { summary, loading } = useSelector((state) => state.dashboard);
 
   const session = getSession();
 
@@ -108,10 +106,10 @@ function DashboardPage() {
   ========================= */
 
   useEffect(() => {
-  if (!summary && !loading) {
-    dispatch(fetchDashboardSummary());
-  }
-}, [dispatch, summary, loading]);
+    if (!summary && !loading) {
+      dispatch(fetchDashboardSummary());
+    }
+  }, [dispatch, summary, loading]);
 
   /* =========================
      DASHBOARD DATA

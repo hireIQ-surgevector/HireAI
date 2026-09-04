@@ -1,29 +1,15 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import {
-  Link,
-  useNavigate,
-  useParams,
-} from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import PageShell from "./PageShell";
 
-import {
-  API_URL,
-  getAuthHeader,
-} from "../utils/auth";
-
+import { API_URL, getAuthHeader } from "../utils/auth";
 
 function EditInterviewSchedulePage() {
-
   const navigate = useNavigate();
 
   const { interviewId } = useParams();
-
 
   /* =========================
      STATE
@@ -31,161 +17,98 @@ function EditInterviewSchedulePage() {
 
   const [interview, setInterview] = useState(null);
 
-  const [interviewDate, setInterviewDate] =
-    useState("");
+  const [interviewDate, setInterviewDate] = useState("");
 
-  const [interviewTime, setInterviewTime] =
-    useState("");
+  const [interviewTime, setInterviewTime] = useState("");
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [saving, setSaving] =
-    useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const [error, setError] =
-    useState("");
-
+  const [error, setError] = useState("");
 
   /* =========================
      GET INTERVIEW
   ========================= */
 
   useEffect(() => {
-
     const fetchInterview = async () => {
-
       try {
-
         setLoading(true);
 
-        const response = await fetch(
-          `${API_URL}/api/interviews`,
-          {
-            headers: {
-              ...getAuthHeader(),
-            },
-          }
-        );
+        const response = await fetch(`${API_URL}/api/interviews`, {
+          headers: {
+            ...getAuthHeader(),
+          },
+        });
 
         if (!response.ok) {
-          throw new Error(
-            "Failed to load interview."
-          );
+          throw new Error("Failed to load interview.");
         }
 
-        const interviews =
-          await response.json();
+        const interviews = await response.json();
 
-        const selectedInterview =
-          interviews.find(
-            (item) =>
-              String(item.id) ===
-              String(interviewId)
-          );
+        const selectedInterview = interviews.find(
+          (item) => String(item.id) === String(interviewId),
+        );
 
         if (!selectedInterview) {
-          throw new Error(
-            "Interview not found."
-          );
+          throw new Error("Interview not found.");
         }
 
         setInterview(selectedInterview);
-
 
         /* =========================
            SPLIT DATE AND TIME
         ========================= */
 
-        if (
-          selectedInterview.scheduled_at
-        ) {
+        if (selectedInterview.scheduled_at) {
+          const date = new Date(selectedInterview.scheduled_at);
 
-          const date =
-            new Date(
-              selectedInterview.scheduled_at
-            );
+          const formattedDate = date.toISOString().split("T")[0];
 
-          const formattedDate =
-            date
-              .toISOString()
-              .split("T")[0];
+          const formattedTime = date.toTimeString().slice(0, 5);
 
-          const formattedTime =
-            date
-              .toTimeString()
-              .slice(0, 5);
+          setInterviewDate(formattedDate);
 
-          setInterviewDate(
-            formattedDate
-          );
-
-          setInterviewTime(
-            formattedTime
-          );
-
+          setInterviewTime(formattedTime);
         }
-
       } catch (error) {
+        console.error("Error loading interview:", error);
 
-        console.error(
-          "Error loading interview:",
-          error
-        );
-
-        setError(
-          error.message ||
-          "Unable to load interview."
-        );
-
+        setError(error.message || "Unable to load interview.");
       } finally {
-
         setLoading(false);
-
       }
-
     };
 
     fetchInterview();
-
   }, [interviewId]);
-
 
   /* =========================
      TODAY
   ========================= */
 
   const today = useMemo(() => {
-
-    return new Date()
-      .toISOString()
-      .split("T")[0];
-
+    return new Date().toISOString().split("T")[0];
   }, []);
-
 
   /* =========================
      SAVE CHANGES
   ========================= */
 
   const handleSave = async () => {
-
     if (!interviewDate) {
-      alert(
-        "Please select an interview date."
-      );
+      alert("Please select an interview date.");
       return;
     }
 
     if (!interviewTime) {
-      alert(
-        "Please select an interview time."
-      );
+      alert("Please select an interview time.");
       return;
     }
 
     try {
-
       setSaving(true);
 
       const response = await fetch(
@@ -194,68 +117,42 @@ function EditInterviewSchedulePage() {
           method: "PATCH",
 
           headers: {
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
 
             ...getAuthHeader(),
           },
 
           body: JSON.stringify({
-            interview_date:
-              interviewDate,
+            interview_date: interviewDate,
 
-            interview_time:
-              interviewTime,
+            interview_time: interviewTime,
           }),
-        }
+        },
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
-
-        throw new Error(
-          data.error ||
-          "Failed to update interview schedule."
-        );
-
+        throw new Error(data.error || "Failed to update interview schedule.");
       }
 
       navigate("/interviews");
-
     } catch (error) {
+      console.error("Error updating interview:", error);
 
-      console.error(
-        "Error updating interview:",
-        error
-      );
-
-      alert(
-        error.message ||
-        "Failed to update interview schedule."
-      );
-
+      alert(error.message || "Failed to update interview schedule.");
     } finally {
-
       setSaving(false);
-
     }
-
   };
-
 
   /* =========================
      LOADING
   ========================= */
 
   if (loading) {
-
     return (
-      <PageShell
-        title="Edit Interview"
-        backTo="/interviews"
-      >
+      <PageShell title="Edit Interview" backTo="/interviews">
         <div
           className="card"
           style={{
@@ -267,55 +164,32 @@ function EditInterviewSchedulePage() {
         </div>
       </PageShell>
     );
-
   }
-
 
   /* =========================
      ERROR
   ========================= */
 
   if (error) {
-
     return (
-      <PageShell
-        title="Edit Interview"
-        backTo="/interviews"
-      >
-        <div className="error-box">
-
-          {error}
-
-        </div>
-
+      <PageShell title="Edit Interview" backTo="/interviews">
+        <div className="error-box">{error}</div>
       </PageShell>
     );
-
   }
-
 
   /* =========================
      PAGE
   ========================= */
 
   return (
-
-    <PageShell
-      title="Edit Interview Schedule"
-      backTo="/interviews"
-    >
-
+    <PageShell title="Edit Interview Schedule" backTo="/interviews">
       <div className="interview-card">
-
         <div className="card">
-
-
           {/* HEADER */}
 
           <div className="section-header">
-
             <div>
-
               <h3
                 style={{
                   marginBottom: "4px",
@@ -325,16 +199,10 @@ function EditInterviewSchedulePage() {
               </h3>
 
               <p className="muted">
-
-                You can only change the
-                interview date and time.
-
+                You can only change the interview date and time.
               </p>
-
             </div>
-
           </div>
-
 
           {/* INTERVIEW DETAILS */}
 
@@ -344,92 +212,54 @@ function EditInterviewSchedulePage() {
               marginBottom: "24px",
             }}
           >
-
-            <strong>
-              {interview?.candidate_name}
-            </strong>
+            <strong>{interview?.candidate_name}</strong>
 
             <br />
 
             <span>
-
-              Position:{" "}
-
-              <strong>
-                {interview?.role_name}
-              </strong>
-
+              Position: <strong>{interview?.role_name}</strong>
             </span>
 
             <br />
 
             <span>
-
-              Interview Round:{" "}
-
-              <strong>
-                {interview?.round}
-              </strong>
-
+              Interview Round: <strong>{interview?.round}</strong>
             </span>
-
           </div>
-
 
           {/* READ ONLY INFORMATION */}
 
           <div className="grid2">
-
-
             <div className="field">
-
-              <label>
-                Candidate
-              </label>
+              <label>Candidate</label>
 
               <input
                 type="text"
-                value={
-                  interview?.candidate_name || ""
-                }
+                value={interview?.candidate_name || ""}
                 readOnly
                 style={{
-                  background:
-                    "var(--gray)",
+                  background: "var(--gray)",
 
-                  cursor:
-                    "not-allowed",
+                  cursor: "not-allowed",
                 }}
               />
-
             </div>
 
-
             <div className="field">
-
-              <label>
-                Interview Round
-              </label>
+              <label>Interview Round</label>
 
               <input
                 type="text"
-                value={
-                  interview?.round || ""
-                }
+                value={interview?.round || ""}
                 readOnly
                 style={{
-                  background:
-                    "var(--gray)",
+                  background: "var(--gray)",
 
-                  cursor:
-                    "not-allowed",
+                  cursor: "not-allowed",
                 }}
               />
-
             </div>
-
           </div>
-
 
           {/* EDITABLE SCHEDULE */}
 
@@ -439,7 +269,6 @@ function EditInterviewSchedulePage() {
               marginBottom: "12px",
             }}
           >
-
             <h3
               style={{
                 marginBottom: "4px",
@@ -448,118 +277,66 @@ function EditInterviewSchedulePage() {
               Schedule
             </h3>
 
-            <p className="muted">
-
-              Update the interview date
-              and time.
-
-            </p>
-
+            <p className="muted">Update the interview date and time.</p>
           </div>
 
-
           <div className="grid2">
-
-
             {/* DATE */}
 
             <div className="field">
-
-              <label>
-                Interview Date
-              </label>
+              <label>Interview Date</label>
 
               <input
                 type="date"
                 min={today}
                 value={interviewDate}
-                onChange={(e) =>
-                  setInterviewDate(
-                    e.target.value
-                  )
-                }
+                onChange={(e) => setInterviewDate(e.target.value)}
               />
-
             </div>
-
 
             {/* TIME */}
 
             <div className="field">
-
-              <label>
-                Interview Time
-              </label>
+              <label>Interview Time</label>
 
               <input
                 type="time"
                 value={interviewTime}
-                onChange={(e) =>
-                  setInterviewTime(
-                    e.target.value
-                  )
-                }
+                onChange={(e) => setInterviewTime(e.target.value)}
               />
-
             </div>
-
           </div>
-
 
           {/* SUMMARY */}
 
-          {(interviewDate ||
-            interviewTime) && (
-
+          {(interviewDate || interviewTime) && (
             <div
               className="info-box success"
               style={{
                 marginTop: "20px",
               }}
             >
-
-              <strong>
-                Updated Schedule
-              </strong>
-
+              <strong>Updated Schedule</strong>
               <br />
-
-              Date:{" "}
-
-              {interviewDate ||
-                "Not selected"}
-
+              Date: {interviewDate || "Not selected"}
               <br />
-
-              Time:{" "}
-
-              {interviewTime ||
-                "Not selected"}
-
+              Time: {interviewTime || "Not selected"}
             </div>
-
           )}
-
 
           {/* ACTIONS */}
 
           <div
             className="flex-row"
             style={{
-              justifyContent:
-                "space-between",
+              justifyContent: "space-between",
 
               marginTop: "24px",
             }}
           >
-
-            <Link
-              to="/interviews"
-              className="btn btn-secondary"
-            >
+            <Link to="/interviews" className="btn btn-secondary">
               Cancel
             </Link>
-
 
             <button
               type="button"
@@ -567,34 +344,18 @@ function EditInterviewSchedulePage() {
               onClick={handleSave}
               disabled={saving}
               style={{
-                opacity:
-                  saving ? 0.6 : 1,
+                opacity: saving ? 0.6 : 1,
 
-                cursor:
-                  saving
-                    ? "not-allowed"
-                    : "pointer",
+                cursor: saving ? "not-allowed" : "pointer",
               }}
             >
-
-              {saving
-                ? "Saving..."
-                : "Save Changes"}
-
+              {saving ? "Saving..." : "Save Changes"}
             </button>
-
           </div>
-
-
         </div>
-
       </div>
-
     </PageShell>
-
   );
-
 }
-
 
 export default EditInterviewSchedulePage;
