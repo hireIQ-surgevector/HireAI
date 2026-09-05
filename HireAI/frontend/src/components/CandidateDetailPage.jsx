@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
   Check,
   FileText,
@@ -121,7 +121,7 @@ function CandidateDetailPage() {
     },
     {
       label: "Notice Period",
-      value: candidate?.notice_period ? `${candidate.notice_period} Days` : "—",
+      value: candidate?.notice_period ? `${candidate.notice_period}` : "—",
       icon: <CalendarIcon size={15} />,
     },
     {
@@ -200,6 +200,14 @@ function CandidateDetailPage() {
       title="Candidate Profile"
       active="candidates"
       backTo="/candidates"
+      actions={
+        <Link
+          to={`/candidates/${candidateId}/edit`}
+          className="btn btn-primary btn-sm"
+        >
+          Edit Candidate
+        </Link>
+      }
     >
       {loading ? (
         <div

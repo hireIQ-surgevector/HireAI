@@ -21,9 +21,9 @@ import ChangePasswordPage from './components/ChangePasswordPage';
 import DashboardPage from './components/DashboardPage';
 import CandidatesPage from './components/CandidatesPage';
 import CandidateDetailPage from './components/CandidateDetailPage';
+import EditCandidatePage from './components/EditCandidatePage';
 import UploadResumePage from './components/UploadResumePage';
 import InterviewsPage from './components/InterviewsPage';
-import EditInterviewSchedulePage from "./components/EditInterviewSchedulePage";
 import InterviewRoomPage from './components/InterviewRoomPage';
 import ScheduleInterviewPage from './components/ScheduleInterviewPage';
 import EvaluationsPage from './components/EvaluationsPage';
@@ -74,6 +74,7 @@ function App() {
           <Route path="/candidate-matcher" element={<ProtectedRoute><CandidateMatcherPage /></ProtectedRoute>} />
           <Route path="/candidates" element={<ProtectedRoute><CandidatesPage /></ProtectedRoute>} />
           <Route path="/candidate-detail/:candidateId?" element={<ProtectedRoute><CandidateDetailPage /></ProtectedRoute>} />
+          <Route path="/candidates/:candidateId/edit" element={<ProtectedRoute><EditCandidatePage /></ProtectedRoute>} />
           <Route path="/upload-resume" element={<ProtectedRoute><UploadResumePage /></ProtectedRoute>} />
           <Route path="/interviews" element={<ProtectedRoute><InterviewsPage /></ProtectedRoute>} />
           <Route path="/schedule-interview" element={<ProtectedRoute><ScheduleInterviewPage /></ProtectedRoute>} />

@@ -60,7 +60,7 @@ function LoginPage() {
             <div className="app-logo-mark">
               <Sparkles size={16} />
             </div>
-            <span className="app-logo-text">TalentSync</span>
+            <span className="app-logo-text">HireIQ</span>
           </div>
           <p>AI-Powered Recruitment Platform</p>
         </div>
@@ -109,3 +109,5 @@ function LoginPage() {
 }
 
 export default LoginPage;
+
+
