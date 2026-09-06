@@ -1,0 +1,6 @@
+requests
+PyMuPDF
+python-docx
+pytesseract
+Pillow
+pyodbc
