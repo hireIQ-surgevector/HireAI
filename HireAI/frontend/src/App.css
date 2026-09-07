@@ -661,3 +661,10 @@ to { transform: rotate(360deg); }
 .candidate-edit-name { margin: 0; font-size: 17px; font-weight: 600; color: #1f2937; }
 
 .candidate-edit-email { margin: 3px 0 0; font-size: 13px; color: #6b7280; }
+
+.matcher-candidate-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--brand);
+  margin: 0 0 4px;
+}
