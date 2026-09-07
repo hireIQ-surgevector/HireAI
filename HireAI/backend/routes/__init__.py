@@ -4,7 +4,7 @@ from routes.candidates import candidates
 from routes.interviews import interviews
 from routes.jobs import jobs
 from routes.scraper import scraper
-from routes.matching import matching
+from routes.matcher import matching
 
 
 def register_routes(app):

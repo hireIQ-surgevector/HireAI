@@ -3,9 +3,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { saveSession } from "../utils/auth";
 
-const SparkIcon = (props) => <Sparkles {...props} />;
-const ArrowRightIcon = (props) => <ArrowRight {...props} />;
-
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:5001";
 
@@ -54,15 +51,20 @@ function LoginPage() {
   return (
     <div className="screen fullpage active">
       <div className="auth-card">
+        {/* Brand header — uses new app-logo-mark / app-logo-text system */}
         <div className="auth-header">
-          <div className="brand-pill">
-            <div className="brand-badge">
-              <SparkIcon size={16} />
+          <div
+            className="app-logo"
+            style={{ justifyContent: "center", marginBottom: 8 }}
+          >
+            <div className="app-logo-mark">
+              <Sparkles size={16} />
             </div>
-            <span className="brand-title">TalentSync</span>
+            <span className="app-logo-text">HireIQ</span>
           </div>
           <p>AI-Powered Recruitment Platform</p>
         </div>
+
         <div className="field">
           <label>Email Address</label>
           <input
@@ -71,6 +73,7 @@ function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
+
         <div className="field">
           <label>Password</label>
           <input
@@ -79,10 +82,13 @@ function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
+
         {error && <div className="error-box">{error}</div>}
+
         <div className="auth-link-row">
           <Link to="/forgot-password">Forgot Password?</Link>
         </div>
+
         <button
           type="button"
           className="btn btn-primary btn-lg full-width"
@@ -93,7 +99,7 @@ function LoginPage() {
             "Signing In..."
           ) : (
             <>
-              Sign In <ArrowRightIcon size={16} />
+              Sign In <ArrowRight size={16} />
             </>
           )}
         </button>
@@ -103,3 +109,5 @@ function LoginPage() {
 }
 
 export default LoginPage;
+
+

@@ -2,8 +2,8 @@ import PageShell from "./PageShell";
 import { Link } from "react-router-dom";
 import { Plus, FileText } from "lucide-react";
 
-const PlusIcon = (props) => <Plus {...props} />
-const DocumentIcon = (props) => <FileText {...props} />
+const PlusIcon = (props) => <Plus {...props} />;
+const DocumentIcon = (props) => <FileText {...props} />;
 
 function RejectCandidatePage() {
   return (
@@ -52,6 +52,5 @@ function RejectCandidatePage() {
     </PageShell>
   );
 }
-
 
 export default RejectCandidatePage;

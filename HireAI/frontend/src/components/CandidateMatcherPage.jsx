@@ -11,6 +11,10 @@ import {
   UserRound,
   CheckCircle2,
   AlertCircle,
+  ThumbsUp,
+  ThumbsDown,
+  ArrowRightCircle,
+  XCircle,
 } from "lucide-react";
 
 import PageShell from "./PageShell";
@@ -50,8 +54,7 @@ const getJobSecondarySkills = (job) => {
 };
 
 /*
-  Match category -> CSS class, matching the classes already
-  defined in App.css (.match-strong / .match-good / etc.)
+  Match category -> CSS class
 */
 
 const CATEGORY_CLASS_MAP = {
@@ -63,6 +66,14 @@ const CATEGORY_CLASS_MAP = {
 
 const getMatchClassName = (category) =>
   CATEGORY_CLASS_MAP[category] || "match-low";
+
+/*
+  A good AI match is what unlocks the one-click "Move to L1"
+*/
+
+const GOOD_MATCH_THRESHOLD = 60;
+
+const isGoodMatch = (score) => (score ?? 0) >= GOOD_MATCH_THRESHOLD;
 
 function CandidateMatcherPage() {
   const [jobs, setJobs] = useState([]);
@@ -82,6 +93,19 @@ function CandidateMatcherPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const [minimumScore, setMinimumScore] = useState("All");
+
+  /*
+    Per-candidate recruiter decisions
+
+    {
+      candidate_id: {
+        aiAccepted: true | false | undefined,
+        stage: "L1" | "Rejected" | undefined
+      }
+    }
+  */
+
+  const [candidateDecisions, setCandidateDecisions] = useState({});
 
   /* =========================================
      LOAD JOBS
@@ -124,15 +148,7 @@ function CandidateMatcherPage() {
   };
 
   /* =========================================
-     LOAD CANDIDATES + ACCURATE MATCH SCORES
-     FOR JOB
-
-     Scores are now calculated server-side
-     (semantic similarity + skill/experience
-     scoring, see services/ai_matcher.py) and
-     persisted to ai_score, instead of being
-     recomputed client-side with plain
-     substring matching.
+     LOAD CANDIDATES + MATCH SCORES
   ========================================= */
 
   const handleJobChange = async (jobId) => {
@@ -143,6 +159,8 @@ function CandidateMatcherPage() {
     setSearchQuery("");
 
     setMinimumScore("All");
+
+    setCandidateDecisions({});
 
     if (!jobId) {
       setSelectedJob(null);
@@ -177,11 +195,11 @@ function CandidateMatcherPage() {
         try {
           const errorData = await response.json();
 
-          if (errorData && errorData.error) {
+          if (errorData?.error) {
             backendMessage = errorData.error;
           }
         } catch (parseError) {
-          // response body wasn't JSON — fall back to the generic message
+          // Response body wasn't JSON
         }
 
         throw new Error(backendMessage);
@@ -201,11 +219,6 @@ function CandidateMatcherPage() {
 
   /* =========================================
      MAP CANDIDATES TO DISPLAY SHAPE
-
-     ai_score / match_category / matched_skills
-     / missing_skills already come from the
-     backend — this just adapts field names to
-     what the UI below expects.
   ========================================= */
 
   const matchedCandidates = useMemo(() => {
@@ -214,7 +227,9 @@ function CandidateMatcherPage() {
     return candidates
       .map((candidate) => ({
         ...candidate,
+
         matchScore: candidate.ai_score ?? 0,
+
         matchDetails: {
           label: candidate.match_category || "Low Match",
           className: getMatchClassName(candidate.match_category),
@@ -257,6 +272,59 @@ function CandidateMatcherPage() {
   const goodMatches = matchedCandidates.filter(
     (candidate) => candidate.matchScore >= 60 && candidate.matchScore < 80,
   ).length;
+
+  /* =========================================
+     RECRUITER DECISION HANDLERS
+  ========================================= */
+
+  const acceptAIMatch = (candidateId) => {
+    setCandidateDecisions((prev) => ({
+      ...prev,
+
+      [candidateId]: {
+        ...prev[candidateId],
+        aiAccepted: true,
+      },
+    }));
+  };
+
+  const overrideAIMatch = (candidateId) => {
+    setCandidateDecisions((prev) => ({
+      ...prev,
+
+      [candidateId]: {
+        ...prev[candidateId],
+        aiAccepted: false,
+      },
+    }));
+  };
+
+  const moveCandidateToStage = (candidateId, stage) => {
+    setCandidateDecisions((prev) => ({
+      ...prev,
+
+      [candidateId]: {
+        ...prev[candidateId],
+        stage,
+      },
+    }));
+  };
+
+  /*
+    JD skills used to determine whether
+    a candidate skill should be green.
+
+    Primary + Secondary JD skills
+  */
+
+  const jobSkills = useMemo(() => {
+    if (!selectedJob) return [];
+
+    return [
+      ...getJobPrimarySkills(selectedJob),
+      ...getJobSecondarySkills(selectedJob),
+    ];
+  }, [selectedJob]);
 
   return (
     <PageShell
@@ -369,6 +437,8 @@ function CandidateMatcherPage() {
 
             <strong>{selectedJob.min_exp || 0} years</strong>
           </div>
+
+          {/* JD SKILLS - LEFT AS NORMAL */}
 
           <div className="matcher-job-skills-panel">
             {getJobPrimarySkills(selectedJob).length > 0 && (
@@ -499,64 +569,89 @@ function CandidateMatcherPage() {
             </select>
           </div>
 
-          {/* CANDIDATE RESULTS */}
+          {/* =====================================
+                CANDIDATE RESULTS
+            ===================================== */}
 
           <div className="matcher-results">
-            {filteredCandidates.map((candidate) => (
-              <div
-                key={candidate.candidate_id}
-                className="matcher-candidate-card card"
-              >
-                {/* CANDIDATE INFO */}
+            {filteredCandidates.map((candidate) => {
+              const decision = candidateDecisions[candidate.candidate_id] || {};
 
-                <div className="matcher-candidate-info">
-                  <div className="matcher-avatar">
-                    <UserRound size={22} />
-                  </div>
+              /*
+                  Candidate skills
+                */
 
-                  <div>
-                    <h3>{candidate.full_name}</h3>
+              const candidateSkills = normalizeSkills(candidate.skills);
 
-                    <p>
-                      {candidate.current_role ||
-                        candidate.applied_role ||
-                        "Candidate"}
-                    </p>
+              return (
+                <div
+                  key={candidate.candidate_id}
+                  className="matcher-candidate-card card"
+                >
+                  {/* =====================================
+                        CANDIDATE INFO
+                    ===================================== */}
 
-                    <div className="matcher-candidate-meta">
-                      {candidate.location && (
-                        <span>
-                          <MapPin size={13} />
+                  <Link
+                    to={`/candidate-detail/${candidate.candidate_id}`}
+                    className="matcher-candidate-info-link"
+                  >
+                    <div className="matcher-candidate-info">
+                      <div className="matcher-avatar">
+                        <UserRound size={22} />
+                      </div>
 
-                          {candidate.location}
-                        </span>
-                      )}
+                      <div>
+                        <h3 className="matcher-candidate-name">
+                          {candidate.full_name}
+                        </h3>
 
-                      <span>
-                        <BriefcaseBusiness size={13} />
-                        {candidate.experience_years || 0} years
-                      </span>
+                        <p>
+                          {candidate.current_role ||
+                            candidate.applied_role ||
+                            "Candidate"}
+                        </p>
+
+                        <div className="matcher-candidate-meta">
+                          {candidate.location && (
+                            <span>
+                              <MapPin size={13} />
+
+                              {candidate.location}
+                            </span>
+                          )}
+
+                          <span>
+                            <BriefcaseBusiness size={13} />
+                            {candidate.experience_years || 0} years
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </Link>
 
-                {/* SKILLS */}
+                  {/* =====================================
+                        CANDIDATE SKILLS
 
-                <div className="matcher-skills">
-                  {normalizeSkills(candidate.skills)
-                    .slice(0, 5)
-                    .map((skill) => {
-                      const matched = (
-                        candidate.matched_skills || []
-                      ).includes(skill);
+                        Green = skill matches JD
+                        Grey = skill does not match JD
+                    ===================================== */}
+
+                  <div className="matcher-skills">
+                    {candidateSkills.slice(0, 5).map((skill) => {
+                      /*
+                            Check against selected Job Description
+                          */
+
+                      const matchesJD = jobSkills.includes(skill);
 
                       return (
                         <span
                           key={skill}
                           className={
-                            matched
+                            matchesJD
                               ? "matcher-skill matcher-skill-matched"
-                              : "matcher-skill"
+                              : "matcher-skill matcher-skill-unmatched"
                           }
                         >
                           {skill}
@@ -564,43 +659,137 @@ function CandidateMatcherPage() {
                       );
                     })}
 
-                  {normalizeSkills(candidate.skills).length === 0 && (
-                    <span className="matcher-no-skills">
-                      No skills available
-                    </span>
-                  )}
-                </div>
-
-                {/* SCORE */}
-
-                <div className="matcher-score">
-                  <div
-                    className={
-                      `matcher-score-circle ` + candidate.matchDetails.className
-                    }
-                  >
-                    {candidate.matchScore}%
+                    {candidateSkills.length === 0 && (
+                      <span className="matcher-no-skills">
+                        No skills available
+                      </span>
+                    )}
                   </div>
 
-                  <span
-                    className={
-                      `matcher-score-label ` + candidate.matchDetails.className
-                    }
-                  >
-                    {candidate.matchDetails.label}
-                  </span>
+                  {/* =====================================
+                        SCORE
+                    ===================================== */}
+
+                  <div className="matcher-score">
+                    <div
+                      className={`matcher-score-circle ${candidate.matchDetails.className}`}
+                    >
+                      {candidate.matchScore}%
+                    </div>
+
+                    <span
+                      className={`matcher-score-label ${candidate.matchDetails.className}`}
+                    >
+                      {candidate.matchDetails.label}
+                    </span>
+                  </div>
+
+                  {/* =====================================
+                        AI MATCH DECISION WORKFLOW
+                    ===================================== */}
+
+                  <div className="matcher-decision">
+                    {decision.stage ? (
+                      <span
+                        className={
+                          decision.stage === "L1"
+                            ? "matcher-decision-badge matcher-decision-badge-l1"
+                            : "matcher-decision-badge matcher-decision-badge-rejected"
+                        }
+                      >
+                        {decision.stage === "L1" ? (
+                          <>
+                            <CheckCircle2 size={14} />
+                            Moved to L1
+                          </>
+                        ) : (
+                          <>
+                            <XCircle size={14} />
+                            Rejected
+                          </>
+                        )}
+                      </span>
+                    ) : decision.aiAccepted === true ? (
+                      isGoodMatch(candidate.matchScore) ? (
+                        <button
+                          type="button"
+                          className="btn btn-success btn-sm"
+                          onClick={() =>
+                            moveCandidateToStage(candidate.candidate_id, "L1")
+                          }
+                        >
+                          <ArrowRightCircle size={14} />
+                          Move to L1
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          onClick={() =>
+                            moveCandidateToStage(
+                              candidate.candidate_id,
+                              "Rejected",
+                            )
+                          }
+                        >
+                          <XCircle size={14} />
+                          Reject Candidate
+                        </button>
+                      )
+                    ) : decision.aiAccepted === false ? (
+                      <div className="matcher-decision-actions">
+                        <button
+                          type="button"
+                          className="btn btn-success btn-sm"
+                          onClick={() =>
+                            moveCandidateToStage(candidate.candidate_id, "L1")
+                          }
+                        >
+                          <ArrowRightCircle size={14} />
+                          Move to L1
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          onClick={() =>
+                            moveCandidateToStage(
+                              candidate.candidate_id,
+                              "Rejected",
+                            )
+                          }
+                        >
+                          <XCircle size={14} />
+                          Reject
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="matcher-decision-actions">
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-sm"
+                          onClick={() => acceptAIMatch(candidate.candidate_id)}
+                        >
+                          <ThumbsUp size={14} />
+                          Accept AI Match
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-sm"
+                          onClick={() =>
+                            overrideAIMatch(candidate.candidate_id)
+                          }
+                        >
+                          <ThumbsDown size={14} />
+                          Override
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-
-                {/* ACTION */}
-
-                <Link
-                  to={`/candidates/${candidate.candidate_id}`}
-                  className="btn btn-secondary btn-sm"
-                >
-                  View Profile
-                </Link>
-              </div>
-            ))}
+              );
+            })}
 
             {filteredCandidates.length === 0 && (
               <div className="matcher-empty card">

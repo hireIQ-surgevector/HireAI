@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
   Check,
   FileText,
@@ -16,10 +16,7 @@ import toast from "react-hot-toast";
 
 import PageShell from "./PageShell";
 import badgeClass from "./badgeClass";
-import {
-  API_URL,
-  getAuthHeader,
-} from "../utils/auth";
+import { API_URL, getAuthHeader } from "../utils/auth";
 
 const SparkIcon = (props) => <Sparkles {...props} />;
 const ClockIcon = (props) => <Clock3 {...props} />;
@@ -57,15 +54,13 @@ function CandidateDetailPage() {
               "Content-Type": "application/json",
               ...getAuthHeader(),
             },
-          }
+          },
         );
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(
-            data.error || "Unable to load candidate profile"
-          );
+          throw new Error(data.error || "Unable to load candidate profile");
         }
 
         setCandidate(data);
@@ -80,16 +75,10 @@ function CandidateDetailPage() {
     loadCandidate();
   }, [candidateId]);
 
-  const candidateName =
-    candidate?.name ||
-    candidate?.full_name ||
-    "Candidate";
+  const candidateName = candidate?.name || candidate?.full_name || "Candidate";
 
   const candidateStage =
-    candidate?.stage ||
-    candidate?.current_status ||
-    candidate?.status ||
-    "New";
+    candidate?.stage || candidate?.current_status || candidate?.status || "New";
 
   const initials = candidateName
     .split(" ")
@@ -132,33 +121,25 @@ function CandidateDetailPage() {
     },
     {
       label: "Notice Period",
-      value: candidate?.notice_period
-        ? `${candidate.notice_period} Days`
-        : "—",
+      value: candidate?.notice_period ? `${candidate.notice_period}` : "—",
       icon: <CalendarIcon size={15} />,
     },
     {
       label: "Current CTC",
-      value: candidate?.current_ctc
-        ? `${candidate.current_ctc} LPA`
-        : "—",
+      value: candidate?.current_ctc ? `${candidate.current_ctc} LPA` : "—",
       icon: <CurrencyIcon size={15} />,
     },
   ];
 
   const skills =
-    Array.isArray(candidate?.skills) &&
-    candidate.skills.length > 0
+    Array.isArray(candidate?.skills) && candidate.skills.length > 0
       ? candidate.skills
       : [];
 
   const score = candidate?.score || 0;
 
   const breakdown = [
-    [
-      "Technical Skills",
-      Math.min(100, score + 5),
-    ],
+    ["Technical Skills", Math.min(100, score + 5)],
     ["Communication", 82],
     ["Problem Solving", 90],
     ["Role Fitment", 85],
@@ -189,15 +170,13 @@ function CandidateDetailPage() {
             ...getAuthHeader(),
           },
           body: JSON.stringify({ action }),
-        }
+        },
       );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.error || "Unable to update stage"
-        );
+        throw new Error(data.error || "Unable to update stage");
       }
 
       setCandidate(data);
@@ -207,14 +186,10 @@ function CandidateDetailPage() {
       } else if (action === "reject") {
         toast.success("Candidate rejected");
       } else {
-        toast.success(
-          `Stage updated to ${data.stage}`
-        );
+        toast.success(`Stage updated to ${data.stage}`);
       }
     } catch (err) {
-      toast.error(
-        err.message || "Failed to update stage"
-      );
+      toast.error(err.message || "Failed to update stage");
     } finally {
       setUpdatingStage(false);
     }
@@ -225,6 +200,14 @@ function CandidateDetailPage() {
       title="Candidate Profile"
       active="candidates"
       backTo="/candidates"
+      actions={
+        <Link
+          to={`/candidates/${candidateId}/edit`}
+          className="btn btn-primary btn-sm"
+        >
+          Edit Candidate
+        </Link>
+      }
     >
       {loading ? (
         <div
@@ -237,9 +220,7 @@ function CandidateDetailPage() {
           Loading candidate profile...
         </div>
       ) : error ? (
-        <div className="error-box">
-          {error}
-        </div>
+        <div className="error-box">{error}</div>
       ) : (
         <>
           {/* Candidate Header */}
@@ -262,7 +243,7 @@ function CandidateDetailPage() {
 
                   <span
                     className={`badge ${badgeClass(
-                      candidateStage.toLowerCase()
+                      candidateStage.toLowerCase(),
                     )}`}
                   >
                     {candidateStage}
@@ -273,25 +254,15 @@ function CandidateDetailPage() {
                   {candidate?.current_role || "Role not specified"}
                 </p>
 
-                <p
-                  className="muted"
-                  style={{ marginTop: "4px" }}
-                >
-                  Applied for{" "}
-                  <strong>
-                    {candidate?.role || "Position"}
-                  </strong>
+                <p className="muted" style={{ marginTop: "4px" }}>
+                  Applied for <strong>{candidate?.role || "Position"}</strong>
                 </p>
               </div>
 
               <div className="score-box">
-                <div className="score-value">
-                  {score}
-                </div>
+                <div className="score-value">{score}</div>
 
-                <div className="score-label">
-                  AI SCORE
-                </div>
+                <div className="score-label">AI SCORE</div>
               </div>
             </div>
           </div>
@@ -299,30 +270,21 @@ function CandidateDetailPage() {
           <div style={{ height: "16px" }} />
 
           <div className="grid2">
-
             {/* Candidate Details */}
 
             <div className="card">
               <div className="section-header">
                 <div>
-                  <h3 style={{ margin: 0 }}>
-                    Candidate Details
-                  </h3>
+                  <h3 style={{ margin: 0 }}>Candidate Details</h3>
 
-                  <p
-                    className="muted"
-                    style={{ marginTop: "4px" }}
-                  >
+                  <p className="muted" style={{ marginTop: "4px" }}>
                     Personal and professional information
                   </p>
                 </div>
               </div>
 
               {unifiedDetails.map((item) => (
-                <div
-                  className="detail-row"
-                  key={item.label}
-                >
+                <div className="detail-row" key={item.label}>
                   <div
                     className="flex-row"
                     style={{
@@ -332,14 +294,10 @@ function CandidateDetailPage() {
                   >
                     {item.icon}
 
-                    <span>
-                      {item.label}
-                    </span>
+                    <span>{item.label}</span>
                   </div>
 
-                  <strong>
-                    {item.value}
-                  </strong>
+                  <strong>{item.value}</strong>
                 </div>
               ))}
             </div>
@@ -349,10 +307,7 @@ function CandidateDetailPage() {
             <div className="card">
               <div className="section-header">
                 <div>
-                  <div
-                    className="flex-row"
-                    style={{ gap: "7px" }}
-                  >
+                  <div className="flex-row" style={{ gap: "7px" }}>
                     <SparkIcon
                       size={17}
                       style={{
@@ -360,15 +315,10 @@ function CandidateDetailPage() {
                       }}
                     />
 
-                    <h3 style={{ margin: 0 }}>
-                      AI Assessment
-                    </h3>
+                    <h3 style={{ margin: 0 }}>AI Assessment</h3>
                   </div>
 
-                  <p
-                    className="muted"
-                    style={{ marginTop: "4px" }}
-                  >
+                  <p className="muted" style={{ marginTop: "4px" }}>
                     Candidate evaluation summary
                   </p>
                 </div>
@@ -393,17 +343,12 @@ function CandidateDetailPage() {
               <div className="tag-row">
                 {skills.length > 0 ? (
                   skills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="tag"
-                    >
+                    <span key={skill} className="tag">
                       {skill}
                     </span>
                   ))
                 ) : (
-                  <span className="muted">
-                    No skills listed
-                  </span>
+                  <span className="muted">No skills listed</span>
                 )}
               </div>
 
@@ -412,46 +357,37 @@ function CandidateDetailPage() {
                   marginTop: "18px",
                 }}
               >
-                {breakdown.map(
-                  ([label, value]) => (
+                {breakdown.map(([label, value]) => (
+                  <div className="progress-row" key={label}>
                     <div
-                      className="progress-row"
-                      key={label}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
                     >
-                      <div
+                      <span className="row-label">{label}</span>
+
+                      <span
                         style={{
-                          display: "flex",
-                          justifyContent:
-                            "space-between",
+                          fontSize: "12px",
+                          fontWeight: 700,
                         }}
                       >
-                        <span className="row-label">
-                          {label}
-                        </span>
-
-                        <span
-                          style={{
-                            fontSize: "12px",
-                            fontWeight: 700,
-                          }}
-                        >
-                          {value}%
-                        </span>
-                      </div>
-
-                      <div className="progress-bar">
-                        <div
-                          className="progress-fill"
-                          style={{
-                            width: `${value}%`,
-                            background:
-                              "var(--brand)",
-                          }}
-                        />
-                      </div>
+                        {value}%
+                      </span>
                     </div>
-                  )
-                )}
+
+                    <div className="progress-bar">
+                      <div
+                        className="progress-fill"
+                        style={{
+                          width: `${value}%`,
+                          background: "var(--brand)",
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -463,23 +399,15 @@ function CandidateDetailPage() {
           <div className="card">
             <div className="section-header">
               <div>
-                <h3 style={{ margin: 0 }}>
-                  Recruitment Progress
-                </h3>
+                <h3 style={{ margin: 0 }}>Recruitment Progress</h3>
 
-                <p
-                  className="muted"
-                  style={{ marginTop: "4px" }}
-                >
-                  Track and manage the candidate's
-                  recruitment journey
+                <p className="muted" style={{ marginTop: "4px" }}>
+                  Track and manage the candidate's recruitment journey
                 </p>
               </div>
 
               <span
-                className={`badge ${badgeClass(
-                  candidateStage.toLowerCase()
-                )}`}
+                className={`badge ${badgeClass(candidateStage.toLowerCase())}`}
               >
                 {candidateStage}
               </span>
@@ -489,10 +417,7 @@ function CandidateDetailPage() {
               {stages.map((stage, index) => {
                 let status = "pending";
 
-                if (
-                  currentStageIndex >= 0 &&
-                  index < currentStageIndex
-                ) {
+                if (currentStageIndex >= 0 && index < currentStageIndex) {
                   status = "done";
                 }
 
@@ -501,26 +426,12 @@ function CandidateDetailPage() {
                 }
 
                 return (
-                  <div
-                    className="step-dot-wrap"
-                    key={stage}
-                  >
-                    <div
-                      className={`step-dot ${status}`}
-                    >
-                      {status === "done" ? (
-                        <Check size={15} />
-                      ) : (
-                        index + 1
-                      )}
+                  <div className="step-dot-wrap" key={stage}>
+                    <div className={`step-dot ${status}`}>
+                      {status === "done" ? <Check size={15} /> : index + 1}
                     </div>
 
-                    <span>
-                      {stage.replace(
-                        " Interview",
-                        ""
-                      )}
-                    </span>
+                    <span>{stage.replace(" Interview", "")}</span>
                   </div>
                 );
               })}
@@ -536,13 +447,8 @@ function CandidateDetailPage() {
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
-                onClick={() =>
-                  handleStageChange("schedule")
-                }
-                disabled={
-                  updatingStage ||
-                  candidateStage === "L1 Interview"
-                }
+                onClick={() => handleStageChange("schedule")}
+                disabled={updatingStage || candidateStage === "L1 Interview"}
               >
                 Move to L1
               </button>
@@ -550,13 +456,8 @@ function CandidateDetailPage() {
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
-                onClick={() =>
-                  handleStageChange("l2")
-                }
-                disabled={
-                  updatingStage ||
-                  candidateStage !== "L1 Interview"
-                }
+                onClick={() => handleStageChange("l2")}
+                disabled={updatingStage || candidateStage !== "L1 Interview"}
               >
                 Move to L2
               </button>
@@ -564,13 +465,8 @@ function CandidateDetailPage() {
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
-                onClick={() =>
-                  handleStageChange("client")
-                }
-                disabled={
-                  updatingStage ||
-                  candidateStage !== "L2 Interview"
-                }
+                onClick={() => handleStageChange("client")}
+                disabled={updatingStage || candidateStage !== "L2 Interview"}
               >
                 Move to Client
               </button>
@@ -578,13 +474,8 @@ function CandidateDetailPage() {
               <button
                 type="button"
                 className="btn btn-primary btn-sm"
-                onClick={() =>
-                  handleStageChange("offer")
-                }
-                disabled={
-                  updatingStage ||
-                  candidateStage === "Offer Sent"
-                }
+                onClick={() => handleStageChange("offer")}
+                disabled={updatingStage || candidateStage === "Offer Sent"}
               >
                 Send Offer
               </button>
@@ -592,13 +483,8 @@ function CandidateDetailPage() {
               <button
                 type="button"
                 className="btn btn-danger btn-sm"
-                onClick={() =>
-                  handleStageChange("reject")
-                }
-                disabled={
-                  updatingStage ||
-                  candidateStage === "Rejected"
-                }
+                onClick={() => handleStageChange("reject")}
+                disabled={updatingStage || candidateStage === "Rejected"}
               >
                 Reject
               </button>
@@ -611,10 +497,7 @@ function CandidateDetailPage() {
 
           <div className="card">
             <div className="section-header">
-              <div
-                className="flex-row"
-                style={{ gap: "8px" }}
-              >
+              <div className="flex-row" style={{ gap: "8px" }}>
                 <ClockIcon
                   size={17}
                   style={{
@@ -622,15 +505,10 @@ function CandidateDetailPage() {
                   }}
                 />
 
-                <h3 style={{ margin: 0 }}>
-                  Interview Notes
-                </h3>
+                <h3 style={{ margin: 0 }}>Interview Notes</h3>
               </div>
 
-              <FileText
-                size={18}
-                color="var(--muted)"
-              />
+              <FileText size={18} color="var(--muted)" />
             </div>
 
             <div className="email-preview">

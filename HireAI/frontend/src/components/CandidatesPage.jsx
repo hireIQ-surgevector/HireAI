@@ -65,11 +65,7 @@ function CandidatesPage() {
   }, []);
 
   const getCandidateStage = (candidate) => {
-    return (
-      candidate.stage ||
-      candidate.status ||
-      "Applied"
-    );
+    return candidate.stage || candidate.status || "Applied";
   };
 
   const stageCounts = useMemo(() => {
@@ -79,22 +75,15 @@ function CandidatesPage() {
       active: candidates.filter((candidate) => {
         const stage = getCandidateStage(candidate).toLowerCase();
 
-        return (
-          !stage.includes("offer") &&
-          !stage.includes("reject")
-        );
+        return !stage.includes("offer") && !stage.includes("reject");
       }).length,
 
       offered: candidates.filter((candidate) =>
-        getCandidateStage(candidate)
-          .toLowerCase()
-          .includes("offer")
+        getCandidateStage(candidate).toLowerCase().includes("offer"),
       ).length,
 
       rejected: candidates.filter((candidate) =>
-        getCandidateStage(candidate)
-          .toLowerCase()
-          .includes("reject")
+        getCandidateStage(candidate).toLowerCase().includes("reject"),
       ).length,
     };
   }, [candidates]);
@@ -122,16 +111,13 @@ function CandidatesPage() {
       let matchesStage = true;
 
       if (stageFilter === "active") {
-        matchesStage =
-          !stage.includes("offer") &&
-          !stage.includes("reject");
+        matchesStage = !stage.includes("offer") && !stage.includes("reject");
       } else if (stageFilter === "offered") {
         matchesStage = stage.includes("offer");
       } else if (stageFilter === "rejected") {
         matchesStage = stage.includes("reject");
       } else if (stageFilter !== "all") {
-        matchesStage =
-          getCandidateStage(candidate) === stageFilter;
+        matchesStage = getCandidateStage(candidate) === stageFilter;
       }
 
       return matchesSearch && matchesStage;
@@ -179,13 +165,9 @@ function CandidatesPage() {
           </div>
 
           <div>
-            <div className="candidate-summary-label">
-              Total Candidates
-            </div>
+            <div className="candidate-summary-label">Total Candidates</div>
 
-            <div className="candidate-summary-value">
-              {stageCounts.all}
-            </div>
+            <div className="candidate-summary-value">{stageCounts.all}</div>
           </div>
         </button>
 
@@ -201,13 +183,9 @@ function CandidatesPage() {
           </div>
 
           <div>
-            <div className="candidate-summary-label">
-              Active Pipeline
-            </div>
+            <div className="candidate-summary-label">Active Pipeline</div>
 
-            <div className="candidate-summary-value">
-              {stageCounts.active}
-            </div>
+            <div className="candidate-summary-value">{stageCounts.active}</div>
           </div>
         </button>
 
@@ -223,13 +201,9 @@ function CandidatesPage() {
           </div>
 
           <div>
-            <div className="candidate-summary-label">
-              Offers Sent
-            </div>
+            <div className="candidate-summary-label">Offers Sent</div>
 
-            <div className="candidate-summary-value">
-              {stageCounts.offered}
-            </div>
+            <div className="candidate-summary-value">{stageCounts.offered}</div>
           </div>
         </button>
 
@@ -245,9 +219,7 @@ function CandidatesPage() {
           </div>
 
           <div>
-            <div className="candidate-summary-label">
-              Rejected
-            </div>
+            <div className="candidate-summary-label">Rejected</div>
 
             <div className="candidate-summary-value">
               {stageCounts.rejected}
@@ -331,9 +303,7 @@ function CandidatesPage() {
 
             <h3>No candidates found</h3>
 
-            <p>
-              Try changing your search or filter criteria.
-            </p>
+            <p>Try changing your search or filter criteria.</p>
 
             {(stageFilter !== "all" || searchTerm) && (
               <button
@@ -369,9 +339,7 @@ function CandidatesPage() {
                     className="candidate-table-row"
                     onClick={() =>
                       canAccessSensitive(session) &&
-                      navigate(
-                        `/candidate-detail/${candidate.candidate_id}`
-                      )
+                      navigate(`/candidate-detail/${candidate.candidate_id}`)
                     }
                     style={{
                       cursor: canAccessSensitive(session)
@@ -409,28 +377,21 @@ function CandidatesPage() {
                       </span>
                     </td>
 
-                    <td>
-                      {candidate.experience || "—"}
-                    </td>
+                    <td>{candidate.experience || "—"}</td>
 
-                    <td>
-                      {scoreBar(candidate.score || 0)}
-                    </td>
+                    <td>{scoreBar(candidate.score || 0)}</td>
 
-                    <td>
-                      {candidate.notice_period || "—"}
-                    </td>
+                    <td>{candidate.notice_period || "—"}</td>
 
                     <td>
                       <span
                         className={`badge ${badgeClass(
-                          candidate.status || stage
+                          candidate.status || stage,
                         )}`}
                       >
                         {stage}
                       </span>
                     </td>
-
                   </tr>
                 );
               })}

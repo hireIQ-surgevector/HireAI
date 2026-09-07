@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { FileText } from "lucide-react";
 
-const DocumentIcon = (props) => <FileText {...props} />
+const DocumentIcon = (props) => <FileText {...props} />;
 
 function RejectDonePage() {
   return (

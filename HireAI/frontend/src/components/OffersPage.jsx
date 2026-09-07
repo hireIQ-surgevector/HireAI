@@ -9,30 +9,30 @@ const OffersIcon = (props) => <FileText {...props} />;
 
 const offers = [
   {
-    name: 'Rahul Kumar',
-    role: 'DevOps Engineer',
-    ctc: '₹22 LPA',
-    sent: 'Dec 18',
-    exp: 'Dec 25',
-    status: 'Accepted',
+    name: "Rahul Kumar",
+    role: "DevOps Engineer",
+    ctc: "₹22 LPA",
+    sent: "Dec 18",
+    exp: "Dec 25",
+    status: "Accepted",
   },
   {
-    name: 'Priya Sharma',
-    role: 'Senior Frontend Dev',
-    ctc: '₹20 LPA',
-    sent: 'Dec 20',
-    exp: 'Dec 27',
-    status: 'Pending',
+    name: "Priya Sharma",
+    role: "Senior Frontend Dev",
+    ctc: "₹20 LPA",
+    sent: "Dec 20",
+    exp: "Dec 27",
+    status: "Pending",
   },
   {
-    name: 'Arjun Mehta',
-    role: 'Full Stack Dev',
-    ctc: '₹18 LPA',
-    sent: 'Dec 15',
-    exp: 'Dec 22',
-    status: 'Pending',
+    name: "Arjun Mehta",
+    role: "Full Stack Dev",
+    ctc: "₹18 LPA",
+    sent: "Dec 15",
+    exp: "Dec 22",
+    status: "Pending",
   },
-]   
+];
 
 function OffersPage() {
   return (
@@ -86,7 +86,11 @@ function OffersPage() {
                   </span>
                 </td>
                 <td>
-                  <button type="button" className="btn btn-ghost btn-sm" disabled>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    disabled
+                  >
                     View
                   </button>
                 </td>
