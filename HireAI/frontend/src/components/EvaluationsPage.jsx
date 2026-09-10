@@ -1,289 +1,197 @@
-// import { Link } from "react-router-dom";
-// import PageShell from "./PageShell";
-// import { Plus, Check } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Check, ChevronDown, X } from "lucide-react";
 
-// const PlusIcon = (props) => <Plus {...props} />
-// const CheckIcon = (props) => <Check {...props} />
-
-// function EvaluationsPage() {
-//   return (
-//     <PageShell
-//       title="Interview Evaluations — Priya Sharma"
-//       active="evaluations"
-//     >
-//       <div className="grid2">
-//         <div className="card">
-//           <h3>Score Summary</h3>
-//           {[
-//             ["Technical Skills", 88],
-//             ["Communication", 82],
-//             ["Problem Solving", 90],
-//             ["Role Fitment", 85],
-//             ["Culture Fit", 78],
-//           ].map(([label, value]) => (
-//             <div key={label} className="progress-row">
-//               <div className="row-label">{label}</div>
-//               <div className="progress-bar">
-//                 <div
-//                   className="progress-fill"
-//                   style={{
-//                     width: `${value}%`,
-//                     background: `hsl(${value * 1.2}, 65%, 40%)`,
-//                   }}
-//                 />
-//               </div>
-//               <span>{value}%</span>
-//             </div>
-//           ))}
-//           <div className="score-box large">84.6</div>
-//           <Link to="/send-offer" className="btn btn-success full-width">
-//             <CheckIcon size={14} /> Advance Candidate
-//           </Link>
-//           <Link to="/reject-candidate" className="btn btn-danger full-width">
-//             <PlusIcon size={14} style={{ transform: "rotate(45deg)" }} /> Reject
-//             Candidate
-//           </Link>
-//         </div>
-//         <div className="card">
-//           <h3>Evaluation Feedback</h3>
-//           <div className="field">
-//             <label>Strengths</label>
-//             <div className="info-box success">
-//               Strong React internals and hooks understanding.
-//             </div>
-//           </div>
-//           <div className="field">
-//             <label>Areas of Improvement</label>
-//             <div className="info-box warning">
-//               System design depth could be stronger.
-//             </div>
-//           </div>
-//           <div className="field">
-//             <label>Final Recommendation</label>
-//             <textarea
-//               rows="3"
-//               defaultValue="Priya demonstrates strong senior-level frontend skills."
-//             />
-//           </div>
-//           <button type="button" className="btn btn-primary btn-sm">
-//             Save Evaluation
-//           </button>
-//         </div>
-//       </div>
-//     </PageShell>
-//   );
-// }
-
-// export default EvaluationsPage;
-
-import { Link } from "react-router-dom";
 import PageShell from "./PageShell";
-import {
-  Check,
-  X,
-  Trophy,
-  MessageSquare,
-  Brain,
-  Target,
-  Users,
-  TrendingUp,
-  Save,
-} from "lucide-react";
+import { API_URL, getAuthHeader } from "../utils/auth";
 
-const evaluationScores = [
-  {
-    label: "Technical Skills",
-    value: 88,
-    icon: <Brain size={17} />,
-    className: "technical",
-  },
-  {
-    label: "Communication",
-    value: 82,
-    icon: <MessageSquare size={17} />,
-    className: "communication",
-  },
-  {
-    label: "Problem Solving",
-    value: 90,
-    icon: <TrendingUp size={17} />,
-    className: "problem-solving",
-  },
-  {
-    label: "Role Fitment",
-    value: 85,
-    icon: <Target size={17} />,
-    className: "role-fit",
-  },
-  {
-    label: "Culture Fit",
-    value: 78,
-    icon: <Users size={17} />,
-    className: "culture-fit",
-  },
+const STAGES = [
+  "Shortlisted",
+  "L1 Interview",
+  "L2 Interview",
+  "Client Interview",
+  "Offer Sent",
 ];
 
+function getStage(candidate) {
+  return candidate.stage || candidate.current_status || candidate.status || "Shortlisted";
+}
+
 function EvaluationsPage() {
+  const [candidates, setCandidates] = useState([]);
+  const [selectedCandidateId, setSelectedCandidateId] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [feedback, setFeedback] = useState("");
+
+  const loadCandidates = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const response = await fetch(`${API_URL}/api/candidates`, {
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to load candidates");
+
+      const activeCandidates = (Array.isArray(data) ? data : []).filter((candidate) => {
+        const stage = getStage(candidate);
+        const hasPersistedScore = candidate.ai_score !== null && candidate.ai_score !== undefined;
+
+        return (
+          hasPersistedScore &&
+          stage !== "New" &&
+          !["Rejected", "Offer Sent"].includes(stage)
+        );
+      });
+      setCandidates(activeCandidates);
+      setSelectedCandidateId((current) =>
+        activeCandidates.some((candidate) => String(candidate.candidate_id) === String(current))
+          ? current
+          : String(activeCandidates[0]?.candidate_id || ""),
+      );
+    } catch (loadError) {
+      setError(loadError.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const taskId = window.setTimeout(loadCandidates, 0);
+    return () => window.clearTimeout(taskId);
+  }, []);
+
+  const selectedCandidate = useMemo(
+    () => candidates.find((candidate) => String(candidate.candidate_id) === String(selectedCandidateId)),
+    [candidates, selectedCandidateId],
+  );
+  const currentStage = selectedCandidate ? getStage(selectedCandidate) : "Shortlisted";
+  const currentIndex = STAGES.indexOf(currentStage);
+  const nextStage = currentIndex >= 0 ? STAGES[currentIndex + 1] : null;
+
+  const updateStage = async (stage) => {
+    if (!selectedCandidate) return;
+    try {
+      setSaving(true);
+      setError("");
+      setFeedback("");
+      const response = await fetch(`${API_URL}/api/candidates/${selectedCandidate.candidate_id}/stage`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
+        body: JSON.stringify({ stage }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to update candidate stage");
+
+      setFeedback(stage === "Rejected" ? "Candidate rejected." : `Candidate moved to ${stage}.`);
+      await loadCandidates();
+    } catch (updateError) {
+      setError(updateError.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <PageShell
-      title="Interview Evaluations — Priya Sharma"
-      active="evaluations"
-    >
+    <PageShell title="Candidate Evaluations">
       <div className="evaluation-page">
-        {/* HEADER */}
         <div className="evaluation-header">
           <div>
-            <p className="evaluation-eyebrow">INTERVIEW EVALUATION</p>
-
-            <h2>Candidate Performance Overview</h2>
-
-            <p>
-              Review the interview results and make a final hiring
-              recommendation for Priya Sharma.
-            </p>
-          </div>
-
-          <div className="evaluation-status">
-            <span className="evaluation-status-dot"></span>
-            Evaluation Completed
+            <p className="evaluation-eyebrow">CANDIDATE EVALUATION</p>
+            <h2>Review and advance candidates</h2>
+            <p>Select a candidate, review their current stage, and make only the next valid decision.</p>
           </div>
         </div>
 
-        <div className="evaluation-layout">
-          {/* LEFT SIDE */}
-          <div className="evaluation-main-card">
-            <div className="evaluation-card-header">
-              <div>
-                <h3>Score Breakdown</h3>
-                <p>Performance across key evaluation criteria</p>
-              </div>
+        {error && <div className="error-box">{error}</div>}
+        {feedback && <div className="info-box success">{feedback}</div>}
 
-              <div className="evaluation-trophy">
-                <Trophy size={20} />
-              </div>
-            </div>
-
-            <div className="evaluation-scores">
-              {evaluationScores.map(({ label, value, icon, className }) => (
-                <div key={label} className="evaluation-score-row">
-                  <div className="evaluation-score-top">
-                    <div className="evaluation-score-label">
-                      <div className={`evaluation-score-icon ${className}`}>
-                        {icon}
-                      </div>
-
-                      <span>{label}</span>
-                    </div>
-
-                    <strong>{value}%</strong>
-                  </div>
-
-                  <div className="evaluation-progress">
-                    <div
-                      className={`evaluation-progress-fill ${className}`}
-                      style={{
-                        width: `${value}%`,
-                      }}
-                    />
-                  </div>
-                </div>
+        <div className="evaluation-selector card">
+          <label htmlFor="evaluation-candidate">Select candidate</label>
+          <div className="evaluation-select-wrap">
+            <select
+              id="evaluation-candidate"
+              value={selectedCandidateId}
+              onChange={(event) => setSelectedCandidateId(event.target.value)}
+              disabled={loading || candidates.length === 0}
+            >
+              <option value="">{loading ? "Loading candidates..." : "Choose a candidate"}</option>
+              {candidates.map((candidate) => (
+                <option key={candidate.candidate_id} value={candidate.candidate_id}>
+                  {candidate.name || "Unknown candidate"} - {getStage(candidate)}
+                </option>
               ))}
-            </div>
-
-            <div className="evaluation-summary">
-              <div className="overall-score">
-                <div className="overall-score-circle">
-                  <span>84.6</span>
-                  <small>/100</small>
-                </div>
-
-                <div className="overall-score-info">
-                  <span className="overall-label">
-                    Overall Evaluation Score
-                  </span>
-
-                  <strong>Strong Candidate</strong>
-
-                  <p>
-                    Priya has demonstrated strong technical and problem-solving
-                    abilities.
-                  </p>
-                </div>
-              </div>
-
-              <div className="evaluation-recommendation">
-                <span>Recommendation</span>
-
-                <div className="recommendation-badge">
-                  <Check size={15} />
-                  Recommended to Advance
-                </div>
-              </div>
-            </div>
-
-            <div className="evaluation-actions">
-              <Link to="/send-offer" className="evaluation-advance-btn">
-                <Check size={17} />
-                Advance Candidate
-              </Link>
-
-              <Link to="/reject-candidate" className="evaluation-reject-btn">
-                <X size={17} />
-                Reject Candidate
-              </Link>
-            </div>
-          </div>
-
-          {/* RIGHT SIDE */}
-          <div className="evaluation-feedback-card">
-            <div className="evaluation-card-header">
-              <div>
-                <h3>Evaluation Feedback</h3>
-                <p>Key observations from the interview</p>
-              </div>
-            </div>
-
-            <div className="feedback-section">
-              <div className="feedback-label success">
-                <Check size={15} />
-                Strengths
-              </div>
-
-              <div className="feedback-box feedback-success">
-                Strong React internals and hooks understanding.
-              </div>
-            </div>
-
-            <div className="feedback-section">
-              <div className="feedback-label warning">
-                <TrendingUp size={15} />
-                Areas of Improvement
-              </div>
-
-              <div className="feedback-box feedback-warning">
-                System design depth could be stronger.
-              </div>
-            </div>
-
-            <div className="final-recommendation-section">
-              <label>Final Recommendation</label>
-
-              <textarea
-                rows="5"
-                defaultValue="Priya demonstrates strong senior-level frontend skills. She has excellent knowledge of React, component architecture, and problem-solving. She is recommended to proceed to the next stage."
-              />
-            </div>
-
-            <div className="evaluation-save-area">
-              <p>Changes will be saved to the candidate's evaluation record.</p>
-
-              <button type="button" className="evaluation-save-btn">
-                <Save size={15} />
-                Save Evaluation
-              </button>
-            </div>
+            </select>
+            <ChevronDown size={17} />
           </div>
         </div>
+
+        {selectedCandidate ? (
+          <div className="evaluation-layout">
+            <div className="evaluation-main-card">
+              <div className="evaluation-card-header">
+                <div>
+                  <h3>{selectedCandidate.name || "Unknown candidate"}</h3>
+                  <p>{selectedCandidate.role || selectedCandidate.current_role || "Role not specified"}</p>
+                </div>
+                <span className="evaluation-status">{currentStage}</span>
+              </div>
+
+              <div className="evaluation-summary">
+                <div className="overall-score">
+                  <div className="overall-score-circle">
+                    <span>{selectedCandidate.score || 0}</span>
+                    <small>/100</small>
+                  </div>
+                  <div className="overall-score-info">
+                    <span className="overall-label">AI match score</span>
+                    <strong>{nextStage ? `Next: ${nextStage}` : "Final stage"}</strong>
+                    <p>Only the immediate next stage is available from the current stage.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="evaluation-stage-track">
+                {STAGES.map((stage, index) => (
+                  <span key={stage} className={index <= currentIndex ? "active" : ""}>
+                    {stage.replace(" Interview", "")}
+                  </span>
+                ))}
+              </div>
+
+              <div className="evaluation-actions">
+                {nextStage ? (
+                  <button type="button" className="evaluation-advance-btn" onClick={() => updateStage(nextStage)} disabled={saving}>
+                    <Check size={17} />
+                    Advance to {nextStage}
+                  </button>
+                ) : (
+                  <span className="info-box">This candidate has reached the final stage.</span>
+                )}
+                <button type="button" className="evaluation-reject-btn" onClick={() => updateStage("Rejected")} disabled={saving}>
+                  <X size={17} />
+                  Reject candidate
+                </button>
+              </div>
+            </div>
+
+            <div className="evaluation-feedback-card">
+              <div className="evaluation-card-header">
+                <div>
+                  <h3>Evaluation notes</h3>
+                  <p>Capture the reasoning behind this stage decision.</p>
+                </div>
+              </div>
+              <div className="final-recommendation-section">
+                <label htmlFor="evaluation-notes">Notes</label>
+                <textarea id="evaluation-notes" rows="8" value={feedback} onChange={(event) => setFeedback(event.target.value)} placeholder="Add evaluation notes..." />
+              </div>
+            </div>
+          </div>
+        ) : !loading ? (
+          <div className="evaluation-empty card">No active candidates are available for evaluation.</div>
+        ) : null}
       </div>
     </PageShell>
   );

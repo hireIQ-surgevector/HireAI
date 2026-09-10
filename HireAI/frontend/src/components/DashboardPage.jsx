@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import {
@@ -7,6 +7,8 @@ import {
   CalendarCheck,
   FileText,
   ArrowRight,
+  PlusCircle,
+  UploadCloud,
 } from "lucide-react";
 
 import PageShell from "./PageShell";
@@ -26,6 +28,10 @@ const InterviewsIcon = (props) => <CalendarCheck {...props} />;
 const OffersIcon = (props) => <FileText {...props} />;
 
 const ArrowRightIcon = (props) => <ArrowRight {...props} />;
+
+const PostJobIcon = (props) => <PlusCircle {...props} />;
+
+const UploadResumeIcon = (props) => <UploadCloud {...props} />;
 
 /* =========================
    HELPER FUNCTIONS
@@ -91,6 +97,27 @@ function formatInterviewDateTime(dateValue) {
 }
 
 /* =========================
+   QUICK ACTIONS CONFIG
+========================= */
+
+const QUICK_ACTIONS = [
+  {
+    key: "post-job",
+    to: "/post-job",
+    label: "Post a New Job",
+    description: "Create a job opening for your team.",
+    icon: PostJobIcon,
+  },
+  {
+    key: "upload-resume",
+    to: "/upload-resume",
+    label: "Add Candidates",
+    description: "Upload resumes to bring in new candidates.",
+    icon: UploadResumeIcon,
+  },
+];
+
+/* =========================
    DASHBOARD PAGE
 ========================= */
 
@@ -119,9 +146,26 @@ function DashboardPage() {
 
   const recentCandidates = summary?.recent_candidates || [];
 
-  const upcomingInterviews = summary?.upcoming_interviews || [];
+  /*
+    Only keep interviews scheduled from right now onward (later today
+    or on a future date) — the API may return past interviews too, so
+    this filters and sorts them soonest-first before display.
+  */
+  const upcomingInterviews = useMemo(() => {
+    const now = new Date();
 
-  const pipeline = summary?.pipeline || [];
+    return (summary?.upcoming_interviews || [])
+      .filter((interview) => {
+        if (!interview.scheduled_at) return false;
+
+        const scheduledDate = new Date(interview.scheduled_at);
+
+        return !Number.isNaN(scheduledDate.getTime()) && scheduledDate >= now;
+      })
+      .sort(
+        (a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at),
+      );
+  }, [summary]);
 
   const canManage =
     session?.permissions?.can_manage_candidates || session?.role === "manager";
@@ -165,18 +209,18 @@ function DashboardPage() {
       </div>
 
       {/* =========================
-          PIPELINE + INTERVIEWS
+          QUICK ACTIONS + INTERVIEWS
       ========================= */}
 
       <div className="grid2">
         {/* =========================
-            HIRING PIPELINE
+            QUICK ACTIONS
         ========================= */}
 
         <div className="card">
           <div className="section-header">
             <div>
-              <h3>Hiring Pipeline</h3>
+              <h3>Quick Actions</h3>
 
               <p
                 className="muted"
@@ -184,61 +228,38 @@ function DashboardPage() {
                   marginTop: "4px",
                 }}
               >
-                Overview of candidates across the recruitment process.
+                Common tasks, one click away.
               </p>
             </div>
           </div>
 
-          {pipeline.length > 0 ? (
-            <div className="pipeline-list">
-              {pipeline.map((item) => {
-                const percentage =
-                  totalCandidates > 0
-                    ? Math.min(100, (item.value / totalCandidates) * 100)
-                    : 0;
+          <div className="quick-actions-list">
+            {QUICK_ACTIONS.map((action) => {
+              const ActionIcon = action.icon;
 
-                return (
-                  <div key={item.label} className="pipeline-row">
-                    <div className="pipeline-label">{item.label}</div>
+              return (
+                <Link
+                  key={action.key}
+                  to={action.to}
+                  className="quick-action-row"
+                >
+                  <div className="quick-action-icon">
+                    <ActionIcon size={18} />
+                  </div>
 
-                    <div className="pipeline-value">{item.value}</div>
+                  <div className="quick-action-main">
+                    <div className="quick-action-label">{action.label}</div>
 
-                    <div className="progress-bar">
-                      <div
-                        className="progress-fill"
-                        style={{
-                          width: `${percentage}%`,
-                        }}
-                      />
+                    <div className="quick-action-description muted">
+                      {action.description}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="dashboard-empty">
-              <div
-                style={{
-                  fontSize: "30px",
-                  marginBottom: "8px",
-                }}
-              >
-                📊
-              </div>
 
-              <div className="strong">No pipeline data yet</div>
-
-              <div
-                className="muted"
-                style={{
-                  marginTop: "4px",
-                }}
-              >
-                Candidate activity will appear here once applications are
-                received.
-              </div>
-            </div>
-          )}
+                  <ArrowRightIcon size={16} className="quick-action-arrow" />
+                </Link>
+              );
+            })}
+          </div>
         </div>
 
         {/* =========================

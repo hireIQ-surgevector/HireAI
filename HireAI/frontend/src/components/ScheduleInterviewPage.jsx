@@ -57,38 +57,20 @@ function ScheduleInterviewPage() {
     fetchCandidates();
   }, []);
 
-  /*
-   * Only candidates who are eligible for another interview
-   * should be displayed.
-   *
-   * Based on your backend, the stage property contains values like:
-   *
-   * Shortlisted
-   * L1 Interview
-   * L2 Interview
-   * Client Interview
-   * Offer Sent
-   * Rejected
-   */
+  /* Only candidates at the scheduling entry stages should be displayed. */
   const eligibleCandidates = useMemo(() => {
-    const excludedStages = [
-      "offer sent",
-      "rejected",
-      "onboarded",
-      "hired",
-      "selected",
-    ];
+    const allowedStages = new Set(["shortlisted", "l1 interview"]);
 
     return candidates.filter((candidate) => {
-      const stage = String(candidate.stage || "")
+      const stage = String(candidate.stage || candidate.current_status || "")
         .trim()
         .toLowerCase();
 
       return (
         candidate.candidate_id &&
         candidate.name &&
-        stage &&
-        !excludedStages.includes(stage)
+        !candidate.has_interview &&
+        allowedStages.has(stage)
       );
     });
   }, [candidates]);
@@ -103,11 +85,7 @@ function ScheduleInterviewPage() {
     );
   }, [eligibleCandidates, selectedCandidateId]);
 
-  /*
-   * Determine which interview should happen next.
-   *
-   * This is based on the candidate's CURRENT stage.
-   */
+  /* This is based on the candidate's CURRENT stage. */
   const nextInterviewRound = useMemo(() => {
     if (!selectedCandidate) {
       return "";

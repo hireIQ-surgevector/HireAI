@@ -36,9 +36,23 @@ def get_candidates():
 
         rows = cursor.fetchall()
 
+        cursor.execute("""
+            SELECT DISTINCT candidate_id
+            FROM dbo.Interviews
+        """)
+        interviewed_candidate_ids = {
+            row[0]
+            for row in cursor.fetchall()
+        }
+
         conn.close()
 
-        candidates_list = [build_candidate_payload(row) for row in rows]
+        candidates_list = []
+
+        for row in rows:
+            candidate = build_candidate_payload(row)
+            candidate['has_interview'] = candidate['candidate_id'] in interviewed_candidate_ids
+            candidates_list.append(candidate)
 
         return jsonify(candidates_list), 200
 
@@ -101,6 +115,48 @@ def update_candidate_stage(candidate_id):
 
         conn = get_connection()
         cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT current_status
+            FROM dbo.Candidates
+            WHERE candidate_id = ?
+            """,
+            (candidate_id,),
+        )
+        current_row = cursor.fetchone()
+
+        if not current_row:
+            conn.close()
+            return jsonify({"error": "Candidate not found"}), 404
+
+        current_stage = normalize_candidate_stage(current_row[0])
+        ordered_stages = [
+            "Shortlisted",
+            "L1 Interview",
+            "L2 Interview",
+            "Client Interview",
+            "Offer Sent",
+        ]
+
+        if target_stage == "Rejected":
+            if current_stage == "Rejected" or current_stage == "Offer Sent":
+                conn.close()
+                return jsonify({
+                    "error": "This candidate cannot be rejected from the current stage"
+                }), 409
+        elif target_stage in ordered_stages:
+            if current_stage not in ordered_stages:
+                current_stage = "Shortlisted"
+
+            current_index = ordered_stages.index(current_stage)
+            target_index = ordered_stages.index(target_stage)
+
+            if target_index != current_index + 1:
+                conn.close()
+                return jsonify({
+                    "error": "Candidates can only move to the next stage"
+                }), 409
 
         cursor.execute(
             """
@@ -258,7 +314,7 @@ def upload_candidates():
 
             try:
 
-                parsed = parse_resume(file_path)
+                parsed = parse_resume(file_path, original_filename)
 
             except Exception as e:
 

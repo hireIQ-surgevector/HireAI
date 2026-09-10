@@ -5,11 +5,16 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Toaster } from 'react-hot-toast';
 
 import './App.css'
 import LoginPage from './components/LoginPage';
-import { getSession } from './utils/auth';
+import {
+  AUTH_CHANGED_EVENT,
+  fetchCurrentUser,
+  getSession,
+} from './utils/auth';
 import ForgotPasswordPage from './components/ForgotPasswordPage';
 import JobsPage from './components/JobsPage';
 import PostJobPage from './components/PostJobPage';
@@ -54,7 +59,26 @@ function ProtectedRoute({ children }) {
 }
 
 function App() {
-  const hasSession = Boolean(getSession()?.token);
+  const [hasSession, setHasSession] = useState(() => Boolean(getSession()?.token));
+
+  useEffect(() => {
+    const syncAuthState = () => {
+      setHasSession(Boolean(getSession()?.token));
+    };
+
+    window.addEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+
+    const intervalId = window.setInterval(() => {
+      if (getSession()?.token) {
+        fetchCurrentUser();
+      }
+    }, 60000);
+
+    return () => {
+      window.removeEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   return (
     <>

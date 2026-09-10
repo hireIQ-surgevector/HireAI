@@ -4,127 +4,33 @@ import re
 import pdfplumber
 from docx import Document
 
-
 # ============================================================
 # SKILL MAPPINGS
 # ============================================================
 
 SKILL_MAPPINGS = {
-
-    "python": [
-        "python"
-    ],
-
-    "sql": [
-        "sql",
-        "postgresql",
-        "mysql",
-        "mssql",
-        "sql server"
-    ],
-
-    "gcp": [
-        "gcp",
-        "google cloud",
-        "google cloud platform"
-    ],
-
-    "airflow": [
-        "airflow",
-        "cloud composer",
-        "apache airflow"
-    ],
-
-    "bigquery": [
-        "bigquery",
-        "gbq",
-        "google bigquery"
-    ],
-
-    "terraform": [
-        "terraform"
-    ],
-
-    "docker": [
-        "docker"
-    ],
-
-    "kubernetes": [
-        "kubernetes",
-        "k8s"
-    ],
-
-    "etl": [
-        "etl",
-        "elt",
-        "data pipeline",
-        "data pipelines"
-    ],
-
-    "ci/cd": [
-        "ci/cd",
-        "github actions",
-        "cloud build",
-        "jenkins",
-        "gitlab ci"
-    ],
-
-    "flask": [
-        "flask"
-    ],
-
-    "django": [
-        "django"
-    ],
-
-    "react": [
-        "react"
-    ],
-
-    "javascript": [
-        "javascript",
-        "js"
-    ],
-
-    "java": [
-        "java"
-    ],
-
-    "c++": [
-        "c++"
-    ],
-
-    "c#": [
-        "c#",
-        ".net",
-        "dotnet"
-    ],
-
-    "aws": [
-        "aws",
-        "amazon web services"
-    ],
-
-    "azure": [
-        "azure",
-        "microsoft azure"
-    ],
-
-    "spark": [
-        "spark",
-        "apache spark",
-        "pyspark"
-    ],
-
-    "hadoop": [
-        "hadoop"
-    ],
-
-    "git": [
-        "git",
-        "github",
-        "gitlab"
-    ]
+    "python": ["python"],
+    "sql": ["sql", "postgresql", "mysql", "mssql", "sql server"],
+    "gcp": ["gcp", "google cloud", "google cloud platform"],
+    "airflow": ["airflow", "cloud composer", "apache airflow"],
+    "bigquery": ["bigquery", "gbq", "google bigquery"],
+    "terraform": ["terraform"],
+    "docker": ["docker"],
+    "kubernetes": ["kubernetes", "k8s"],
+    "etl": ["etl", "elt", "data pipeline", "data pipelines"],
+    "ci/cd": ["ci/cd", "github actions", "cloud build", "jenkins", "gitlab ci"],
+    "flask": ["flask"],
+    "django": ["django"],
+    "react": ["react"],
+    "javascript": ["javascript", "js"],
+    "java": ["java"],
+    "c++": ["c++"],
+    "c#": ["c#", ".net", "dotnet"],
+    "aws": ["aws", "amazon web services"],
+    "azure": ["azure", "microsoft azure"],
+    "spark": ["spark", "apache spark", "pyspark"],
+    "hadoop": ["hadoop"],
+    "git": ["git", "github", "gitlab"],
 }
 
 
@@ -132,21 +38,19 @@ SKILL_MAPPINGS = {
 # TEXT CLEANING
 # ============================================================
 
+
 def clean_text(text):
 
     if not text:
         return ""
 
-    return re.sub(
-        r"\s+",
-        " ",
-        str(text)
-    ).strip()
+    return re.sub(r"\s+", " ", str(text)).strip()
 
 
 # ============================================================
 # PDF TEXT EXTRACTION
 # ============================================================
+
 
 def extract_text_from_pdf(pdf_path):
 
@@ -168,6 +72,7 @@ def extract_text_from_pdf(pdf_path):
 # DOCX TEXT EXTRACTION
 # ============================================================
 
+
 def extract_text_from_docx(docx_path):
 
     doc = Document(docx_path)
@@ -186,14 +91,10 @@ def extract_text_from_docx(docx_path):
 # TXT TEXT EXTRACTION
 # ============================================================
 
+
 def extract_text_from_txt(txt_path):
 
-    with open(
-        txt_path,
-        "r",
-        encoding="utf-8",
-        errors="ignore"
-    ) as file:
+    with open(txt_path, "r", encoding="utf-8", errors="ignore") as file:
 
         text = file.read()
 
@@ -204,44 +105,41 @@ def extract_text_from_txt(txt_path):
 # EXTRACT TEXT FROM RESUME
 # ============================================================
 
+
 def extract_text_from_resume(file_path):
 
-    extension = os.path.splitext(
-        file_path
-    )[1].lower()
+    extension = os.path.splitext(file_path)[1].lower()
 
     if extension == ".pdf":
 
-        return extract_text_from_pdf(
-            file_path
-        )
+        return extract_text_from_pdf(file_path)
 
     elif extension == ".docx":
 
-        return extract_text_from_docx(
-            file_path
-        )
+        return extract_text_from_docx(file_path)
 
     elif extension == ".txt":
 
-        return extract_text_from_txt(
-            file_path
-        )
+        return extract_text_from_txt(file_path)
 
     else:
 
-        raise ValueError(
-            f"Unsupported file type: {extension}"
-        )
+        raise ValueError(f"Unsupported file type: {extension}")
 
 
 # ============================================================
 # NAME EXTRACTION
 # ============================================================
 
-def extract_name(text, file_name=None):
 
-    lines = text.split(" ")
+def normalize_person_name(name):
+
+    normalized = re.sub(r"\s+", " ", str(name or "")).strip()
+
+    return normalized.title()
+
+
+def extract_name(text, file_name=None):
 
     # --------------------------------------------------------
     # Try explicit labels first
@@ -249,19 +147,15 @@ def extract_name(text, file_name=None):
 
     patterns = [
         r"(?:name)\s*[:\-]\s*([A-Za-z][A-Za-z .'-]{2,60})",
-        r"(?:full name)\s*[:\-]\s*([A-Za-z][A-Za-z .'-]{2,60})"
+        r"(?:full name)\s*[:\-]\s*([A-Za-z][A-Za-z .'-]{2,60})",
     ]
 
     for pattern in patterns:
 
-        match = re.search(
-            pattern,
-            text,
-            re.IGNORECASE
-        )
+        match = re.search(pattern, text, re.IGNORECASE)
 
         if match:
-            return match.group(1).strip()
+            return normalize_person_name(match.group(1))
 
     # --------------------------------------------------------
     # Try filename
@@ -269,30 +163,21 @@ def extract_name(text, file_name=None):
 
     if file_name:
 
-        name = os.path.splitext(
-            os.path.basename(file_name)
-        )[0]
+        name = os.path.splitext(os.path.basename(file_name))[0]
 
         # Remove common resume/job suffixes
         name = re.sub(
-            r"[_\-]\s*(resume|cv|data engineer|developer|software engineer).*?$",
+            r"[_\-\s]+(?:resume|cv|data engineer|developer|software engineer|\d+\s*years?.*)$",
             "",
             name,
-            flags=re.IGNORECASE
+            flags=re.IGNORECASE,
         )
 
-        name = re.sub(
-            r"\s*\(\d+\)$",
-            "",
-            name
-        )
+        name = re.sub(r"\s*\(\d+\)$", "", name)
 
         # Only use filename if it looks like a person's name
-        if re.match(
-            r"^[A-Za-z][A-Za-z .'-]{2,60}$",
-            name
-        ):
-            return name.replace("_", " ").strip()
+        if re.match(r"^[A-Za-z][A-Za-z .'-]{2,60}$", name):
+            return normalize_person_name(name.replace("_", " "))
 
     # --------------------------------------------------------
     # Fallback: first few words
@@ -302,23 +187,26 @@ def extract_name(text, file_name=None):
 
     if len(words) >= 2:
 
-        candidate = " ".join(words[:4])
+        blocked = {
+            "resume", "curriculum", "vitae", "profile", "summary", "objective",
+            "data", "software", "cloud", "senior", "junior", "lead", "engineer",
+            "developer", "specialist", "professional", "bengaluru", "bangalore",
+            "pune", "india", "hyderabad", "mumbai", "delhi",
+        }
+        name_words = []
 
-        # Don't return obvious resume headings
-        blocked = [
-            "resume",
-            "curriculum",
-            "vitae",
-            "profile",
-            "summary",
-            "objective"
-        ]
+        for word in words[:8]:
+            cleaned = re.sub(r"[^A-Za-z'-]", "", word)
+            if not cleaned:
+                continue
+            if cleaned.lower() in blocked:
+                break
+            name_words.append(cleaned)
+            if len(name_words) == 3:
+                break
 
-        if not any(
-            word.lower() in blocked
-            for word in words[:2]
-        ):
-            return candidate
+        if len(name_words) >= 2:
+            return normalize_person_name(" ".join(name_words))
 
     return ""
 
@@ -327,17 +215,53 @@ def extract_name(text, file_name=None):
 # EMAIL EXTRACTION
 # ============================================================
 
+
 def extract_email(text):
 
-    pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
+    if not text:
+        return ""
 
-    match = re.search(
-        pattern,
-        text
+    # PDF text extraction can insert spaces where an email wrapped across
+    # lines, for example: "person@gmail.co m" or "person @ gmail . com".
+    split_pattern = (
+        r"(?<![A-Za-z0-9._%+-])"
+        r"([A-Za-z0-9][A-Za-z0-9._%+-]*(?:\s+[A-Za-z0-9][A-Za-z0-9._%+-]*){0,2})"
+        r"\s*@\s*"
+        r"([A-Za-z0-9][A-Za-z0-9.-]*(?:\s+[A-Za-z0-9][A-Za-z0-9.-]*){0,2})"
+        r"\s*\.\s*([A-Za-z]{2,}(?:\s+[A-Za-z](?=\s|$))?)"
     )
 
+    match = re.search(split_pattern, text)
+
     if match:
-        return match.group(0)
+        local_part = re.sub(
+            r"^(?:contact|email|e-mail|mail)\s+",
+            "",
+            match.group(1),
+            flags=re.IGNORECASE,
+        )
+        local_part = re.sub(r"^\d+\s+", "", local_part)
+        email = re.sub(
+            r"\s+", "", f"{local_part}@{match.group(2)}.{match.group(3)}"
+        ).lower()
+        email_match = re.fullmatch(
+            r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", email
+        )
+
+        if email_match:
+            return email_match.group(0)
+
+    pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
+    match = re.search(pattern, text)
+
+    if match:
+        email = match.group(0)
+        suffix = re.match(r"\s+([A-Za-z])(?=\s|$)", text[match.end():])
+
+        if suffix:
+            email += suffix.group(1)
+
+        return email
 
     return ""
 
@@ -350,26 +274,21 @@ def extract_email(text):
 # PHONE EXTRACTION
 # ============================================================
 
+
 def extract_phone(text):
 
     patterns = [
-
         # +91 9876543210
         r"(?:\+91[\s\-]?)?([6-9]\d{9})",
-
         # +1 1234567890
         r"\+\d{1,3}[\s\-]?(\d{7,12})",
-
         # 987-654-3210
-        r"\b(\d{3})[\s\-](\d{3})[\s\-](\d{4})\b"
+        r"\b(\d{3})[\s\-](\d{3})[\s\-](\d{4})\b",
     ]
 
     for pattern in patterns:
 
-        match = re.search(
-            pattern,
-            text
-        )
+        match = re.search(pattern, text)
 
         if match:
 
@@ -385,63 +304,48 @@ def extract_phone(text):
                 phone = "".join(groups)
 
             # Keep only digits
-            phone = re.sub(
-                r"\D",
-                "",
-                phone
-            )
+            phone = re.sub(r"\D", "", phone)
 
             if phone:
                 return int(phone)
 
     return None
 
+
 # ============================================================
 # EXPERIENCE EXTRACTION
 # ============================================================
+
 
 def extract_experience(text):
 
     text = clean_text(text).lower()
 
     patterns = [
-
         # Total Experience: 7 years
         r"total\s+experience\s*:?\s*(\d+(?:\.\d+)?)\s*\+?\s*years?",
-
         # Overall Experience: 7 years
         r"overall\s+experience\s*:?\s*(\d+(?:\.\d+)?)\s*\+?\s*years?",
-
         # Professional Experience: 7 years
         r"professional\s+experience\s*:?\s*(\d+(?:\.\d+)?)\s*\+?\s*years?",
-
         # Experience: 7 years
         r"experience\s*:?\s*(\d+(?:\.\d+)?)\s*\+?\s*years?",
-
         # 7 years 4 months
-        r"(\d+(?:\.\d+)?)\s*\+?\s*years?\s*(?:and\s*)?\d*\s*months?",
-
+        r"(\d+(?:\.\d+)?)\s*\+?\s*years?(?:\s*(?:and\s*)?\d+\s*months?)?",
         # 7 yrs
         r"(\d+(?:\.\d+)?)\s*\+?\s*yrs",
-
         # Experience 7.5
-        r"experience\s+(\d+(?:\.\d+)?)"
+        r"experience\s+(\d+(?:\.\d+)?)",
     ]
 
     for pattern in patterns:
 
-        match = re.search(
-            pattern,
-            text,
-            re.IGNORECASE
-        )
+        match = re.search(pattern, text, re.IGNORECASE)
 
         if match:
 
             try:
-                return float(
-                    match.group(1)
-                )
+                return float(match.group(1))
 
             except ValueError:
                 pass
@@ -452,6 +356,7 @@ def extract_experience(text):
 # ============================================================
 # SKILLS EXTRACTION
 # ============================================================
+
 
 def extract_skills(text):
 
@@ -465,53 +370,48 @@ def extract_skills(text):
 
             variation = variation.lower()
 
-            if re.search(
-                rf"\b{re.escape(variation)}\b",
-                text
-            ):
+            if re.search(rf"\b{re.escape(variation)}\b", text):
 
-                found_skills.append(
-                    main_skill
-                )
+                found_skills.append(main_skill)
 
                 break
 
-    return sorted(
-        list(set(found_skills))
-    )
+    return sorted(list(set(found_skills)))
 
 
 # ============================================================
 # CURRENT ROLE EXTRACTION
 # ============================================================
 
+
 def extract_current_role(text):
 
     patterns = [
-
         r"(?:current role|current position|current designation)\s*[:\-]\s*([^|,\n]{2,80})",
-
         r"(?:designation|job title|title)\s*[:\-]\s*([^|,\n]{2,80})",
-
-        r"(?:role)\s*[:\-]\s*([^|,\n]{2,80})"
     ]
 
     for pattern in patterns:
 
-        match = re.search(
-            pattern,
-            text,
-            re.IGNORECASE
-        )
+        match = re.search(pattern, text, re.IGNORECASE)
 
         if match:
 
-            value = clean_text(
-                match.group(1)
-            )
+            value = clean_text(match.group(1))
 
             if value:
                 return value
+
+    role_match = re.search(
+        r"\b(?:(?:senior|junior|lead|principal)\s+)?"
+        r"(?:data|software|cloud|frontend|backend|full[ -]?stack)\s+"
+        r"engineer(?:\s+(?:specialist|developer))?\b",
+        text,
+        re.IGNORECASE,
+    )
+
+    if role_match:
+        return clean_text(role_match.group(0))
 
     return ""
 
@@ -520,29 +420,34 @@ def extract_current_role(text):
 # LOCATION EXTRACTION
 # ============================================================
 
+
 def extract_location(text):
 
     patterns = [
-
         r"(?:location|current location|based in|address)\s*[:\-]\s*([^|]{2,80})"
     ]
 
     for pattern in patterns:
 
-        match = re.search(
-            pattern,
-            text,
-            re.IGNORECASE
-        )
+        match = re.search(pattern, text, re.IGNORECASE)
 
         if match:
 
-            value = clean_text(
-                match.group(1)
-            )
+            value = clean_text(match.group(1))
 
             if value:
                 return value
+
+    location_match = re.search(
+        r"\b((?:Bengaluru|Bangalore|Pune|Hyderabad|Mumbai|Delhi|Vizianagaram|"
+        r"Guntur|Chennai)(?:,?\s+(?:India|Maharashtra|Karnataka|Telangana|"
+        r"Andhra Pradesh|Tamil Nadu|MH|KA|TS|AP))?(?:\s+\d{5,6})?)\b",
+        text,
+        re.IGNORECASE,
+    )
+
+    if location_match:
+        return clean_text(location_match.group(1))
 
     return ""
 
@@ -551,40 +456,27 @@ def extract_location(text):
 # NOTICE PERIOD EXTRACTION
 # ============================================================
 
-# ============================================================
-# NOTICE PERIOD EXTRACTION
-# ============================================================
 
 def extract_notice_period(text):
 
     patterns = [
-
         # Notice Period: 30 days
         r"notice\s+period\s*[:\-]?\s*(\d+)\s*days?",
-
         # Notice Period: 2 months
         r"notice\s+period\s*[:\-]?\s*(\d+)\s*months?",
-
         # 30 days notice period
         r"(\d+)\s*days?\s*notice\s+period",
-
         # 2 months notice period
-        r"(\d+)\s*months?\s*notice\s+period"
+        r"(\d+)\s*months?\s*notice\s+period",
     ]
 
     for pattern in patterns:
 
-        match = re.search(
-            pattern,
-            text,
-            re.IGNORECASE
-        )
+        match = re.search(pattern, text, re.IGNORECASE)
 
         if match:
 
-            value = int(
-                match.group(1)
-            )
+            value = int(match.group(1))
 
             # Convert months to approximately days
             if "month" in match.group(0).lower():
@@ -594,40 +486,31 @@ def extract_notice_period(text):
             return value
 
     # Immediate joining
-    if re.search(
-        r"\bimmediate(?:ly)?\b",
-        text,
-        re.IGNORECASE
-    ):
+    if re.search(r"\bimmediate(?:ly)?\b", text, re.IGNORECASE):
         return 0
 
     return None
+
 
 # ============================================================
 # CURRENT CTC EXTRACTION
 # ============================================================
 
+
 def extract_current_ctc(text):
 
     patterns = [
-
         # Current CTC: 8 LPA
         r"(?:current\s+ctc|current\s+salary)\s*[:\-]?\s*(?:₹|rs\.?|inr)?\s*(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lacs?)",
-
         # CTC: 8 LPA
         r"\bctc\s*[:\-]?\s*(?:₹|rs\.?|inr)?\s*(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lacs?)",
-
         # 8 LPA current CTC
-        r"(?:current)\s+(?:ctc|salary)\s+(?:is\s+)?(?:₹|rs\.?|inr)?\s*(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lacs?)"
+        r"(?:current)\s+(?:ctc|salary)\s+(?:is\s+)?(?:₹|rs\.?|inr)?\s*(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lacs?)",
     ]
 
     for pattern in patterns:
 
-        match = re.search(
-            pattern,
-            text,
-            re.IGNORECASE
-        )
+        match = re.search(pattern, text, re.IGNORECASE)
 
         if match:
 
@@ -638,10 +521,7 @@ def extract_current_ctc(text):
 
                 for group in match.groups():
 
-                    if group and re.match(
-                        r"^\d+(?:\.\d+)?$",
-                        group
-                    ):
+                    if group and re.match(r"^\d+(?:\.\d+)?$", group):
                         number = float(group)
                         break
 
@@ -657,11 +537,10 @@ def extract_current_ctc(text):
 # PARSE ONE RESUME
 # ============================================================
 
-def parse_resume(file_path):
 
-    file_name = os.path.basename(
-        file_path
-    )
+def parse_resume(file_path, original_file_name=None):
+
+    file_name = original_file_name or os.path.basename(file_path)
 
     try:
 
@@ -669,9 +548,7 @@ def parse_resume(file_path):
         # Extract text
         # ----------------------------------------------------
 
-        text = extract_text_from_resume(
-            file_path
-        )
+        text = extract_text_from_resume(file_path)
 
         # ----------------------------------------------------
         # Empty resume
@@ -693,116 +570,69 @@ def parse_resume(file_path):
                 "experience_years": None,
                 "current_ctc": None,
                 "notice_period": "",
-                "skills": []
+                "skills": [],
             }
 
         # ----------------------------------------------------
         # Extract candidate information
         # ----------------------------------------------------
 
-        full_name = extract_name(
-            text,
-            file_name
-        )
+        full_name = extract_name(text, file_name)
 
-        email = extract_email(
-            text
-        )
+        email = extract_email(text)
 
-        phone = extract_phone(
-            text
-        )
+        phone = extract_phone(text)
 
-        current_role = extract_current_role(
-            text
-        )
+        current_role = extract_current_role(text)
 
-        location = extract_location(
-            text
-        )
+        location = extract_location(text)
 
-        experience_years = extract_experience(
-            text
-        )
+        experience_years = extract_experience(text)
 
-        current_ctc = extract_current_ctc(
-            text
-        )
+        current_ctc = extract_current_ctc(text)
 
-        notice_period = extract_notice_period(
-            text
-        )
+        notice_period = extract_notice_period(text)
 
-        skills = extract_skills(
-            text
-        )
+        skills = extract_skills(text)
 
         # ----------------------------------------------------
         # Return parsed candidate
         # ----------------------------------------------------
 
         return {
-
             "fileName": file_name,
-
             "filePath": file_path,
-
             "status": "success",
-
             "error": None,
-
             "text": text,
-
             "full_name": full_name,
-
             "email": email,
-
             "phone": phone,
-
             "current_role": current_role,
-
             "location": location,
-
             "experience_years": experience_years,
-
             "current_ctc": current_ctc,
-
             "notice_period": notice_period,
-
-            "skills": skills
+            "skills": skills,
         }
 
     except Exception as e:
 
         return {
-
             "fileName": file_name,
-
             "filePath": file_path,
-
             "status": "failed",
-
             "error": str(e),
-
             "text": "",
-
             "full_name": "",
-
             "email": "",
-
             "phone": "",
-
             "current_role": "",
-
             "location": "",
-
             "experience_years": None,
-
             "current_ctc": None,
-
             "notice_period": "",
-
-            "skills": []
+            "skills": [],
         }
 
 
@@ -810,19 +640,16 @@ def parse_resume(file_path):
 # PARSE MULTIPLE RESUMES
 # ============================================================
 
+
 def parse_multiple_resumes(file_paths):
 
     results = []
 
     for file_path in file_paths:
 
-        result = parse_resume(
-            file_path
-        )
+        result = parse_resume(file_path)
 
-        results.append(
-            result
-        )
+        results.append(result)
 
     return results
 
@@ -831,40 +658,24 @@ def parse_multiple_resumes(file_paths):
 # PARSE RESUMES FROM FOLDER
 # ============================================================
 
+
 def parse_resumes_from_folder(folder_path):
 
-    supported_extensions = {
-        ".pdf",
-        ".docx",
-        ".txt"
-    }
+    supported_extensions = {".pdf", ".docx", ".txt"}
 
     file_paths = []
 
-    for file_name in os.listdir(
-        folder_path
-    ):
+    for file_name in os.listdir(folder_path):
 
-        file_path = os.path.join(
-            folder_path,
-            file_name
-        )
+        file_path = os.path.join(folder_path, file_name)
 
-        if not os.path.isfile(
-            file_path
-        ):
+        if not os.path.isfile(file_path):
             continue
 
-        extension = os.path.splitext(
-            file_name
-        )[1].lower()
+        extension = os.path.splitext(file_name)[1].lower()
 
         if extension in supported_extensions:
 
-            file_paths.append(
-                file_path
-            )
+            file_paths.append(file_path)
 
-    return parse_multiple_resumes(
-        file_paths
-    )
+    return parse_multiple_resumes(file_paths)

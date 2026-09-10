@@ -419,27 +419,19 @@ function JobsPage() {
                   {/* ACTIONS */}
 
                   <div className="job-actions">
-                    {isExpired ? (
-                      <span className="job-expired-text">
-                        This job is no longer active
-                      </span>
-                    ) : (
-                      <>
-                        <Link
-                          to={`/jobs/${jobId}/candidates`}
-                          className="btn btn-secondary btn-sm"
-                        >
-                          View Candidates
-                        </Link>
+                    <Link
+                      to={`/jobs/${jobId}/candidates`}
+                      className="btn btn-secondary btn-sm"
+                    >
+                      View Candidates
+                    </Link>
 
-                        <Link
-                          to={`/edit-job/${jobId}`}
-                          className="btn btn-ghost btn-sm"
-                        >
-                          Edit
-                        </Link>
-                      </>
-                    )}
+                    <Link
+                      to={`/edit-job/${jobId}`}
+                      className="btn btn-ghost btn-sm"
+                    >
+                      Edit
+                    </Link>
                   </div>
                 </div>
               </div>

@@ -1,19 +1,30 @@
 """
 AI-based candidate-to-job matching.
 
-Ported from the standalone `ai_ats_project` (sentence-transformers
-semantic similarity + rule-based skill/experience scoring) so scores
-are calculated once on the backend and persisted to
-dbo.Candidates.ai_score — instead of being recomputed inaccurately
-in the browser with plain substring matching.
+Ported from the standalone `ai_ats_project`, matching its original
+scoring formula exactly:
 
-Weighting mirrors the frontend's original point scale so existing
-"Strong / Good / Moderate / Low Match" buckets still make sense:
+    final_score = ai_score * 0.8 + experience_score * 0.2
 
-    Mandatory skills   : 40 points
-    Required skills    : 30 points
-    Experience          : 20 points
-    Semantic relevance  : 10 points
+Where:
+  - ai_score is semantic (embedding) similarity between the
+    candidate's profile text and the job's text, 0-1.
+  - experience_score is binary: 1 if the candidate meets the job's
+    minimum experience, else 0.
+
+Skills are NOT part of the weighted score, same as the original —
+they only act as a pass/fail gate: missing a mandatory skill caps
+the result at "Low Match" regardless of score (mirrors the original
+project's "Rejected" bucket). Matched/missing skills are still
+returned so the UI can show why a candidate landed where they did.
+
+Note: the original project computed ai_score from the full resume
+text vs. the full JD text (both extracted from uploaded files). This
+backend doesn't have raw resume/JD text on hand, so the closest
+available substitute is used instead: candidate role + skills, and
+job title + skills + description. If you start storing the raw
+parsed resume/JD text alongside the candidate/job records, swap it
+in below for a truer semantic match.
 """
 
 import re
@@ -141,13 +152,14 @@ def _match_skill_lists(candidate_skills, job_skills):
 
 def _semantic_similarity(candidate_text, job_text):
     """
-    0-100 semantic closeness between the candidate's profile text
-    and the job's description text, using the same embedding model
-    the original ai_ats_project used for resume-to-JD matching.
+    0-1 semantic closeness between the candidate's profile text and
+    the job's text — this IS the "ai_score" from the original
+    project's formula, produced the same way: cosine similarity
+    between sentence-transformer embeddings of the two texts.
     """
 
     if not candidate_text.strip() or not job_text.strip():
-        return 0
+        return 0.0
 
     from sklearn.metrics.pairwise import cosine_similarity
 
@@ -161,10 +173,8 @@ def _semantic_similarity(candidate_text, job_text):
     )[0][0]
 
     # Cosine similarity can dip slightly negative for unrelated
-    # text — clamp to 0-1 before scaling to a percentage.
-    similarity = max(0.0, min(1.0, float(similarity)))
-
-    return similarity * 100
+    # text — clamp to 0-1, same as treating it as a plain fraction.
+    return max(0.0, min(1.0, float(similarity)))
 
 
 def _to_float(value):
@@ -199,9 +209,14 @@ def _category_for_score(score, has_all_mandatory):
 
 def calculate_match(candidate, job):
     """
-    Computes an accurate 0-100 match score for one candidate against
-    one job, plus the matched/missing skill breakdown so the UI can
-    show *why* the score is what it is.
+    Computes a 0-100 match score for one candidate against one job
+    using the original project's formula:
+
+        final_score = ai_score * 0.8 + experience_score * 0.2
+
+    plus the matched/missing skill breakdown (skill-gated category,
+    not scored) so the UI can show why a candidate landed where
+    they did.
 
     `candidate` needs: skills, experience_years, current_role,
     applied_role.
@@ -214,40 +229,20 @@ def calculate_match(candidate, job):
     mandatory_skills = normalize_skills(job.get("mandatory_skills"))
     required_skills = normalize_skills(job.get("required_skills"))
 
-    score = 0.0
+    # ---- Skills: gate only, not part of the weighted score ----
 
-    # ---- Mandatory skills (40) ----
     matched_mandatory, missing_mandatory = _match_skill_lists(
         candidate_skills, mandatory_skills
     )
 
-    if mandatory_skills:
-        score += (len(matched_mandatory) / len(mandatory_skills)) * 40
-    else:
-        score += 40
-
-    # ---- Required skills (30) ----
     matched_required, missing_required = _match_skill_lists(
         candidate_skills, required_skills
     )
 
-    if required_skills:
-        score += (len(matched_required) / len(required_skills)) * 30
-    else:
-        score += 30
+    has_all_mandatory = len(missing_mandatory) == 0
 
-    # ---- Experience (20) ----
-    candidate_experience = _to_float(candidate.get("experience_years"))
-    required_experience = _to_float(job.get("min_exp"))
+    # ---- ai_score: semantic similarity (0-1) ----
 
-    if required_experience <= 0:
-        score += 20
-    elif candidate_experience >= required_experience:
-        score += 20
-    else:
-        score += (candidate_experience / required_experience) * 20
-
-    # ---- Semantic relevance (10) ----
     candidate_text = " ".join(filter(None, [
         candidate.get("current_role"),
         candidate.get("applied_role"),
@@ -260,17 +255,35 @@ def calculate_match(candidate, job):
         job.get("description"),
     ]))
 
-    semantic_score = _semantic_similarity(candidate_text, job_text)
+    ai_score = _semantic_similarity(candidate_text, job_text)
 
-    score += (semantic_score / 100) * 10
+    # ---- experience_score: binary (0 or 1) ----
 
-    final_score = max(0, min(100, round(score)))
+    candidate_experience = _to_float(candidate.get("experience_years"))
+    required_experience = _to_float(job.get("min_exp"))
+
+    if required_experience <= 0:
+        experience_score = 1
+    elif candidate_experience >= required_experience:
+        experience_score = 1
+    else:
+        experience_score = 0
+
+    # ---- Final Weighted Score (same formula as the original) ----
+
+    final_score = (
+        ai_score * 0.8
+        +
+        experience_score * 0.2
+    )
+
+    final_score_pct = max(0, min(100, round(final_score * 100)))
 
     return {
-        "score": final_score,
+        "score": final_score_pct,
         "category": _category_for_score(
-            final_score,
-            has_all_mandatory=len(missing_mandatory) == 0,
+            final_score_pct,
+            has_all_mandatory=has_all_mandatory,
         ),
         "matched_skills": sorted(set(matched_mandatory + matched_required)),
         "missing_skills": sorted(set(missing_mandatory + missing_required)),
