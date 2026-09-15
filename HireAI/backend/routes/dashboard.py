@@ -15,7 +15,7 @@ dashboard = Blueprint('dashboard', __name__)
 
 
 @dashboard.route('/api/dashboard-summary', methods=['GET'])
-@jwt_required(optional=True)
+@jwt_required(optional=False)
 def dashboard_summary():
 
     try:

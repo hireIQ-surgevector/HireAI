@@ -379,7 +379,13 @@ function CandidatesPage() {
 
                     <td>{candidate.experience || "—"}</td>
 
-                    <td>{scoreBar(candidate.score || 0)}</td>
+                    <td>
+                      {candidate.ai_score === null || candidate.ai_score === undefined ? (
+                        <span className="badge badge-blue">Not evaluated</span>
+                      ) : (
+                        scoreBar(candidate.ai_score)
+                      )}
+                    </td>
 
                     <td>{candidate.notice_period || "—"}</td>
 

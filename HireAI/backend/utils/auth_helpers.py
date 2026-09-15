@@ -133,7 +133,7 @@ def build_candidate_payload(row):
     elif raw_skills:
         skills = [
             item.strip()
-            for item in str(raw_skills).split(';')
+            for item in re.split(r'[,;|]', str(raw_skills))
             if item.strip()
         ]
 

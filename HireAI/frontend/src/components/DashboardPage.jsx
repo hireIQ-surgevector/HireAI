@@ -16,7 +16,6 @@ import StatCard from "./StatCard";
 import badgeClass from "./badgeClass";
 import scoreBar from "./scoreBar";
 
-import { getSession } from "../utils/auth";
 import { fetchDashboardSummary } from "../store/dashboardSlice";
 
 const JobsIcon = (props) => <BriefcaseBusiness {...props} />;
@@ -126,8 +125,6 @@ function DashboardPage() {
 
   const { summary, loading } = useSelector((state) => state.dashboard);
 
-  const session = getSession();
-
   /* =========================
      LOAD DASHBOARD DATA
   ========================= */
@@ -167,9 +164,6 @@ function DashboardPage() {
       );
   }, [summary]);
 
-  const canManage =
-    session?.permissions?.can_manage_candidates || session?.role === "manager";
-
   const totalCandidates = counts.candidates || 0;
 
   return (
@@ -178,7 +172,7 @@ function DashboardPage() {
           DASHBOARD METRICS
       ========================= */}
 
-      <div className="grid4">
+      <div className="grid4 dashboard-kpi-grid">
         <StatCard
           label="Active Jobs"
           value={loading ? "—" : String(counts.open_jobs || 0)}
@@ -212,7 +206,7 @@ function DashboardPage() {
           QUICK ACTIONS + INTERVIEWS
       ========================= */}
 
-      <div className="grid2">
+      <div className="grid2 dashboard-middle-grid">
         {/* =========================
             QUICK ACTIONS
         ========================= */}
@@ -384,7 +378,7 @@ function DashboardPage() {
           RECENT CANDIDATES
       ========================= */}
 
-      <div className="card">
+      <div className="card dashboard-recent-card">
         <div className="section-header">
           <div>
             <h3>Recent Candidates</h3>
@@ -434,7 +428,6 @@ function DashboardPage() {
                 <th>Role</th>
                 <th>Status</th>
                 <th>Match Score</th>
-                <th>Action</th>
               </tr>
             </thead>
 
@@ -478,21 +471,14 @@ function DashboardPage() {
                     )}
                   </td>
 
-                  <td>{scoreBar(candidate.score || 0)}</td>
-
                   <td>
-                    {canManage && candidate.candidate_id ? (
-                      <Link
-                        to={`/candidate-detail/${candidate.candidate_id}`}
-                        className="btn btn-ghost btn-sm"
-                      >
-                        View
-                        <ArrowRightIcon size={14} />
-                      </Link>
+                    {candidate.score === null || candidate.score === undefined ? (
+                      <span className="badge badge-blue">Not evaluated</span>
                     ) : (
-                      <span className="muted">Restricted</span>
+                      scoreBar(candidate.score)
                     )}
                   </td>
+
                 </tr>
               ))}
             </tbody>

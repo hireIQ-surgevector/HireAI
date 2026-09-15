@@ -6,19 +6,20 @@ from flask_jwt_extended import jwt_required
 
 from config.db import get_connection
 from utils.schema import ensure_schema
-from utils.resume_parser import parse_resume
+from utils.resume_parser import parse_resume, extract_job_skills_from_resume
 
 from utils.auth_helpers import (
     get_candidate_select_clause,
     build_candidate_payload,
     get_candidate_stage_transition,
+    normalize_candidate_stage,
 )
 
 candidates = Blueprint("candidates", __name__)
 
 
 @candidates.route("/api/candidates", methods=["GET"])
-@jwt_required(optional=True)
+@jwt_required(optional=False)
 def get_candidates():
     try:
         ensure_schema()
@@ -61,7 +62,7 @@ def get_candidates():
 
 
 @candidates.route("/api/candidates/<int:candidate_id>", methods=["GET"])
-@jwt_required(optional=True)
+@jwt_required(optional=False)
 def get_candidate_detail(candidate_id):
     try:
         ensure_schema()
@@ -94,7 +95,7 @@ def get_candidate_detail(candidate_id):
 
 
 @candidates.route("/api/candidates/<int:candidate_id>/stage", methods=["PATCH"])
-@jwt_required(optional=True)
+@jwt_required(optional=False)
 def update_candidate_stage(candidate_id):
     try:
         ensure_schema()
@@ -271,6 +272,24 @@ def upload_candidates():
 
         job_title = job[1]
 
+        cursor.execute(
+            """
+            SELECT mandatory_skills, required_skills
+            FROM dbo.Jobs
+            WHERE job_id = ?
+            """,
+            (job_id,),
+        )
+        job_skill_row = cursor.fetchone()
+        job_skills = []
+        if job_skill_row:
+            for raw_skills in job_skill_row:
+                job_skills.extend(
+                    skill.strip()
+                    for skill in str(raw_skills or "").replace(";", ",").split(",")
+                    if skill.strip()
+                )
+
         # ----------------------------------------------------
         # PROCESS EACH RESUME
         # ----------------------------------------------------
@@ -348,6 +367,11 @@ def upload_candidates():
             notice_period = parsed.get("notice_period")
 
             skills = parsed.get("skills") or []
+            jd_skills = extract_job_skills_from_resume(
+                parsed.get("text", ""),
+                job_skills,
+            )
+            skills = list(dict.fromkeys([*jd_skills, *skills]))
 
             # ------------------------------------------------
             # SKILLS → STRING
@@ -472,7 +496,7 @@ def upload_candidates():
 
 
 @candidates.route("/api/candidates/<int:candidate_id>", methods=["PATCH"])
-@jwt_required(optional=True)
+@jwt_required(optional=False)
 def update_candidate_details(candidate_id):
     try:
         ensure_schema()
@@ -480,9 +504,27 @@ def update_candidate_details(candidate_id):
         data = request.get_json(silent=True) or {}
 
         location = data.get("location")
+        full_name = (data.get("full_name") or "").strip()
         current_role = data.get("current_role")
+        skills = data.get("skills")
         notice_period = data.get("notice_period")
         current_ctc = data.get("current_ctc")
+
+        if not full_name:
+            return jsonify({"error": "Candidate name is required"}), 400
+
+        if isinstance(skills, list):
+            skills_value = ", ".join(
+                str(skill).strip()
+                for skill in skills
+                if str(skill).strip()
+            )
+        else:
+            skills_value = ", ".join(
+                skill.strip()
+                for skill in str(skills or "").replace(";", ",").split(",")
+                if skill.strip()
+            )
 
         conn = get_connection()
         cursor = conn.cursor()
@@ -515,13 +557,23 @@ def update_candidate_details(candidate_id):
             """
             UPDATE dbo.Candidates
             SET
+                full_name = ?,
                 location = ?,
                 current_role = ?,
+                skills = ?,
                 notice_period = ?,
                 current_ctc = ?
             WHERE candidate_id = ?
             """,
-            (location, current_role, notice_period, current_ctc, candidate_id),
+            (
+                full_name,
+                location,
+                current_role,
+                skills_value,
+                notice_period,
+                current_ctc,
+                candidate_id,
+            ),
         )
 
         conn.commit()

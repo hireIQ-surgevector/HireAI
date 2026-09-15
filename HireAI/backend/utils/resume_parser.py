@@ -33,6 +33,27 @@ SKILL_MAPPINGS = {
     "git": ["git", "github", "gitlab"],
 }
 
+SKILL_ALIASES = {
+    "python": ["python", "python programming", "python development"],
+    "sql": ["sql", "sql server", "t-sql", "tsql", "postgresql", "mysql", "mssql", "database querying"],
+    "javascript": ["javascript", "js", "ecmascript", "es6"],
+    "typescript": ["typescript", "ts"],
+    "react": ["react", "react.js", "reactjs"],
+    "node.js": ["node", "node.js", "nodejs", "express.js", "expressjs"],
+    "java": ["java", "core java", "spring", "spring boot"],
+    "c#": ["c#", ".net", "dotnet", "asp.net", "aspnet"],
+    "aws": ["aws", "amazon web services", "ec2", "s3", "lambda", "cloudformation"],
+    "azure": ["azure", "microsoft azure", "azure functions", "adf", "azure data factory"],
+    "gcp": ["gcp", "google cloud", "google cloud platform", "bigquery", "dataflow", "cloud composer"],
+    "docker": ["docker", "containerization", "containers"],
+    "kubernetes": ["kubernetes", "k8s", "container orchestration"],
+    "etl": ["etl", "elt", "data pipeline", "data pipelines", "data integration"],
+    "ci/cd": ["ci/cd", "cicd", "continuous integration", "continuous delivery", "github actions", "jenkins"],
+    "machine learning": ["machine learning", "ml", "predictive modeling", "scikit-learn", "sklearn"],
+    "data analysis": ["data analysis", "data analytics", "business intelligence", "bi", "reporting"],
+    "project management": ["project management", "program management", "agile", "scrum", "jira"],
+}
+
 
 # ============================================================
 # TEXT CLEANING
@@ -45,6 +66,37 @@ def clean_text(text):
         return ""
 
     return re.sub(r"\s+", " ", str(text)).strip()
+
+
+def extract_job_skills_from_resume(text, job_skills):
+    """Return the job's own skill labels when equivalent resume wording appears."""
+    resume_text = clean_text(text).lower()
+    extracted = []
+
+    for job_skill in job_skills or []:
+        label = clean_text(job_skill)
+        if not label:
+            continue
+
+        normalized = label.lower()
+        alias_group = next(
+            (
+                aliases
+                for aliases in SKILL_ALIASES.values()
+                if normalized in {str(alias).lower() for alias in aliases}
+            ),
+            [],
+        )
+        aliases = set(SKILL_ALIASES.get(normalized, []))
+        aliases.update(alias_group)
+        aliases.add(normalized)
+
+        for alias in aliases:
+            if re.search(rf"(?<![a-z0-9]){re.escape(alias)}(?![a-z0-9])", resume_text):
+                extracted.append(label)
+                break
+
+    return extracted
 
 
 # ============================================================

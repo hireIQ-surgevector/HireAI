@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PageShell from "./PageShell";
 import { API_URL, getAuthHeader } from "../utils/auth";
+import toast from "react-hot-toast";
 
 function ScheduleInterviewPage() {
   const navigate = useNavigate();
@@ -49,6 +50,7 @@ function ScheduleInterviewPage() {
         console.error("Error fetching candidates:", error);
 
         setCandidateError(error.message || "Unable to load candidates.");
+        toast.error(error.message || "Unable to load candidates.");
       } finally {
         setLoadingCandidates(false);
       }
@@ -158,22 +160,22 @@ function ScheduleInterviewPage() {
    */
   const handleSchedule = async () => {
     if (!selectedCandidate) {
-      alert("Please select a candidate.");
+      toast.error("Please select a candidate.");
       return;
     }
 
     if (!nextInterviewRound) {
-      alert("There is no next interview round available for this candidate.");
+      toast.error("There is no next interview round available for this candidate.");
       return;
     }
 
     if (!interviewDate) {
-      alert("Please select an interview date.");
+      toast.error("Please select an interview date.");
       return;
     }
 
     if (!interviewTime) {
-      alert("Please select an interview time.");
+      toast.error("Please select an interview time.");
       return;
     }
 
@@ -205,11 +207,12 @@ function ScheduleInterviewPage() {
         throw new Error(data.error || "Failed to schedule interview.");
       }
 
+      toast.success("Interview scheduled successfully.");
       navigate("/interviews");
     } catch (error) {
       console.error("Error scheduling interview:", error);
 
-      alert(error.message || "Failed to schedule interview.");
+      toast.error(error.message || "Failed to schedule interview.");
     } finally {
       setScheduling(false);
     }

@@ -224,7 +224,7 @@ function InterviewsPage() {
                         <td>
                           <div className="interview-row-actions">
                             <Link
-                              to={`/edit-interview/${interview.id}`}
+                              to={`/edit-interview-schedule/${interview.id}`}
                               className="interview-edit-btn"
                               title="Edit interview schedule"
                             >

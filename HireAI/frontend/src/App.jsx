@@ -31,6 +31,7 @@ import UploadResumePage from './components/UploadResumePage';
 import InterviewsPage from './components/InterviewsPage';
 import InterviewRoomPage from './components/InterviewRoomPage';
 import ScheduleInterviewPage from './components/ScheduleInterviewPage';
+import EditInterviewSchedulePage from './components/EditInterviewSchedulePage';
 import EvaluationsPage from './components/EvaluationsPage';
 import RejectCandidatePage from './components/RejectCandidatePage';
 import RejectDonePage from './components/RejectDonePage';
@@ -102,6 +103,7 @@ function App() {
           <Route path="/upload-resume" element={<ProtectedRoute><UploadResumePage /></ProtectedRoute>} />
           <Route path="/interviews" element={<ProtectedRoute><InterviewsPage /></ProtectedRoute>} />
           <Route path="/schedule-interview" element={<ProtectedRoute><ScheduleInterviewPage /></ProtectedRoute>} />
+          <Route path="/edit-interview-schedule/:interviewId" element={<ProtectedRoute><EditInterviewSchedulePage /></ProtectedRoute>} />
           <Route path="/interview-room" element={<ProtectedRoute><InterviewRoomPage /></ProtectedRoute>} />
           <Route path="/evaluations" element={<ProtectedRoute><EvaluationsPage /></ProtectedRoute>} />
           <Route path="/reject-candidate" element={<ProtectedRoute><RejectCandidatePage /></ProtectedRoute>} />

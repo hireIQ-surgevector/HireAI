@@ -141,7 +141,7 @@ function CandidateDetailPage() {
       ? candidate.skills
       : [];
 
-  const score = candidate?.score || 0;
+  const score = candidate?.ai_score ?? 0;
 
   const breakdown = [
     ["Technical Skills", Math.min(100, score + 5)],
@@ -225,9 +225,17 @@ function CandidateDetailPage() {
               </div>
 
               <div className="score-box">
-                <div className="score-value">{score}</div>
+                <div className="score-value">
+                  {candidate?.ai_score === null || candidate?.ai_score === undefined
+                    ? "—"
+                    : candidate.ai_score}
+                </div>
 
-                <div className="score-label">AI SCORE</div>
+                <div className="score-label">
+                  {candidate?.ai_score === null || candidate?.ai_score === undefined
+                    ? "NOT EVALUATED"
+                    : "AI SCORE"}
+                </div>
               </div>
             </div>
           </div>

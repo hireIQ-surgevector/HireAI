@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PageShell from "./PageShell";
 import {
@@ -8,6 +8,7 @@ import {
   BriefcaseBusiness,
   MapPin,
   Building2,
+  Plus,
 } from "lucide-react";
 
 import { API_URL } from "../utils/auth";
@@ -60,7 +61,9 @@ function JobsPage() {
   }, []);
 
   useEffect(() => {
-    fetchJobs();
+    const taskId = window.setTimeout(fetchJobs, 0);
+
+    return () => window.clearTimeout(taskId);
   }, [fetchJobs]);
 
   /* =========================
@@ -186,6 +189,25 @@ function JobsPage() {
         </Link>
       }
     >
+      <div className="jobs-page">
+      <div className="jobs-intro">
+        <div>
+          <p className="jobs-eyebrow">RECRUITMENT WORKSPACE</p>
+          <h2>Build the team you need</h2>
+          <p>Track open roles, candidate flow, and hiring deadlines from one place.</p>
+        </div>
+        <div className="jobs-intro-mark"><BriefcaseBusiness size={28} /></div>
+      </div>
+
+      {!loading && jobs.length > 0 && (
+        <div className="jobs-stat-strip">
+          <div><span>Total openings</span><strong>{jobs.length}</strong></div>
+          <div><span>Active roles</span><strong>{activeJobsCount}</strong></div>
+          <div><span>Closing soon</span><strong>{jobs.filter((job) => getJobStatusDetails(job.due_date).label === "Closing Soon").length}</strong></div>
+          <div><span>Departments</span><strong>{departments.length - 1}</strong></div>
+        </div>
+      )}
+
       {/* =========================
           HEADER / FILTER BAR
       ========================= */}
@@ -306,7 +328,8 @@ function JobsPage() {
           <p>Get started by creating your first job opening.</p>
 
           <Link to="/post-job" className="btn btn-primary">
-            + Post New Job
+                <Plus size={15} />
+                Post New Job
           </Link>
         </div>
       )}
@@ -340,7 +363,7 @@ function JobsPage() {
       ========================= */}
 
       {!loading && !error && filteredJobs.length > 0 && (
-        <div className="stack">
+        <div className="stack jobs-list">
           {filteredJobs.map((job) => {
             const jobId = job.job_id || job.id;
 
@@ -351,8 +374,6 @@ function JobsPage() {
             const location = job.location || "Remote";
 
             const candidateCount = job.candidate_count ?? job.count ?? 0;
-
-            const postedDate = formatDate(job.created_at) || "Recently";
 
             const formattedDueDate = formatDate(job.due_date);
 
@@ -439,6 +460,7 @@ function JobsPage() {
           })}
         </div>
       )}
+      </div>
     </PageShell>
   );
 }
