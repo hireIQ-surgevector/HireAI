@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   BriefcaseBusiness,
@@ -22,16 +22,16 @@ function EditCandidatePage() {
   const [candidateEmail, setCandidateEmail] = useState("");
 
   const [formData, setFormData] = useState({
+    full_name: "",
     location: "",
     current_role: "",
+    skills: "",
     notice_period: "",
     current_ctc: "",
   });
 
   useEffect(() => {
     if (!candidateId) {
-      setError("No candidate selected");
-      setLoading(false);
       return;
     }
 
@@ -61,8 +61,10 @@ function EditCandidatePage() {
         setCandidateEmail(data.email || "");
 
         setFormData({
+          full_name: data.name || data.full_name || "",
           location: data.location || "",
           current_role: data.current_role || "",
+          skills: Array.isArray(data.skills) ? data.skills.join(", ") : data.skills || "",
           notice_period: data.notice_period ?? "",
           current_ctc: data.current_ctc ?? "",
         });
@@ -99,8 +101,10 @@ function EditCandidatePage() {
           ...getAuthHeader(),
         },
         body: JSON.stringify({
+          full_name: formData.full_name.trim(),
           location: formData.location.trim(),
           current_role: formData.current_role.trim(),
+          skills: formData.skills,
           notice_period:
             formData.notice_period === ""
               ? null
@@ -187,6 +191,31 @@ function EditCandidatePage() {
 
           <form onSubmit={handleSubmit}>
             <div className="edit-candidate-grid">
+              <div className="form-group">
+                <label htmlFor="full_name">Candidate Name</label>
+                <input
+                  id="full_name"
+                  name="full_name"
+                  type="text"
+                  value={formData.full_name}
+                  onChange={handleChange}
+                  placeholder="e.g. Priya Sharma"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="skills">Skills</label>
+                <input
+                  id="skills"
+                  name="skills"
+                  type="text"
+                  value={formData.skills}
+                  onChange={handleChange}
+                  placeholder="e.g. Python, SQL, React"
+                />
+              </div>
+
               {/* Location */}
 
               <div className="form-group">

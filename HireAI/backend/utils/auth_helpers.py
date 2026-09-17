@@ -133,7 +133,7 @@ def build_candidate_payload(row):
     elif raw_skills:
         skills = [
             item.strip()
-            for item in str(raw_skills).split(';')
+            for item in re.split(r'[,;|]', str(raw_skills))
             if item.strip()
         ]
 
@@ -184,6 +184,7 @@ def build_candidate_payload(row):
         ),
         'stage': normalized_stage,
         'status': status_value,
+        'ai_score': row.ai_score,
         'score': row.ai_score or 0,
         'applied': (
             row.created_at.strftime('%b %d')

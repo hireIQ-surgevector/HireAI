@@ -3,6 +3,11 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5001
 export const AUTH_STORAGE_KEY = 'talentsync_user';
 export const TOKEN_STORAGE_KEY = 'token';
 export const API_URL = API_BASE_URL;
+export const AUTH_CHANGED_EVENT = 'hireai-auth-changed';
+
+function notifyAuthChanged() {
+  window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+}
 
 export function saveSession(userData, token) {
   const session = {
@@ -31,6 +36,7 @@ export function getSession() {
 export function clearSession() {
   localStorage.removeItem(TOKEN_STORAGE_KEY);
   localStorage.removeItem(AUTH_STORAGE_KEY);
+  notifyAuthChanged();
 }
 
 export function getAuthHeader() {
@@ -74,10 +80,19 @@ export async function fetchCurrentUser() {
   });
 
   if (!response.ok) {
+    if (response.status === 401 && localStorage.getItem(TOKEN_STORAGE_KEY) === token) {
+      clearSession();
+    }
     return null;
   }
 
   const data = await response.json();
+
+  // Do not restore a session if logout happened while this request was pending.
+  if (localStorage.getItem(TOKEN_STORAGE_KEY) !== token) {
+    return null;
+  }
+
   saveSession(data.user, token);
   return data;
 }

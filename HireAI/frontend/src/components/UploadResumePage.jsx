@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PageShell from "./PageShell";
-import { Upload, FileText, X, Briefcase, Loader2 } from "lucide-react";
+import { Upload, FileText, X, Briefcase } from "lucide-react";
+import toast from "react-hot-toast";
 
 function UploadResumePage() {
+  const navigate = useNavigate();
+
   const fileInputRef = useRef(null);
 
   const [jobs, setJobs] = useState([]);
@@ -35,6 +39,7 @@ function UploadResumePage() {
       } catch (error) {
         console.error("Error loading jobs:", error);
         setJobsError("Unable to load jobs. Please try again.");
+        toast.error(error.message || "Unable to load jobs.");
       } finally {
         setLoadingJobs(false);
       }
@@ -103,7 +108,7 @@ function UploadResumePage() {
     e.preventDefault();
 
     if (!selectedJobId) {
-      alert("Please select a job first.");
+      toast.error("Please select a job first.");
       return;
     }
 
@@ -128,12 +133,12 @@ function UploadResumePage() {
 
   const handleRunScreening = async () => {
     if (!selectedJobId) {
-      alert("Please select a job first.");
+      toast.error("Please select a job first.");
       return;
     }
 
     if (selectedFiles.length === 0) {
-      alert("Please upload at least one resume.");
+      toast.error("Please upload at least one resume.");
       return;
     }
 
@@ -164,14 +169,17 @@ function UploadResumePage() {
 
       console.log("Resume processing result:", data);
 
-      alert(`${data.created_count} candidate(s) added successfully.`);
+      toast.success(`${data.created_count} candidate(s) added successfully.`);
 
       // Clear selected files after successful upload
       setSelectedFiles([]);
+
+      // Candidates are now in the system — send the recruiter to review them
+      navigate("/candidates");
     } catch (error) {
       console.error("Resume upload error:", error);
 
-      alert(error.message || "Failed to process resumes.");
+      toast.error(error.message || "Failed to process resumes.");
     }
   };
 

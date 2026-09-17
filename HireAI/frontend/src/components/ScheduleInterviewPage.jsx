@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PageShell from "./PageShell";
 import { API_URL, getAuthHeader } from "../utils/auth";
+import toast from "react-hot-toast";
 
 function ScheduleInterviewPage() {
   const navigate = useNavigate();
@@ -49,6 +50,7 @@ function ScheduleInterviewPage() {
         console.error("Error fetching candidates:", error);
 
         setCandidateError(error.message || "Unable to load candidates.");
+        toast.error(error.message || "Unable to load candidates.");
       } finally {
         setLoadingCandidates(false);
       }
@@ -57,38 +59,20 @@ function ScheduleInterviewPage() {
     fetchCandidates();
   }, []);
 
-  /*
-   * Only candidates who are eligible for another interview
-   * should be displayed.
-   *
-   * Based on your backend, the stage property contains values like:
-   *
-   * Shortlisted
-   * L1 Interview
-   * L2 Interview
-   * Client Interview
-   * Offer Sent
-   * Rejected
-   */
+  /* Only candidates at the scheduling entry stages should be displayed. */
   const eligibleCandidates = useMemo(() => {
-    const excludedStages = [
-      "offer sent",
-      "rejected",
-      "onboarded",
-      "hired",
-      "selected",
-    ];
+    const allowedStages = new Set(["shortlisted", "l1 interview"]);
 
     return candidates.filter((candidate) => {
-      const stage = String(candidate.stage || "")
+      const stage = String(candidate.stage || candidate.current_status || "")
         .trim()
         .toLowerCase();
 
       return (
         candidate.candidate_id &&
         candidate.name &&
-        stage &&
-        !excludedStages.includes(stage)
+        !candidate.has_interview &&
+        allowedStages.has(stage)
       );
     });
   }, [candidates]);
@@ -103,11 +87,7 @@ function ScheduleInterviewPage() {
     );
   }, [eligibleCandidates, selectedCandidateId]);
 
-  /*
-   * Determine which interview should happen next.
-   *
-   * This is based on the candidate's CURRENT stage.
-   */
+  /* This is based on the candidate's CURRENT stage. */
   const nextInterviewRound = useMemo(() => {
     if (!selectedCandidate) {
       return "";
@@ -180,22 +160,22 @@ function ScheduleInterviewPage() {
    */
   const handleSchedule = async () => {
     if (!selectedCandidate) {
-      alert("Please select a candidate.");
+      toast.error("Please select a candidate.");
       return;
     }
 
     if (!nextInterviewRound) {
-      alert("There is no next interview round available for this candidate.");
+      toast.error("There is no next interview round available for this candidate.");
       return;
     }
 
     if (!interviewDate) {
-      alert("Please select an interview date.");
+      toast.error("Please select an interview date.");
       return;
     }
 
     if (!interviewTime) {
-      alert("Please select an interview time.");
+      toast.error("Please select an interview time.");
       return;
     }
 
@@ -227,11 +207,12 @@ function ScheduleInterviewPage() {
         throw new Error(data.error || "Failed to schedule interview.");
       }
 
+      toast.success("Interview scheduled successfully.");
       navigate("/interviews");
     } catch (error) {
       console.error("Error scheduling interview:", error);
 
-      alert(error.message || "Failed to schedule interview.");
+      toast.error(error.message || "Failed to schedule interview.");
     } finally {
       setScheduling(false);
     }

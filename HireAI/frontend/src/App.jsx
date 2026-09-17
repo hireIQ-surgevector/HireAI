@@ -5,11 +5,16 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Toaster } from 'react-hot-toast';
 
 import './App.css'
 import LoginPage from './components/LoginPage';
-import { getSession } from './utils/auth';
+import {
+  AUTH_CHANGED_EVENT,
+  fetchCurrentUser,
+  getSession,
+} from './utils/auth';
 import ForgotPasswordPage from './components/ForgotPasswordPage';
 import JobsPage from './components/JobsPage';
 import PostJobPage from './components/PostJobPage';
@@ -26,6 +31,7 @@ import UploadResumePage from './components/UploadResumePage';
 import InterviewsPage from './components/InterviewsPage';
 import InterviewRoomPage from './components/InterviewRoomPage';
 import ScheduleInterviewPage from './components/ScheduleInterviewPage';
+import EditInterviewSchedulePage from './components/EditInterviewSchedulePage';
 import EvaluationsPage from './components/EvaluationsPage';
 import RejectCandidatePage from './components/RejectCandidatePage';
 import RejectDonePage from './components/RejectDonePage';
@@ -54,7 +60,26 @@ function ProtectedRoute({ children }) {
 }
 
 function App() {
-  const hasSession = Boolean(getSession()?.token);
+  const [hasSession, setHasSession] = useState(() => Boolean(getSession()?.token));
+
+  useEffect(() => {
+    const syncAuthState = () => {
+      setHasSession(Boolean(getSession()?.token));
+    };
+
+    window.addEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+
+    const intervalId = window.setInterval(() => {
+      if (getSession()?.token) {
+        fetchCurrentUser();
+      }
+    }, 60000);
+
+    return () => {
+      window.removeEventListener(AUTH_CHANGED_EVENT, syncAuthState);
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   return (
     <>
@@ -78,6 +103,7 @@ function App() {
           <Route path="/upload-resume" element={<ProtectedRoute><UploadResumePage /></ProtectedRoute>} />
           <Route path="/interviews" element={<ProtectedRoute><InterviewsPage /></ProtectedRoute>} />
           <Route path="/schedule-interview" element={<ProtectedRoute><ScheduleInterviewPage /></ProtectedRoute>} />
+          <Route path="/edit-interview-schedule/:interviewId" element={<ProtectedRoute><EditInterviewSchedulePage /></ProtectedRoute>} />
           <Route path="/interview-room" element={<ProtectedRoute><InterviewRoomPage /></ProtectedRoute>} />
           <Route path="/evaluations" element={<ProtectedRoute><EvaluationsPage /></ProtectedRoute>} />
           <Route path="/reject-candidate" element={<ProtectedRoute><RejectCandidatePage /></ProtectedRoute>} />

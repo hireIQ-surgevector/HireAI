@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import PageShell from "./PageShell";
 
 import { API_URL, getAuthHeader } from "../utils/auth";
+import toast from "react-hot-toast";
 
 function EditInterviewSchedulePage() {
   const navigate = useNavigate();
@@ -77,6 +78,7 @@ function EditInterviewSchedulePage() {
         console.error("Error loading interview:", error);
 
         setError(error.message || "Unable to load interview.");
+        toast.error(error.message || "Unable to load interview.");
       } finally {
         setLoading(false);
       }
@@ -99,12 +101,12 @@ function EditInterviewSchedulePage() {
 
   const handleSave = async () => {
     if (!interviewDate) {
-      alert("Please select an interview date.");
+      toast.error("Please select an interview date.");
       return;
     }
 
     if (!interviewTime) {
-      alert("Please select an interview time.");
+      toast.error("Please select an interview time.");
       return;
     }
 
@@ -136,11 +138,12 @@ function EditInterviewSchedulePage() {
         throw new Error(data.error || "Failed to update interview schedule.");
       }
 
+      toast.success("Interview schedule updated successfully.");
       navigate("/interviews");
     } catch (error) {
       console.error("Error updating interview:", error);
 
-      alert(error.message || "Failed to update interview schedule.");
+      toast.error(error.message || "Failed to update interview schedule.");
     } finally {
       setSaving(false);
     }

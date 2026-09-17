@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import PageShell from "./PageShell";
+import { API_URL, getAuthHeader } from "../utils/auth";
 
 /* =========================================
    HELPER FUNCTIONS
@@ -28,12 +29,13 @@ const normalizeSkills = (skills) => {
 
   if (Array.isArray(skills)) {
     return skills
-      .map((skill) => String(skill).trim().toLowerCase())
+      .flatMap((skill) => String(skill).split(/[,;|]/))
+      .map((skill) => skill.trim().toLowerCase())
       .filter(Boolean);
   }
 
   return String(skills)
-    .split(/[;,|]/)
+    .split(/[,;|]/)
     .map((skill) => skill.trim().toLowerCase())
     .filter(Boolean);
 };
@@ -75,6 +77,17 @@ const GOOD_MATCH_THRESHOLD = 60;
 
 const isGoodMatch = (score) => (score ?? 0) >= GOOD_MATCH_THRESHOLD;
 
+const skillsMatch = (candidateSkill, jobSkill) => {
+  const candidateValue = candidateSkill.toLowerCase().trim();
+  const jobValue = jobSkill.toLowerCase().trim();
+
+  return (
+    candidateValue === jobValue ||
+    candidateValue.includes(jobValue) ||
+    jobValue.includes(candidateValue)
+  );
+};
+
 function CandidateMatcherPage() {
   const [jobs, setJobs] = useState([]);
 
@@ -107,27 +120,23 @@ function CandidateMatcherPage() {
 
   const [candidateDecisions, setCandidateDecisions] = useState({});
 
+  const [processingCandidateId, setProcessingCandidateId] = useState(null);
+
   /* =========================================
      LOAD JOBS
   ========================================= */
 
-  useEffect(() => {
-    fetchJobs();
-  }, []);
-
-  const fetchJobs = async () => {
+  async function fetchJobs() {
     try {
       setLoadingJobs(true);
 
       setError("");
 
-      const token = localStorage.getItem("token");
-
-      const response = await fetch("http://localhost:5001/api/jobs", {
+      const response = await fetch(`${API_URL}/api/jobs`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+          ...getAuthHeader(),
         },
       });
 
@@ -145,7 +154,13 @@ function CandidateMatcherPage() {
     } finally {
       setLoadingJobs(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    const taskId = window.setTimeout(fetchJobs, 0);
+
+    return () => window.clearTimeout(taskId);
+  }, []);
 
   /* =========================================
      LOAD CANDIDATES + MATCH SCORES
@@ -176,15 +191,13 @@ function CandidateMatcherPage() {
 
       setError("");
 
-      const token = localStorage.getItem("token");
-
       const response = await fetch(
-        `http://localhost:5001/api/jobs/${jobId}/calculate-scores`,
+        `${API_URL}/api/jobs/${jobId}/calculate-scores`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
+            ...getAuthHeader(),
           },
         },
       );
@@ -198,7 +211,7 @@ function CandidateMatcherPage() {
           if (errorData?.error) {
             backendMessage = errorData.error;
           }
-        } catch (parseError) {
+        } catch {
           // Response body wasn't JSON
         }
 
@@ -277,37 +290,102 @@ function CandidateMatcherPage() {
      RECRUITER DECISION HANDLERS
   ========================================= */
 
-  const acceptAIMatch = (candidateId) => {
-    setCandidateDecisions((prev) => ({
-      ...prev,
+  const saveAIDecision = async (candidateId, decision) => {
+    setProcessingCandidateId(candidateId);
 
-      [candidateId]: {
-        ...prev[candidateId],
-        aiAccepted: true,
-      },
-    }));
+    try {
+      const response = await fetch(
+        `${API_URL}/api/jobs/${selectedJobId}/candidates/${candidateId}/decision`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeader(),
+          },
+          body: JSON.stringify({ decision }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 409) {
+          setCandidates((prev) =>
+            prev.filter((candidate) => candidate.candidate_id !== candidateId),
+          );
+          setCandidateDecisions((prev) => {
+            const next = { ...prev };
+            delete next[candidateId];
+            return next;
+          });
+          setError(
+            "This candidate was already evaluated or moved from the new stage. The result was removed.",
+          );
+          return;
+        }
+
+        throw new Error(data.error || "Unable to save AI decision");
+      }
+
+      setCandidateDecisions((prev) => ({
+        ...prev,
+        [candidateId]: {
+          ...prev[candidateId],
+          aiAccepted: decision === "accept",
+        },
+      }));
+    } catch (error) {
+      console.error("Unable to save AI decision:", error);
+      setError(error.message);
+    } finally {
+      setProcessingCandidateId(null);
+    }
   };
 
-  const overrideAIMatch = (candidateId) => {
-    setCandidateDecisions((prev) => ({
-      ...prev,
+  const moveCandidateToStage = async (candidateId, stage) => {
+    const decision = candidateDecisions[candidateId]?.aiAccepted;
 
-      [candidateId]: {
-        ...prev[candidateId],
-        aiAccepted: false,
-      },
-    }));
-  };
+    if (decision === undefined) {
+      setError("Choose Accept AI Match or Override first.");
+      return;
+    }
 
-  const moveCandidateToStage = (candidateId, stage) => {
-    setCandidateDecisions((prev) => ({
-      ...prev,
+    setProcessingCandidateId(candidateId);
 
-      [candidateId]: {
-        ...prev[candidateId],
-        stage,
-      },
-    }));
+    try {
+      const response = await fetch(
+        `${API_URL}/api/jobs/${selectedJobId}/candidates/${candidateId}/finalize`,
+        {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({
+          decision: decision ? "accept" : "override",
+          stage: stage === "L1" ? "L1 Interview" : stage,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to update candidate stage");
+      }
+
+      setCandidateDecisions((prev) => ({
+        ...prev,
+        [candidateId]: {
+          ...prev[candidateId],
+          stage,
+        },
+      }));
+    } catch (error) {
+      console.error("Unable to update candidate stage:", error);
+      setError(error.message);
+    } finally {
+      setProcessingCandidateId(null);
+    }
   };
 
   /*
@@ -603,29 +681,9 @@ function CandidateMatcherPage() {
 
                       <div>
                         <h3 className="matcher-candidate-name">
-                          {candidate.full_name}
+                          {candidate.name || candidate.full_name || "Candidate"}
                         </h3>
 
-                        <p>
-                          {candidate.current_role ||
-                            candidate.applied_role ||
-                            "Candidate"}
-                        </p>
-
-                        <div className="matcher-candidate-meta">
-                          {candidate.location && (
-                            <span>
-                              <MapPin size={13} />
-
-                              {candidate.location}
-                            </span>
-                          )}
-
-                          <span>
-                            <BriefcaseBusiness size={13} />
-                            {candidate.experience_years || 0} years
-                          </span>
-                        </div>
                       </div>
                     </div>
                   </Link>
@@ -643,7 +701,9 @@ function CandidateMatcherPage() {
                             Check against selected Job Description
                           */
 
-                      const matchesJD = jobSkills.includes(skill);
+                      const matchesJD = jobSkills.some((jobSkill) =>
+                        skillsMatch(skill, jobSkill),
+                      );
 
                       return (
                         <span
@@ -689,6 +749,9 @@ function CandidateMatcherPage() {
                     ===================================== */}
 
                   <div className="matcher-decision">
+                    {processingCandidateId === candidate.candidate_id && (
+                      <span className="matcher-decision-saving">Saving...</span>
+                    )}
                     {decision.stage ? (
                       <span
                         className={
@@ -709,49 +772,34 @@ function CandidateMatcherPage() {
                           </>
                         )}
                       </span>
-                    ) : decision.aiAccepted === true ? (
-                      isGoodMatch(candidate.matchScore) ? (
-                        <button
-                          type="button"
-                          className="btn btn-success btn-sm"
-                          onClick={() =>
-                            moveCandidateToStage(candidate.candidate_id, "L1")
-                          }
-                        >
-                          <ArrowRightCircle size={14} />
-                          Move to L1
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="btn btn-danger btn-sm"
-                          onClick={() =>
-                            moveCandidateToStage(
-                              candidate.candidate_id,
-                              "Rejected",
-                            )
-                          }
-                        >
-                          <XCircle size={14} />
-                          Reject Candidate
-                        </button>
-                      )
-                    ) : decision.aiAccepted === false ? (
+                    ) : decision.aiAccepted !== undefined ? (
                       <div className="matcher-decision-actions">
                         <button
                           type="button"
-                          className="btn btn-success btn-sm"
+                          className={`btn btn-success btn-sm ${
+                            decision.aiAccepted && isGoodMatch(candidate.matchScore)
+                              ? "matcher-recommended-action"
+                              : ""
+                          }`}
+                          disabled={processingCandidateId === candidate.candidate_id}
                           onClick={() =>
                             moveCandidateToStage(candidate.candidate_id, "L1")
                           }
                         >
                           <ArrowRightCircle size={14} />
-                          Move to L1
+                          {decision.aiAccepted && isGoodMatch(candidate.matchScore)
+                            ? "Recommended: Advance to L1"
+                            : "Advance to L1"}
                         </button>
 
                         <button
                           type="button"
-                          className="btn btn-danger btn-sm"
+                          className={`btn btn-danger btn-sm ${
+                            decision.aiAccepted && !isGoodMatch(candidate.matchScore)
+                              ? "matcher-recommended-action"
+                              : ""
+                          }`}
+                          disabled={processingCandidateId === candidate.candidate_id}
                           onClick={() =>
                             moveCandidateToStage(
                               candidate.candidate_id,
@@ -760,7 +808,9 @@ function CandidateMatcherPage() {
                           }
                         >
                           <XCircle size={14} />
-                          Reject
+                          {decision.aiAccepted && !isGoodMatch(candidate.matchScore)
+                            ? "Recommended: Reject candidate"
+                            : "Reject candidate"}
                         </button>
                       </div>
                     ) : (
@@ -768,7 +818,10 @@ function CandidateMatcherPage() {
                         <button
                           type="button"
                           className="btn btn-primary btn-sm"
-                          onClick={() => acceptAIMatch(candidate.candidate_id)}
+                          disabled={processingCandidateId === candidate.candidate_id}
+                          onClick={() =>
+                            saveAIDecision(candidate.candidate_id, "accept")
+                          }
                         >
                           <ThumbsUp size={14} />
                           Accept AI Match
@@ -777,8 +830,9 @@ function CandidateMatcherPage() {
                         <button
                           type="button"
                           className="btn btn-outline btn-sm"
+                          disabled={processingCandidateId === candidate.candidate_id}
                           onClick={() =>
-                            overrideAIMatch(candidate.candidate_id)
+                            saveAIDecision(candidate.candidate_id, "override")
                           }
                         >
                           <ThumbsDown size={14} />
@@ -812,9 +866,12 @@ function CandidateMatcherPage() {
         <div className="matcher-empty card">
           <Users size={32} />
 
-          <h3>No candidates found</h3>
+          <h3>No new candidates to evaluate</h3>
 
-          <p>There are currently no candidates associated with this job.</p>
+          <p>
+            All candidates for this job have already been evaluated or moved
+            beyond the new stage.
+          </p>
         </div>
       )}
 

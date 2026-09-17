@@ -12,7 +12,6 @@ import {
   CalendarDays,
   IndianRupee,
 } from "lucide-react";
-import toast from "react-hot-toast";
 
 import PageShell from "./PageShell";
 import badgeClass from "./badgeClass";
@@ -33,13 +32,14 @@ function CandidateDetailPage() {
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [updatingStage, setUpdatingStage] = useState(false);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     if (!candidateId) {
       setError("No candidate selected");
       setLoading(false);
-      return;
+      return () => controller.abort();
     }
 
     const loadCandidate = async () => {
@@ -54,6 +54,7 @@ function CandidateDetailPage() {
               "Content-Type": "application/json",
               ...getAuthHeader(),
             },
+            signal: controller.signal,
           },
         );
 
@@ -65,14 +66,18 @@ function CandidateDetailPage() {
 
         setCandidate(data);
       } catch (err) {
-        console.error("Unable to load candidate", err);
-        setError(err.message);
+        if (err.name !== "AbortError" && localStorage.getItem("token")) {
+          console.error("Unable to load candidate", err);
+          setError(err.message);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadCandidate();
+
+    return () => controller.abort();
   }, [candidateId]);
 
   const candidateName = candidate?.name || candidate?.full_name || "Candidate";
@@ -136,7 +141,7 @@ function CandidateDetailPage() {
       ? candidate.skills
       : [];
 
-  const score = candidate?.score || 0;
+  const score = candidate?.ai_score ?? 0;
 
   const breakdown = [
     ["Technical Skills", Math.min(100, score + 5)],
@@ -154,46 +159,6 @@ function CandidateDetailPage() {
   ];
 
   const currentStageIndex = stages.indexOf(candidateStage);
-
-  const handleStageChange = async (action) => {
-    if (!candidateId) return;
-
-    setUpdatingStage(true);
-
-    try {
-      const response = await fetch(
-        `${API_URL}/api/candidates/${candidateId}/stage`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeader(),
-          },
-          body: JSON.stringify({ action }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Unable to update stage");
-      }
-
-      setCandidate(data);
-
-      if (action === "offer") {
-        toast.success("Offer sent successfully!");
-      } else if (action === "reject") {
-        toast.success("Candidate rejected");
-      } else {
-        toast.success(`Stage updated to ${data.stage}`);
-      }
-    } catch (err) {
-      toast.error(err.message || "Failed to update stage");
-    } finally {
-      setUpdatingStage(false);
-    }
-  };
 
   return (
     <PageShell
@@ -260,9 +225,17 @@ function CandidateDetailPage() {
               </div>
 
               <div className="score-box">
-                <div className="score-value">{score}</div>
+                <div className="score-value">
+                  {candidate?.ai_score === null || candidate?.ai_score === undefined
+                    ? "—"
+                    : candidate.ai_score}
+                </div>
 
-                <div className="score-label">AI SCORE</div>
+                <div className="score-label">
+                  {candidate?.ai_score === null || candidate?.ai_score === undefined
+                    ? "NOT EVALUATED"
+                    : "AI SCORE"}
+                </div>
               </div>
             </div>
           </div>
@@ -437,57 +410,9 @@ function CandidateDetailPage() {
               })}
             </div>
 
-            <div
-              className="inline-actions"
-              style={{
-                flexWrap: "wrap",
-                marginTop: "10px",
-              }}
-            >
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() => handleStageChange("schedule")}
-                disabled={updatingStage || candidateStage === "L1 Interview"}
-              >
-                Move to L1
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() => handleStageChange("l2")}
-                disabled={updatingStage || candidateStage !== "L1 Interview"}
-              >
-                Move to L2
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() => handleStageChange("client")}
-                disabled={updatingStage || candidateStage !== "L2 Interview"}
-              >
-                Move to Client
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={() => handleStageChange("offer")}
-                disabled={updatingStage || candidateStage === "Offer Sent"}
-              >
-                Send Offer
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-danger btn-sm"
-                onClick={() => handleStageChange("reject")}
-                disabled={updatingStage || candidateStage === "Rejected"}
-              >
-                Reject
-              </button>
+            <div className="info-box">
+              Stage decisions are managed from the Evaluations page. Candidates
+              can only advance one stage at a time.
             </div>
           </div>
 
