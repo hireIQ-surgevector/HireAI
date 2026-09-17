@@ -22,13 +22,10 @@ Note: the original project computed ai_score from the full resume
 text vs. the full JD text (both extracted from uploaded files). This
 backend doesn't have raw resume/JD text on hand, so the closest
 available substitute is used instead: candidate role + skills, and
-job title + skills + description. If you start storing the raw
-parsed resume/JD text alongside the candidate/job records, swap it
-in below for a truer semantic match.
+job title + skills + description.
 """
 
 import re
-
 
 _model = None
 
@@ -122,7 +119,9 @@ def _skill_is_match(candidate_skill, job_skill, threshold=0.6):
     similarity = cosine_similarity(
         [embeddings[0]],
         [embeddings[1]],
-    )[0][0]
+    )[
+        0
+    ][0]
 
     return similarity >= threshold
 
@@ -170,7 +169,9 @@ def _semantic_similarity(candidate_text, job_text):
     similarity = cosine_similarity(
         [embeddings[0]],
         [embeddings[1]],
-    )[0][0]
+    )[
+        0
+    ][0]
 
     # Cosine similarity can dip slightly negative for unrelated
     # text — clamp to 0-1, same as treating it as a plain fraction.
@@ -181,7 +182,40 @@ def _to_float(value):
     try:
         return float(value)
     except (TypeError, ValueError):
-        return 0.0
+        return None
+
+
+def _extract_experience_years(candidate):
+    """
+    The candidate payload doesn't reliably expose a raw numeric
+    "experience_years" key — depending on how build_candidate_payload
+    formats it, experience can show up as:
+
+      - candidate["experience_years"]  -> a real number (best case)
+      - candidate["experience"]        -> a formatted STRING like
+                                           "8.0 yrs", "15 years", or
+                                           "N/A" when unknown
+
+    This checks the numeric key first, then falls back to parsing
+    the leading number out of the string field. Returns 0.0 if
+    neither is present/parseable (unknown experience is treated as
+    not meeting the requirement, same as before).
+    """
+
+    numeric_value = _to_float(candidate.get("experience_years"))
+
+    if numeric_value is not None:
+        return numeric_value
+
+    raw_text = candidate.get("experience")
+
+    if raw_text:
+        match = re.search(r"(\d+(?:\.\d+)?)", str(raw_text))
+
+        if match:
+            return float(match.group(1))
+
+    return 0.0
 
 
 def _category_for_score(score, has_all_mandatory):
@@ -218,8 +252,9 @@ def calculate_match(candidate, job):
     not scored) so the UI can show why a candidate landed where
     they did.
 
-    `candidate` needs: skills, experience_years, current_role,
-    applied_role.
+    `candidate` needs: skills, current_role, applied_role, and
+    experience under either "experience_years" (numeric) or
+    "experience" (a string like "8.0 yrs" / "N/A").
     `job` needs: title, mandatory_skills, required_skills, min_exp,
     and optionally description.
     """
@@ -243,24 +278,35 @@ def calculate_match(candidate, job):
 
     # ---- ai_score: semantic similarity (0-1) ----
 
-    candidate_text = " ".join(filter(None, [
-        candidate.get("current_role"),
-        candidate.get("applied_role"),
-        ", ".join(candidate_skills),
-    ]))
+    candidate_text = " ".join(
+        filter(
+            None,
+            [
+                candidate.get("current_role"),
+                candidate.get("applied_role"),
+                ", ".join(candidate_skills),
+            ],
+        )
+    )
 
-    job_text = " ".join(filter(None, [
-        job.get("title"),
-        ", ".join(mandatory_skills + required_skills),
-        job.get("description"),
-    ]))
+    job_text = " ".join(
+        filter(
+            None,
+            [
+                job.get("title"),
+                ", ".join(mandatory_skills + required_skills),
+                job.get("description"),
+            ],
+        )
+    )
 
     ai_score = _semantic_similarity(candidate_text, job_text)
 
     # ---- experience_score: binary (0 or 1) ----
 
-    candidate_experience = _to_float(candidate.get("experience_years"))
-    required_experience = _to_float(job.get("min_exp"))
+    candidate_experience = _extract_experience_years(candidate)
+
+    required_experience = _to_float(job.get("min_exp")) or 0.0
 
     if required_experience <= 0:
         experience_score = 1
@@ -271,11 +317,7 @@ def calculate_match(candidate, job):
 
     # ---- Final Weighted Score (same formula as the original) ----
 
-    final_score = (
-        ai_score * 0.8
-        +
-        experience_score * 0.2
-    )
+    final_score = ai_score * 0.8 + experience_score * 0.2
 
     final_score_pct = max(0, min(100, round(final_score * 100)))
 
@@ -287,4 +329,12 @@ def calculate_match(candidate, job):
         ),
         "matched_skills": sorted(set(matched_mandatory + matched_required)),
         "missing_skills": sorted(set(missing_mandatory + missing_required)),
+        # ---- Diagnostics ----
+        # Not used by the UI, just returned so you can see in the
+        # API response (Network tab) exactly why a candidate scored
+        # what they did. Safe to remove once confirmed correct.
+        "debug_ai_score_pct": round(ai_score * 100),
+        "debug_experience_score": experience_score,
+        "debug_candidate_experience_years": candidate_experience,
+        "debug_required_experience_years": required_experience,
     }

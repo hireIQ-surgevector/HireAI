@@ -291,51 +291,83 @@ function CandidateMatcherPage() {
   ========================================= */
 
   const saveAIDecision = async (candidateId, decision) => {
+    setError("");
+
+    // Override is only a local selection.
+    // It does NOT change the candidate stage.
+    if (decision === "override") {
+      setCandidateDecisions((prev) => ({
+        ...prev,
+        [candidateId]: {
+          ...prev[candidateId],
+          aiAccepted: false,
+          decisionType: "override",
+        },
+      }));
+
+      return;
+    }
+
+    // Accept AI Match
+    // Determine the final stage from the AI score.
+    const candidate = candidates.find(
+      (item) => item.candidate_id === candidateId,
+    );
+
+    if (!candidate) {
+      setError("Candidate not found.");
+      return;
+    }
+
+    const score = candidate.ai_score ?? 0;
+
+    // Score >= 60 -> L1
+    // Score < 60 -> Rejected
+    const targetStage =
+      score >= GOOD_MATCH_THRESHOLD ? "L1 Interview" : "Rejected";
+
     setProcessingCandidateId(candidateId);
 
     try {
       const response = await fetch(
-        `${API_URL}/api/jobs/${selectedJobId}/candidates/${candidateId}/decision`,
+        `${API_URL}/api/jobs/${selectedJobId}/candidates/${candidateId}/finalize`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             ...getAuthHeader(),
           },
-          body: JSON.stringify({ decision }),
+          body: JSON.stringify({
+            decision: "accept",
+            stage: targetStage,
+          }),
         },
       );
 
       const data = await response.json();
 
       if (!response.ok) {
-        if (response.status === 409) {
-          setCandidates((prev) =>
-            prev.filter((candidate) => candidate.candidate_id !== candidateId),
-          );
-          setCandidateDecisions((prev) => {
-            const next = { ...prev };
-            delete next[candidateId];
-            return next;
-          });
-          setError(
-            "This candidate was already evaluated or moved from the new stage. The result was removed.",
-          );
-          return;
-        }
-
-        throw new Error(data.error || "Unable to save AI decision");
+        throw new Error(data.error || "Unable to finalize AI recommendation");
       }
 
+      // Store the result locally so the UI can show the final status.
       setCandidateDecisions((prev) => ({
         ...prev,
         [candidateId]: {
           ...prev[candidateId],
-          aiAccepted: decision === "accept",
+          aiAccepted: true,
+          decisionType: "accept",
+          stage: targetStage === "L1 Interview" ? "L1" : "Rejected",
         },
       }));
+
+      // Remove the candidate from the matcher list because
+      // they have now been moved out of the New/Applied stage.
+      setCandidates((prev) =>
+        prev.filter((candidate) => candidate.candidate_id !== candidateId),
+      );
     } catch (error) {
-      console.error("Unable to save AI decision:", error);
+      console.error("Unable to finalize AI recommendation:", error);
       setError(error.message);
     } finally {
       setProcessingCandidateId(null);
@@ -351,21 +383,25 @@ function CandidateMatcherPage() {
     }
 
     setProcessingCandidateId(candidateId);
+    setError("");
 
     try {
+      const targetStage = stage === "L1" ? "L1 Interview" : "Rejected";
+
       const response = await fetch(
         `${API_URL}/api/jobs/${selectedJobId}/candidates/${candidateId}/finalize`,
         {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeader(),
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeader(),
+          },
+          body: JSON.stringify({
+            decision: decision ? "accept" : "override",
+            stage: targetStage,
+          }),
         },
-        body: JSON.stringify({
-          decision: decision ? "accept" : "override",
-          stage: stage === "L1" ? "L1 Interview" : stage,
-        }),
-      });
+      );
 
       const data = await response.json();
 
@@ -377,7 +413,7 @@ function CandidateMatcherPage() {
         ...prev,
         [candidateId]: {
           ...prev[candidateId],
-          stage,
+          stage: stage,
         },
       }));
     } catch (error) {
@@ -683,7 +719,6 @@ function CandidateMatcherPage() {
                         <h3 className="matcher-candidate-name">
                           {candidate.name || candidate.full_name || "Candidate"}
                         </h3>
-
                       </div>
                     </div>
                   </Link>
@@ -749,9 +784,10 @@ function CandidateMatcherPage() {
                     ===================================== */}
 
                   <div className="matcher-decision">
-                    {processingCandidateId === candidate.candidate_id && (
-                      <span className="matcher-decision-saving">Saving...</span>
-                    )}
+                    {/* =====================================
+                            FINAL STAGE
+                        ===================================== */}
+
                     {decision.stage ? (
                       <span
                         className={
@@ -772,34 +808,46 @@ function CandidateMatcherPage() {
                           </>
                         )}
                       </span>
-                    ) : decision.aiAccepted !== undefined ? (
+                    ) : decision.decisionType === "accept" ? (
+                      /*
+      AI recommendation was accepted.
+
+      Nothing else needs to be selected because
+      the recruiter has accepted the AI recommendation.
+    */
+                      <span className="matcher-decision-badge matcher-decision-badge-l1">
+                        <CheckCircle2 size={14} />
+                        AI Match Accepted
+                      </span>
+                    ) : decision.decisionType === "override" ? (
+                      /*
+      AI recommendation was overridden.
+
+      The recruiter must now decide the actual outcome:
+        1. Advance to L1
+        2. Reject Candidate
+    */
                       <div className="matcher-decision-actions">
                         <button
                           type="button"
-                          className={`btn btn-success btn-sm ${
-                            decision.aiAccepted && isGoodMatch(candidate.matchScore)
-                              ? "matcher-recommended-action"
-                              : ""
-                          }`}
-                          disabled={processingCandidateId === candidate.candidate_id}
+                          className="btn btn-success btn-sm"
+                          disabled={
+                            processingCandidateId === candidate.candidate_id
+                          }
                           onClick={() =>
                             moveCandidateToStage(candidate.candidate_id, "L1")
                           }
                         >
                           <ArrowRightCircle size={14} />
-                          {decision.aiAccepted && isGoodMatch(candidate.matchScore)
-                            ? "Recommended: Advance to L1"
-                            : "Advance to L1"}
+                          Advance to L1
                         </button>
 
                         <button
                           type="button"
-                          className={`btn btn-danger btn-sm ${
-                            decision.aiAccepted && !isGoodMatch(candidate.matchScore)
-                              ? "matcher-recommended-action"
-                              : ""
-                          }`}
-                          disabled={processingCandidateId === candidate.candidate_id}
+                          className="btn btn-danger btn-sm"
+                          disabled={
+                            processingCandidateId === candidate.candidate_id
+                          }
                           onClick={() =>
                             moveCandidateToStage(
                               candidate.candidate_id,
@@ -808,17 +856,17 @@ function CandidateMatcherPage() {
                           }
                         >
                           <XCircle size={14} />
-                          {decision.aiAccepted && !isGoodMatch(candidate.matchScore)
-                            ? "Recommended: Reject candidate"
-                            : "Reject candidate"}
+                          Reject Candidate
                         </button>
                       </div>
                     ) : (
+                      /*
+      No recruiter decision has been selected yet.
+    */
                       <div className="matcher-decision-actions">
                         <button
                           type="button"
                           className="btn btn-primary btn-sm"
-                          disabled={processingCandidateId === candidate.candidate_id}
                           onClick={() =>
                             saveAIDecision(candidate.candidate_id, "accept")
                           }
@@ -830,7 +878,6 @@ function CandidateMatcherPage() {
                         <button
                           type="button"
                           className="btn btn-outline btn-sm"
-                          disabled={processingCandidateId === candidate.candidate_id}
                           onClick={() =>
                             saveAIDecision(candidate.candidate_id, "override")
                           }

@@ -114,7 +114,7 @@ def create_job():
 
 
 @jobs.route('/api/jobs', methods=['GET'])
-@jwt_required(optional=False)
+@jwt_required(optional=True)
 def get_jobs():
     conn = None
 
