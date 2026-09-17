@@ -133,6 +133,10 @@ def calculate_scores_for_job(job_id):
             candidate['match_category'] = match['category']
             candidate['matched_skills'] = match['matched_skills']
             candidate['missing_skills'] = match['missing_skills']
+            candidate['debug_ai_score_pct'] = match.get('debug_ai_score_pct')
+            candidate['debug_experience_score'] = match.get('debug_experience_score')
+            candidate['debug_candidate_experience_years'] = match.get('debug_candidate_experience_years')
+            candidate['debug_required_experience_years'] = match.get('debug_required_experience_years')
 
             results.append(candidate)
 
@@ -233,6 +237,10 @@ def calculate_score_for_candidate(job_id, candidate_id):
         candidate['match_category'] = match['category']
         candidate['matched_skills'] = match['matched_skills']
         candidate['missing_skills'] = match['missing_skills']
+        candidate['debug_ai_score_pct'] = match.get('debug_ai_score_pct')
+        candidate['debug_experience_score'] = match.get('debug_experience_score')
+        candidate['debug_candidate_experience_years'] = match.get('debug_candidate_experience_years')
+        candidate['debug_required_experience_years'] = match.get('debug_required_experience_years')
 
         return jsonify(candidate), 200
 
