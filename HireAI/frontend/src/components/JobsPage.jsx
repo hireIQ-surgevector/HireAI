@@ -108,12 +108,7 @@ function JobsPage() {
 
     const daysRemaining = Math.ceil(difference / (1000 * 60 * 60 * 24));
 
-    if (daysRemaining < 0) {
-      return {
-        label: "Expired",
-        badgeClass: "badge-red",
-      };
-    }
+    if (daysRemaining < 0) { return { label: "Overdue", badgeClass: "badge-red", }; }
 
     if (daysRemaining <= 14) {
       return {
@@ -164,13 +159,7 @@ function JobsPage() {
      ACTIVE JOB COUNT
   ========================= */
 
-  const activeJobsCount = useMemo(() => {
-    return jobs.filter((job) => {
-      const status = getJobStatusDetails(job.due_date).label;
-
-      return status !== "Expired";
-    }).length;
-  }, [jobs]);
+  const activeJobsCount = useMemo(() => { return jobs.filter((job) => { const status = getJobStatusDetails(job.due_date).label; return status !== "Overdue"; }).length; }, [jobs]);
 
   const hasActiveFilters = selectedDept !== "All" || selectedStatus !== "All";
 
@@ -263,7 +252,7 @@ function JobsPage() {
 
                 <option value="Closing Soon">Closing Soon</option>
 
-                <option value="Expired">Expired</option>
+                <option value="Overdue">Overdue</option>
               </select>
             </div>
 
@@ -379,7 +368,7 @@ function JobsPage() {
 
             const statusInfo = getJobStatusDetails(job.due_date);
 
-            const isExpired = statusInfo.label === "Expired";
+            const isExpired = statusInfo.label === "Overdue";
 
             return (
               <div
