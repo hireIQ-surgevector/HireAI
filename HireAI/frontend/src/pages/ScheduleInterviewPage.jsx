@@ -222,7 +222,7 @@ function ScheduleInterviewPage() {
     <PageShell
       title="Schedule Interview"
       active="interviews"
-      backTo="/candidates"
+      backTo="/interviews"
     >
       <div className="interview-card">
         <div className="card">

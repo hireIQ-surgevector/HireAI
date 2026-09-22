@@ -37,7 +37,7 @@ const offers = [
 function OffersPage() {
   return (
     <PageShell title="Offer Letters" active="offers">
-      <div className="grid3">
+      <div className="grid3 offer-kpi-grid">
         <StatCard
           label="Offers Sent"
           value="4"
