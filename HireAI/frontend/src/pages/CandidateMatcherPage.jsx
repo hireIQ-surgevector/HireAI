@@ -17,7 +17,7 @@ import {
   XCircle,
 } from "lucide-react";
 
-import PageShell from "./PageShell";
+import PageShell from "../components/PageShell";
 import { API_URL, getAuthHeader } from "../utils/auth";
 
 /* =========================================

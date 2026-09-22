@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import PageShell from "./PageShell";
+import PageShell from "../components/PageShell";
 import { API_URL, getAuthHeader } from "../utils/auth";
 
 function EditCandidatePage() {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import PageShell from "./PageShell";
+import PageShell from "../components/PageShell";
 
 function EditJobPage() {
   const { jobId } = useParams();

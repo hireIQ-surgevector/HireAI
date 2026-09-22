@@ -11,10 +11,10 @@ import {
   UploadCloud,
 } from "lucide-react";
 
-import PageShell from "./PageShell";
-import StatCard from "./StatCard";
-import badgeClass from "./badgeClass";
-import scoreBar from "./scoreBar";
+import PageShell from "../components/PageShell";
+import StatCard from "../components/StatCard";
+import badgeClass from "../components/badgeClass";
+import scoreBar from "../components/scoreBar";
 
 import { fetchDashboardSummary } from "../store/dashboardSlice";
 

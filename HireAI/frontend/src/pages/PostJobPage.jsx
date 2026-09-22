@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import PageShell from "./PageShell";
+import PageShell from "../components/PageShell";
 import toast from "react-hot-toast";
 
 function PostJobPage() {

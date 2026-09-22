@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import PageShell from "./PageShell";
+import PageShell from "../components/PageShell";
 import { CalendarDays, Clock, Pencil, Plus, User } from "lucide-react";
 import { API_URL, canManageCandidates, getSession } from "../utils/auth";
 

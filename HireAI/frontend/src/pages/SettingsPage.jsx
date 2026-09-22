@@ -1,4 +1,4 @@
-import PageShell from "./PageShell";
+import PageShell from "../components/PageShell";
 
 function SettingsPage() {
   return (
