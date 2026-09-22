@@ -9,43 +9,43 @@ import { useEffect, useState } from "react";
 import { Toaster } from 'react-hot-toast';
 
 import './App.css'
-import LoginPage from './components/LoginPage';
+import LoginPage from './pages/LoginPage';
 import {
   AUTH_CHANGED_EVENT,
   fetchCurrentUser,
   getSession,
 } from './utils/auth';
-import ForgotPasswordPage from './components/ForgotPasswordPage';
-import JobsPage from './components/JobsPage';
-import PostJobPage from './components/PostJobPage';
-import EditJobPage from './components/EditJobPage';
-import JobCandidatesPage from './components/JobCandidatesPage';
-import CandidateMatcherPage from "./components/CandidateMatcherPage";
-import ResetSentPage from './components/ResetSentPage';
-import ChangePasswordPage from './components/ChangePasswordPage';
-import DashboardPage from './components/DashboardPage';
-import CandidatesPage from './components/CandidatesPage';
-import CandidateDetailPage from './components/CandidateDetailPage';
-import EditCandidatePage from './components/EditCandidatePage';
-import UploadResumePage from './components/UploadResumePage';
-import InterviewsPage from './components/InterviewsPage';
-import InterviewRoomPage from './components/InterviewRoomPage';
-import ScheduleInterviewPage from './components/ScheduleInterviewPage';
-import EditInterviewSchedulePage from './components/EditInterviewSchedulePage';
-import EvaluationsPage from './components/EvaluationsPage';
-import RejectCandidatePage from './components/RejectCandidatePage';
-import RejectDonePage from './components/RejectDonePage';
-import SendOfferPage from './components/SendOfferPage';
-import OfferSentPage from './components/OfferSentPage';
-import OffersPage from './components/OffersPage';
-import SettingsPage from './components/SettingsPage';
-import CandidateHomePage from './components/CandidateHomePage';
-import CandidateInterviewPage from './components/CandidateInterviewPage';
-import CandidateFeedbackPage from './components/CandidateFeedbackPage';
-import CandidateOfferPage from './components/CandidateOfferPage';
-import OfferAcceptedPage from './components/OfferAcceptedPage';
-import OfferDeclinedPage from './components/OfferDeclinedPage';
-import OnboardingPage from './components/OnboardingPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import JobsPage from './pages/JobsPage';
+import PostJobPage from './pages/PostJobPage';
+import EditJobPage from './pages/EditJobPage';
+import JobCandidatesPage from './pages/JobCandidatesPage';
+import CandidateMatcherPage from "./pages/CandidateMatcherPage";
+import ResetSentPage from './pages/ResetSentPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
+import DashboardPage from './pages/DashboardPage';
+import CandidatesPage from './pages/CandidatesPage';
+import CandidateDetailPage from './pages/CandidateDetailPage';
+import EditCandidatePage from './pages/EditCandidatePage';
+import UploadResumePage from './pages/UploadResumePage';
+import InterviewsPage from './pages/InterviewsPage';
+import InterviewRoomPage from './pages/InterviewRoomPage';
+import ScheduleInterviewPage from './pages/ScheduleInterviewPage';
+import EditInterviewSchedulePage from './pages/EditInterviewSchedulePage';
+import EvaluationsPage from './pages/EvaluationsPage';
+import RejectCandidatePage from './pages/RejectCandidatePage';
+import RejectDonePage from './pages/RejectDonePage';
+import SendOfferPage from './pages/SendOfferPage';
+import OfferSentPage from './pages/OfferSentPage';
+import OffersPage from './pages/OffersPage';
+import SettingsPage from './pages/SettingsPage';
+import CandidateHomePage from './pages/CandidateHomePage';
+import CandidateInterviewPage from './pages/CandidateInterviewPage';
+import CandidateFeedbackPage from './pages/CandidateFeedbackPage';
+import CandidateOfferPage from './pages/CandidateOfferPage';
+import OfferAcceptedPage from './pages/OfferAcceptedPage';
+import OfferDeclinedPage from './pages/OfferDeclinedPage';
+import OnboardingPage from './pages/OnboardingPage';
 
 
 function ProtectedRoute({ children }) {
