@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, X } from "lucide-react";
 
-import PageShell from "./PageShell";
+import PageShell from "../components/PageShell";
 import { API_URL, getAuthHeader } from "../utils/auth";
 
 const STAGES = [

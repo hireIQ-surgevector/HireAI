@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import PageShell from "./PageShell";
+import PageShell from "../components/PageShell";
 import { API_URL, getAuthHeader } from "../utils/auth";
 import toast from "react-hot-toast";
 
@@ -222,7 +222,7 @@ function ScheduleInterviewPage() {
     <PageShell
       title="Schedule Interview"
       active="interviews"
-      backTo="/candidates"
+      backTo="/interviews"
     >
       <div className="interview-card">
         <div className="card">

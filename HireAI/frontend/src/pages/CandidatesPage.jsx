@@ -10,9 +10,9 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-import PageShell from "./PageShell";
-import scoreBar from "./scoreBar";
-import badgeClass from "./badgeClass";
+import PageShell from "../components/PageShell";
+import scoreBar from "../components/scoreBar";
+import badgeClass from "../components/badgeClass";
 
 import {
   API_URL,

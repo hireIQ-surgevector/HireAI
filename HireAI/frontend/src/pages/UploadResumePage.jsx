@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import PageShell from "./PageShell";
+import PageShell from "../components/PageShell";
 import { Upload, FileText, X, Briefcase } from "lucide-react";
 import toast from "react-hot-toast";
 

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import PageShell from "./PageShell";
+import PageShell from "../components/PageShell";
 
 function SendOfferPage() {
   return (

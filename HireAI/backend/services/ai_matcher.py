@@ -27,7 +27,6 @@ job title + skills + description.
 
 import re
 
-
 _model = None
 
 
@@ -120,7 +119,9 @@ def _skill_is_match(candidate_skill, job_skill, threshold=0.6):
     similarity = cosine_similarity(
         [embeddings[0]],
         [embeddings[1]],
-    )[0][0]
+    )[
+        0
+    ][0]
 
     return similarity >= threshold
 
@@ -168,7 +169,9 @@ def _semantic_similarity(candidate_text, job_text):
     similarity = cosine_similarity(
         [embeddings[0]],
         [embeddings[1]],
-    )[0][0]
+    )[
+        0
+    ][0]
 
     # Cosine similarity can dip slightly negative for unrelated
     # text — clamp to 0-1, same as treating it as a plain fraction.
@@ -275,17 +278,27 @@ def calculate_match(candidate, job):
 
     # ---- ai_score: semantic similarity (0-1) ----
 
-    candidate_text = " ".join(filter(None, [
-        candidate.get("current_role"),
-        candidate.get("applied_role"),
-        ", ".join(candidate_skills),
-    ]))
+    candidate_text = " ".join(
+        filter(
+            None,
+            [
+                candidate.get("current_role"),
+                candidate.get("applied_role"),
+                ", ".join(candidate_skills),
+            ],
+        )
+    )
 
-    job_text = " ".join(filter(None, [
-        job.get("title"),
-        ", ".join(mandatory_skills + required_skills),
-        job.get("description"),
-    ]))
+    job_text = " ".join(
+        filter(
+            None,
+            [
+                job.get("title"),
+                ", ".join(mandatory_skills + required_skills),
+                job.get("description"),
+            ],
+        )
+    )
 
     ai_score = _semantic_similarity(candidate_text, job_text)
 
@@ -304,11 +317,7 @@ def calculate_match(candidate, job):
 
     # ---- Final Weighted Score (same formula as the original) ----
 
-    final_score = (
-        ai_score * 0.8
-        +
-        experience_score * 0.2
-    )
+    final_score = ai_score * 0.8 + experience_score * 0.2
 
     final_score_pct = max(0, min(100, round(final_score * 100)))
 
@@ -320,7 +329,6 @@ def calculate_match(candidate, job):
         ),
         "matched_skills": sorted(set(matched_mandatory + matched_required)),
         "missing_skills": sorted(set(missing_mandatory + missing_required)),
-
         # ---- Diagnostics ----
         # Not used by the UI, just returned so you can see in the
         # API response (Network tab) exactly why a candidate scored

@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import PageShell from "./PageShell";
-import badgeClass from "./badgeClass";
+import PageShell from "../components/PageShell";
+import badgeClass from "../components/badgeClass";
 import {
   API_URL,
   canAccessSensitive,

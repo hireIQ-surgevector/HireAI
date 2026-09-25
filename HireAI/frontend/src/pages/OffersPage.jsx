@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Check, FileText, CalendarDays } from "lucide-react";
-import PageShell from "./PageShell";
-import StatCard from "./StatCard";
+import PageShell from "../components/PageShell";
+import StatCard from "../components/StatCard";
 
 const CheckIcon = (props) => <Check {...props} />;
 const CalendarIcon = (props) => <CalendarDays {...props} />;
@@ -37,7 +37,7 @@ const offers = [
 function OffersPage() {
   return (
     <PageShell title="Offer Letters" active="offers">
-      <div className="grid3">
+      <div className="grid3 offer-kpi-grid">
         <StatCard
           label="Offers Sent"
           value="4"

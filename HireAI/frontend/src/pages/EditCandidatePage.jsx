@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import PageShell from "./PageShell";
+import PageShell from "../components/PageShell";
 import { API_URL, getAuthHeader } from "../utils/auth";
 
 function EditCandidatePage() {
@@ -23,6 +23,8 @@ function EditCandidatePage() {
 
   const [formData, setFormData] = useState({
     full_name: "",
+    email: "",
+    phone: "",
     location: "",
     current_role: "",
     skills: "",
@@ -62,9 +64,13 @@ function EditCandidatePage() {
 
         setFormData({
           full_name: data.name || data.full_name || "",
+          email: data.email || "",
+          phone: data.phone || "",
           location: data.location || "",
           current_role: data.current_role || "",
-          skills: Array.isArray(data.skills) ? data.skills.join(", ") : data.skills || "",
+          skills: Array.isArray(data.skills)
+            ? data.skills.join(", ")
+            : data.skills || "",
           notice_period: data.notice_period ?? "",
           current_ctc: data.current_ctc ?? "",
         });
@@ -201,6 +207,32 @@ function EditCandidatePage() {
                   onChange={handleChange}
                   placeholder="e.g. Priya Sharma"
                   required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="email">Email</label>
+
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="e.g. candidate@gmail.com"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="phone">Mobile Number</label>
+
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="e.g. +91 9876543210"
                 />
               </div>
 

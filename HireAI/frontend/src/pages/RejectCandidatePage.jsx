@@ -1,4 +1,4 @@
-import PageShell from "./PageShell";
+import PageShell from "../components/PageShell";
 import { Link } from "react-router-dom";
 import { Plus, FileText } from "lucide-react";
 
