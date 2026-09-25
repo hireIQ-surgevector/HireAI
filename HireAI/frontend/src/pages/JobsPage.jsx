@@ -1,17 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import PageShell from "../components/PageShell";
-import {
-  CalendarDays,
-  Users,
-  X,
-  BriefcaseBusiness,
-  MapPin,
-  Building2,
-  Plus,
-} from "lucide-react";
+import { BriefcaseBusiness, Plus } from "lucide-react";
 
-import { API_URL } from "../utils/auth";
+import PageShell from "../components/PageShell";
+import JobsIntro from "../components/JobsIntro";
+import JobsStatStrip from "../components/JobsStatStrip";
+import JobsToolbar from "../components/JobsToolbar";
+import JobsEmptyState from "../components/JobsEmptyState";
+import JobCard from "../components/JobCard";
+
+import { getJobStatusDetails } from "../utils/jobStatus";
+import { API_URL, getAuthHeader } from "../utils/auth";
 
 function JobsPage() {
   const [jobs, setJobs] = useState([]);
@@ -30,17 +29,11 @@ function JobsPage() {
       setLoading(true);
       setError("");
 
-      const token = localStorage.getItem("token");
-
       const response = await fetch(`${API_URL}/api/jobs`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          ...(token
-            ? {
-                Authorization: `Bearer ${token}`,
-              }
-            : {}),
+          ...getAuthHeader(),
         },
       });
 
@@ -61,67 +54,8 @@ function JobsPage() {
   }, []);
 
   useEffect(() => {
-    const taskId = window.setTimeout(fetchJobs, 0);
-
-    return () => window.clearTimeout(taskId);
+    fetchJobs();
   }, [fetchJobs]);
-
-  /* =========================
-     DATE FORMATTING
-  ========================= */
-
-  const formatDate = (dateString) => {
-    if (!dateString) return null;
-
-    const date = new Date(dateString);
-
-    if (Number.isNaN(date.getTime())) {
-      return null;
-    }
-
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  /* =========================
-     JOB STATUS
-  ========================= */
-
-  const getJobStatusDetails = (dueDateStr) => {
-    if (!dueDateStr) {
-      return {
-        label: "Active",
-        badgeClass: "badge-green",
-      };
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const dueDate = new Date(dueDateStr);
-    dueDate.setHours(0, 0, 0, 0);
-
-    const difference = dueDate.getTime() - today.getTime();
-
-    const daysRemaining = Math.ceil(difference / (1000 * 60 * 60 * 24));
-
-    if (daysRemaining < 0) { return { label: "Overdue", badgeClass: "badge-red", }; }
-
-    if (daysRemaining <= 14) {
-      return {
-        label: "Closing Soon",
-        badgeClass: "badge-yellow",
-      };
-    }
-
-    return {
-      label: "Active",
-      badgeClass: "badge-green",
-    };
-  };
 
   /* =========================
      DEPARTMENTS
@@ -156,10 +90,26 @@ function JobsPage() {
   }, [jobs, selectedDept, selectedStatus]);
 
   /* =========================
-     ACTIVE JOB COUNT
+     SUMMARY COUNTS
   ========================= */
 
-  const activeJobsCount = useMemo(() => { return jobs.filter((job) => { const status = getJobStatusDetails(job.due_date).label; return status !== "Overdue"; }).length; }, [jobs]);
+  const { activeJobsCount, closingSoonCount, overdueCount } = useMemo(() => {
+    let active = 0;
+    let closingSoon = 0;
+    let overdue = 0;
+
+    jobs.forEach((job) => {
+      const status = getJobStatusDetails(job.due_date).label;
+
+      if (status !== "Overdue") active += 1;
+
+      if (status === "Closing Soon") closingSoon += 1;
+
+      if (status === "Overdue") overdue += 1;
+    });
+
+    return { activeJobsCount: active, closingSoonCount: closingSoon, overdueCount: overdue };
+  }, [jobs]);
 
   const hasActiveFilters = selectedDept !== "All" || selectedStatus !== "All";
 
@@ -169,286 +119,123 @@ function JobsPage() {
   };
 
   return (
-    <PageShell
-      title="Job Openings"
-      active="jobs"
-      actions={
-        <Link to="/post-job" className="btn btn-primary">
-          + Post New Job
-        </Link>
-      }
-    >
+    <PageShell hideTopbar>
       <div className="jobs-page">
-      <div className="jobs-intro">
-        <div>
-          <p className="jobs-eyebrow">RECRUITMENT WORKSPACE</p>
-          <h2>Build the team you need</h2>
-          <p>Track open roles, candidate flow, and hiring deadlines from one place.</p>
-        </div>
-        <div className="jobs-intro-mark"><BriefcaseBusiness size={28} /></div>
-      </div>
+        <JobsIntro
+          eyebrow="RECRUITMENT WORKSPACE"
+          title="Build the team you need"
+          description="Track open roles, candidate flow, and hiring deadlines from one place."
+          icon={BriefcaseBusiness}
+          actions={
+            <Link to="/post-job" className="btn btn-primary">
+              + Post New Job
+            </Link>
+          }
+        />
 
-      {!loading && jobs.length > 0 && (
-        <div className="jobs-stat-strip">
-          <div><span>Total openings</span><strong>{jobs.length}</strong></div>
-          <div><span>Active roles</span><strong>{activeJobsCount}</strong></div>
-          <div><span>Closing soon</span><strong>{jobs.filter((job) => getJobStatusDetails(job.due_date).label === "Closing Soon").length}</strong></div>
-          <div><span>Departments</span><strong>{departments.length - 1}</strong></div>
-        </div>
-      )}
+        {!loading && jobs.length > 0 && (
+          <JobsStatStrip
+            totalJobs={jobs.length}
+            activeJobsCount={activeJobsCount}
+            closingSoonCount={closingSoonCount}
+            overdueCount={overdueCount}
+          />
+        )}
 
-      {/* =========================
-          HEADER / FILTER BAR
-      ========================= */}
+        {/* =========================
+            FILTER BAR
+        ========================= */}
 
-      {!loading && jobs.length > 0 && (
-        <div className="jobs-toolbar">
-          <div className="jobs-summary">
-            <div className="jobs-summary-icon">
-              <BriefcaseBusiness size={18} />
-            </div>
+        {!loading && jobs.length > 0 && (
+          <JobsToolbar
+            departments={departments}
+            selectedDept={selectedDept}
+            onSelectDept={setSelectedDept}
+            selectedStatus={selectedStatus}
+            onSelectStatus={setSelectedStatus}
+            filteredCount={filteredJobs.length}
+            totalCount={jobs.length}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={clearFilters}
+          />
+        )}
 
-            <div>
-              <strong>{filteredJobs.length}</strong>
+        {/* =========================
+            LOADING
+        ========================= */}
 
-              <span> of {jobs.length} jobs</span>
-            </div>
+        {loading && (
+          <div className="jobs-loading">
+            <div className="loading-spinner" />
+
+            <p>Loading job openings...</p>
           </div>
+        )}
 
-          <div className="jobs-filters">
-            {/* DEPARTMENT FILTER */}
+        {/* =========================
+            ERROR
+        ========================= */}
 
-            <div className="jobs-filter-group">
-              <label htmlFor="dept-filter">Department</label>
+        {!loading && error && (
+          <div className="error-box">
+            <p>{error}</p>
 
-              <select
-                id="dept-filter"
-                value={selectedDept}
-                onChange={(e) => setSelectedDept(e.target.value)}
-                className="select-input"
-              >
-                {departments.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* STATUS FILTER */}
-
-            <div className="jobs-filter-group">
-              <label htmlFor="status-filter">Status</label>
-
-              <select
-                id="status-filter"
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="select-input"
-              >
-                <option value="All">All Statuses</option>
-
-                <option value="Active">Active</option>
-
-                <option value="Closing Soon">Closing Soon</option>
-
-                <option value="Overdue">Overdue</option>
-              </select>
-            </div>
-
-            {/* CLEAR FILTERS */}
-
-            {hasActiveFilters && (
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={clearFilters}
-              >
-                <X size={14} />
-                Clear
-              </button>
-            )}
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={fetchJobs}
+            >
+              Try Again
+            </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* =========================
-          LOADING
-      ========================= */}
+        {/* =========================
+            EMPTY STATE
+        ========================= */}
 
-      {loading && (
-        <div className="jobs-loading">
-          <div className="loading-spinner" />
-
-          <p>Loading job openings...</p>
-        </div>
-      )}
-
-      {/* =========================
-          ERROR
-      ========================= */}
-
-      {!loading && error && (
-        <div className="error-box">
-          <p>{error}</p>
-
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            onClick={fetchJobs}
+        {!loading && !error && jobs.length === 0 && (
+          <JobsEmptyState
+            title="No job openings yet"
+            description="Get started by creating your first job opening."
           >
-            Try Again
-          </button>
-        </div>
-      )}
+            <Link to="/post-job" className="btn btn-primary">
+              <Plus size={15} />
+              Post New Job
+            </Link>
+          </JobsEmptyState>
+        )}
 
-      {/* =========================
-          EMPTY STATE
-      ========================= */}
+        {/* =========================
+            NO FILTER RESULTS
+        ========================= */}
 
-      {!loading && !error && jobs.length === 0 && (
-        <div className="jobs-empty-state">
-          <div className="jobs-empty-icon">
-            <BriefcaseBusiness size={30} />
-          </div>
-
-          <h3>No job openings yet</h3>
-
-          <p>Get started by creating your first job opening.</p>
-
-          <Link to="/post-job" className="btn btn-primary">
-                <Plus size={15} />
-                Post New Job
-          </Link>
-        </div>
-      )}
-
-      {/* =========================
-          NO FILTER RESULTS
-      ========================= */}
-
-      {!loading && !error && jobs.length > 0 && filteredJobs.length === 0 && (
-        <div className="jobs-empty-state">
-          <div className="jobs-empty-icon">
-            <BriefcaseBusiness size={30} />
-          </div>
-
-          <h3>No matching jobs</h3>
-
-          <p>Try changing your filters.</p>
-
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={clearFilters}
+        {!loading && !error && jobs.length > 0 && filteredJobs.length === 0 && (
+          <JobsEmptyState
+            title="No matching jobs"
+            description="Try changing your filters."
           >
-            Reset Filters
-          </button>
-        </div>
-      )}
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={clearFilters}
+            >
+              Reset Filters
+            </button>
+          </JobsEmptyState>
+        )}
 
-      {/* =========================
-          JOB LIST
-      ========================= */}
+        {/* =========================
+            JOB LIST
+        ========================= */}
 
-      {!loading && !error && filteredJobs.length > 0 && (
-        <div className="stack jobs-list">
-          {filteredJobs.map((job) => {
-            const jobId = job.job_id || job.id;
-
-            const title = job.title || "Untitled Position";
-
-            const department = job.department || "General";
-
-            const location = job.location || "Remote";
-
-            const candidateCount = job.candidate_count ?? job.count ?? 0;
-
-            const formattedDueDate = formatDate(job.due_date);
-
-            const statusInfo = getJobStatusDetails(job.due_date);
-
-            const isExpired = statusInfo.label === "Overdue";
-
-            return (
-              <div
-                key={jobId || title}
-                className={`card job-card ${
-                  isExpired ? "job-card-expired" : ""
-                }`}
-              >
-                <div className="job-main">
-                  {/* JOB ICON */}
-
-                  <div className="job-icon">
-                    <BriefcaseBusiness size={22} />
-                  </div>
-
-                  {/* JOB DETAILS */}
-
-                  <div className="job-body">
-                    <div className="job-title-row">
-                      <div>
-                        <h3>{title}</h3>
-                      </div>
-
-                      <span className={`badge ${statusInfo.badgeClass}`}>
-                        {statusInfo.label}
-                      </span>
-                    </div>
-
-                    {/* META */}
-
-                    <div className="job-meta">
-                      <span>
-                        <Building2 size={14} />
-                        {department}
-                      </span>
-
-                      <span>
-                        <MapPin size={14} />
-                        {location}
-                      </span>
-
-                      <span>
-                        <Users size={14} />
-                        {candidateCount}{" "}
-                        {candidateCount === 1 ? "candidate" : "candidates"}
-                      </span>
-
-                      <span>
-                        <CalendarDays size={14} />
-
-                        {formattedDueDate
-                          ? `Target: ${formattedDueDate}`
-                          : "No target date"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* ACTIONS */}
-
-                  <div className="job-actions">
-                    <Link
-                      to={`/jobs/${jobId}/candidates`}
-                      className="btn btn-secondary btn-sm"
-                    >
-                      View Candidates
-                    </Link>
-
-                    <Link
-                      to={`/edit-job/${jobId}`}
-                      className="btn btn-ghost btn-sm"
-                    >
-                      Edit
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+        {!loading && !error && filteredJobs.length > 0 && (
+          <div className="stack jobs-list">
+            {filteredJobs.map((job) => (
+              <JobCard key={job.job_id || job.id || job.title} job={job} />
+            ))}
+          </div>
+        )}
       </div>
     </PageShell>
   );

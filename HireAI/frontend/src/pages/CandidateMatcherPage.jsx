@@ -75,8 +75,6 @@ const getMatchClassName = (category) =>
 
 const GOOD_MATCH_THRESHOLD = 60;
 
-const isGoodMatch = (score) => (score ?? 0) >= GOOD_MATCH_THRESHOLD;
-
 const skillsMatch = (candidateSkill, jobSkill) => {
   const candidateValue = candidateSkill.toLowerCase().trim();
   const jobValue = jobSkill.toLowerCase().trim();
@@ -87,6 +85,43 @@ const skillsMatch = (candidateSkill, jobSkill) => {
     jobValue.includes(candidateValue)
   );
 };
+
+/*
+  Both recruiter actions (accepting the AI match, or resolving an
+  override) end up hitting the same "finalize" endpoint - this is the
+  one place that builds that request.
+*/
+async function finalizeCandidate(
+  jobId,
+  candidateId,
+  { decision, stage, errorMessage },
+) {
+  const response = await fetch(
+    `${API_URL}/api/jobs/${jobId}/candidates/${candidateId}/finalize`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({ decision, stage }),
+    },
+  );
+
+  let data = {};
+
+  try {
+    data = await response.json();
+  } catch {
+    // Response body wasn't JSON.
+  }
+
+  if (!response.ok) {
+    throw new Error(data.error || errorMessage);
+  }
+
+  return data;
+}
 
 function CandidateMatcherPage() {
   const [jobs, setJobs] = useState([]);
@@ -157,9 +192,7 @@ function CandidateMatcherPage() {
   }
 
   useEffect(() => {
-    const taskId = window.setTimeout(fetchJobs, 0);
-
-    return () => window.clearTimeout(taskId);
+    fetchJobs();
   }, []);
 
   /* =========================================
@@ -278,13 +311,18 @@ function CandidateMatcherPage() {
      SUMMARY COUNTS
   ========================================= */
 
-  const strongMatches = matchedCandidates.filter(
-    (candidate) => candidate.matchScore >= 80,
-  ).length;
+  const { strongMatches, goodMatches } = useMemo(
+    () => ({
+      strongMatches: matchedCandidates.filter(
+        (candidate) => candidate.matchScore >= 80,
+      ).length,
 
-  const goodMatches = matchedCandidates.filter(
-    (candidate) => candidate.matchScore >= 60 && candidate.matchScore < 80,
-  ).length;
+      goodMatches: matchedCandidates.filter(
+        (candidate) => candidate.matchScore >= 60 && candidate.matchScore < 80,
+      ).length,
+    }),
+    [matchedCandidates],
+  );
 
   /* =========================================
      RECRUITER DECISION HANDLERS
@@ -308,7 +346,7 @@ function CandidateMatcherPage() {
       return;
     }
 
-    // Accept AI Match
+    // Accept AI Match.
     // Determine the final stage from the AI score.
     const candidate = candidates.find(
       (item) => item.candidate_id === candidateId,
@@ -329,26 +367,11 @@ function CandidateMatcherPage() {
     setProcessingCandidateId(candidateId);
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/jobs/${selectedJobId}/candidates/${candidateId}/finalize`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeader(),
-          },
-          body: JSON.stringify({
-            decision: "accept",
-            stage: targetStage,
-          }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Unable to finalize AI recommendation");
-      }
+      await finalizeCandidate(selectedJobId, candidateId, {
+        decision: "accept",
+        stage: targetStage,
+        errorMessage: "Unable to finalize AI recommendation",
+      });
 
       // Store the result locally so the UI can show the final status.
       setCandidateDecisions((prev) => ({
@@ -388,32 +411,17 @@ function CandidateMatcherPage() {
     try {
       const targetStage = stage === "L1" ? "L1 Interview" : "Rejected";
 
-      const response = await fetch(
-        `${API_URL}/api/jobs/${selectedJobId}/candidates/${candidateId}/finalize`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeader(),
-          },
-          body: JSON.stringify({
-            decision: decision ? "accept" : "override",
-            stage: targetStage,
-          }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Unable to update candidate stage");
-      }
+      await finalizeCandidate(selectedJobId, candidateId, {
+        decision: decision ? "accept" : "override",
+        stage: targetStage,
+        errorMessage: "Unable to update candidate stage",
+      });
 
       setCandidateDecisions((prev) => ({
         ...prev,
         [candidateId]: {
           ...prev[candidateId],
-          stage: stage,
+          stage,
         },
       }));
     } catch (error) {
@@ -425,20 +433,124 @@ function CandidateMatcherPage() {
   };
 
   /*
+    Renders whatever the recruiter should see for a given candidate's
+    decision state: a final badge, an AI-accepted badge, the
+    override follow-up buttons, or the initial accept/override choice.
+  */
+  const renderCandidateDecision = (candidate, decision) => {
+    const isProcessing = processingCandidateId === candidate.candidate_id;
+
+    if (decision.stage) {
+      const isL1 = decision.stage === "L1";
+
+      return (
+        <span
+          className={
+            isL1
+              ? "matcher-decision-badge matcher-decision-badge-l1"
+              : "matcher-decision-badge matcher-decision-badge-rejected"
+          }
+        >
+          {isL1 ? (
+            <>
+              <CheckCircle2 size={14} />
+              Moved to L1
+            </>
+          ) : (
+            <>
+              <XCircle size={14} />
+              Rejected
+            </>
+          )}
+        </span>
+      );
+    }
+
+    if (decision.decisionType === "accept") {
+      // AI recommendation was accepted - nothing else to choose.
+      return (
+        <span className="matcher-decision-badge matcher-decision-badge-l1">
+          <CheckCircle2 size={14} />
+          AI Match Accepted
+        </span>
+      );
+    }
+
+    if (decision.decisionType === "override") {
+      // AI recommendation was overridden - the recruiter must now
+      // decide the actual outcome: advance to L1, or reject.
+      return (
+        <div className="matcher-decision-actions">
+          <button
+            type="button"
+            className="btn btn-success btn-sm"
+            disabled={isProcessing}
+            onClick={() => moveCandidateToStage(candidate.candidate_id, "L1")}
+          >
+            <ArrowRightCircle size={14} />
+            Advance to L1
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-danger btn-sm"
+            disabled={isProcessing}
+            onClick={() =>
+              moveCandidateToStage(candidate.candidate_id, "Rejected")
+            }
+          >
+            <XCircle size={14} />
+            Reject Candidate
+          </button>
+        </div>
+      );
+    }
+
+    // No recruiter decision has been selected yet.
+    return (
+      <div className="matcher-decision-actions">
+        <button
+          type="button"
+          className="btn btn-primary btn-sm"
+          onClick={() => saveAIDecision(candidate.candidate_id, "accept")}
+        >
+          <ThumbsUp size={14} />
+          Accept AI Match
+        </button>
+
+        <button
+          type="button"
+          className="btn btn-outline btn-sm"
+          onClick={() => saveAIDecision(candidate.candidate_id, "override")}
+        >
+          <ThumbsDown size={14} />
+          Override
+        </button>
+      </div>
+    );
+  };
+
+  /*
     JD skills used to determine whether
     a candidate skill should be green.
 
     Primary + Secondary JD skills
   */
 
-  const jobSkills = useMemo(() => {
-    if (!selectedJob) return [];
+  const jobPrimarySkills = useMemo(
+    () => getJobPrimarySkills(selectedJob),
+    [selectedJob],
+  );
 
-    return [
-      ...getJobPrimarySkills(selectedJob),
-      ...getJobSecondarySkills(selectedJob),
-    ];
-  }, [selectedJob]);
+  const jobSecondarySkills = useMemo(
+    () => getJobSecondarySkills(selectedJob),
+    [selectedJob],
+  );
+
+  const jobSkills = useMemo(
+    () => [...jobPrimarySkills, ...jobSecondarySkills],
+    [jobPrimarySkills, jobSecondarySkills],
+  );
 
   return (
     <PageShell
@@ -555,14 +667,14 @@ function CandidateMatcherPage() {
           {/* JD SKILLS - LEFT AS NORMAL */}
 
           <div className="matcher-job-skills-panel">
-            {getJobPrimarySkills(selectedJob).length > 0 && (
+            {jobPrimarySkills.length > 0 && (
               <div className="matcher-job-skill-group">
                 <span className="matcher-job-skill-group-label">
                   Primary Skills
                 </span>
 
                 <div className="matcher-skills">
-                  {getJobPrimarySkills(selectedJob).map((skill) => (
+                  {jobPrimarySkills.map((skill) => (
                     <span
                       key={`primary-${skill}`}
                       className="matcher-skill matcher-skill-primary"
@@ -574,14 +686,14 @@ function CandidateMatcherPage() {
               </div>
             )}
 
-            {getJobSecondarySkills(selectedJob).length > 0 && (
+            {jobSecondarySkills.length > 0 && (
               <div className="matcher-job-skill-group">
                 <span className="matcher-job-skill-group-label">
                   Secondary Skills
                 </span>
 
                 <div className="matcher-skills">
-                  {getJobSecondarySkills(selectedJob).map((skill) => (
+                  {jobSecondarySkills.map((skill) => (
                     <span
                       key={`secondary-${skill}`}
                       className="matcher-skill matcher-skill-secondary"
@@ -784,109 +896,7 @@ function CandidateMatcherPage() {
                     ===================================== */}
 
                   <div className="matcher-decision">
-                    {/* =====================================
-                            FINAL STAGE
-                        ===================================== */}
-
-                    {decision.stage ? (
-                      <span
-                        className={
-                          decision.stage === "L1"
-                            ? "matcher-decision-badge matcher-decision-badge-l1"
-                            : "matcher-decision-badge matcher-decision-badge-rejected"
-                        }
-                      >
-                        {decision.stage === "L1" ? (
-                          <>
-                            <CheckCircle2 size={14} />
-                            Moved to L1
-                          </>
-                        ) : (
-                          <>
-                            <XCircle size={14} />
-                            Rejected
-                          </>
-                        )}
-                      </span>
-                    ) : decision.decisionType === "accept" ? (
-                      /*
-      AI recommendation was accepted.
-
-      Nothing else needs to be selected because
-      the recruiter has accepted the AI recommendation.
-    */
-                      <span className="matcher-decision-badge matcher-decision-badge-l1">
-                        <CheckCircle2 size={14} />
-                        AI Match Accepted
-                      </span>
-                    ) : decision.decisionType === "override" ? (
-                      /*
-      AI recommendation was overridden.
-
-      The recruiter must now decide the actual outcome:
-        1. Advance to L1
-        2. Reject Candidate
-    */
-                      <div className="matcher-decision-actions">
-                        <button
-                          type="button"
-                          className="btn btn-success btn-sm"
-                          disabled={
-                            processingCandidateId === candidate.candidate_id
-                          }
-                          onClick={() =>
-                            moveCandidateToStage(candidate.candidate_id, "L1")
-                          }
-                        >
-                          <ArrowRightCircle size={14} />
-                          Advance to L1
-                        </button>
-
-                        <button
-                          type="button"
-                          className="btn btn-danger btn-sm"
-                          disabled={
-                            processingCandidateId === candidate.candidate_id
-                          }
-                          onClick={() =>
-                            moveCandidateToStage(
-                              candidate.candidate_id,
-                              "Rejected",
-                            )
-                          }
-                        >
-                          <XCircle size={14} />
-                          Reject Candidate
-                        </button>
-                      </div>
-                    ) : (
-                      /*
-      No recruiter decision has been selected yet.
-    */
-                      <div className="matcher-decision-actions">
-                        <button
-                          type="button"
-                          className="btn btn-primary btn-sm"
-                          onClick={() =>
-                            saveAIDecision(candidate.candidate_id, "accept")
-                          }
-                        >
-                          <ThumbsUp size={14} />
-                          Accept AI Match
-                        </button>
-
-                        <button
-                          type="button"
-                          className="btn btn-outline btn-sm"
-                          onClick={() =>
-                            saveAIDecision(candidate.candidate_id, "override")
-                          }
-                        >
-                          <ThumbsDown size={14} />
-                          Override
-                        </button>
-                      </div>
-                    )}
+                    {renderCandidateDecision(candidate, decision)}
                   </div>
                 </div>
               );
