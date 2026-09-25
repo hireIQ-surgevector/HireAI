@@ -7,31 +7,37 @@ import {
 } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
-// test to see if dev branch is mad in the repo
+
 import "./App.css";
-import LoginPage from "./pages/LoginPage";
 import {
   AUTH_CHANGED_EVENT,
   fetchCurrentUser,
   getSession,
 } from "./utils/auth";
+
+import LoginPage from "./pages/LoginPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetSentPage from "./pages/ResetSentPage";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
+
+import DashboardPage from "./pages/DashboardPage";
+
 import JobsPage from "./pages/JobsPage";
 import PostJobPage from "./pages/PostJobPage";
 import EditJobPage from "./pages/EditJobPage";
 import JobCandidatesPage from "./pages/JobCandidatesPage";
+
 import CandidateMatcherPage from "./pages/CandidateMatcherPage";
-import ResetSentPage from "./pages/ResetSentPage";
-import ChangePasswordPage from "./pages/ChangePasswordPage";
-import DashboardPage from "./pages/DashboardPage";
 import CandidatesPage from "./pages/CandidatesPage";
 import CandidateDetailPage from "./pages/CandidateDetailPage";
 import EditCandidatePage from "./pages/EditCandidatePage";
 import UploadResumePage from "./pages/UploadResumePage";
+
 import InterviewsPage from "./pages/InterviewsPage";
 import InterviewRoomPage from "./pages/InterviewRoomPage";
 import ScheduleInterviewPage from "./pages/ScheduleInterviewPage";
 import EditInterviewSchedulePage from "./pages/EditInterviewSchedulePage";
+
 import EvaluationsPage from "./pages/EvaluationsPage";
 import RejectCandidatePage from "./pages/RejectCandidatePage";
 import RejectDonePage from "./pages/RejectDonePage";
@@ -64,7 +70,6 @@ const PUBLIC_ROUTES = [
   { path: "/forgot-password", element: <ForgotPasswordPage /> },
   { path: "/reset-sent", element: <ResetSentPage /> },
   { path: "/change-password", element: <ChangePasswordPage /> },
-  { path: "/jobs/:jobId/candidates", element: <JobCandidatesPage /> },
 ];
 
 /*
@@ -73,25 +78,34 @@ const PUBLIC_ROUTES = [
 */
 const PROTECTED_ROUTES = [
   { path: "/dashboard", element: <DashboardPage /> },
+
   { path: "/jobs", element: <JobsPage /> },
   { path: "/post-job", element: <PostJobPage /> },
   { path: "/edit-job/:jobId", element: <EditJobPage /> },
-  { path: "/candidate-matcher", element: <CandidateMatcherPage /> },
+  { path: "/jobs/:jobId/candidates", element: <JobCandidatesPage /> },
+
   { path: "/candidates", element: <CandidatesPage /> },
+  { path: "/upload-resume", element: <UploadResumePage /> },
   { path: "/candidate-detail/:candidateId?", element: <CandidateDetailPage /> },
   { path: "/candidates/:candidateId/edit", element: <EditCandidatePage /> },
-  { path: "/upload-resume", element: <UploadResumePage /> },
+
+  { path: "/candidate-matcher", element: <CandidateMatcherPage /> },
+
   { path: "/interviews", element: <InterviewsPage /> },
   { path: "/schedule-interview", element: <ScheduleInterviewPage /> },
   { path: "/edit-interview-schedule/:interviewId", element: <EditInterviewSchedulePage /> },
-  { path: "/interview-room", element: <InterviewRoomPage /> },
+
   { path: "/evaluations", element: <EvaluationsPage /> },
-  { path: "/reject-candidate", element: <RejectCandidatePage /> },
-  { path: "/reject-done", element: <RejectDonePage /> },
+
+  { path: "/offers", element: <OffersPage /> },
   { path: "/send-offer", element: <SendOfferPage /> },
   { path: "/offer-sent", element: <OfferSentPage /> },
-  { path: "/offers", element: <OffersPage /> },
+  { path: "/interview-room", element: <InterviewRoomPage /> },
+
+  { path: "/reject-candidate", element: <RejectCandidatePage /> },
+  { path: "/reject-done", element: <RejectDonePage /> },
   { path: "/settings", element: <SettingsPage /> },
+
   { path: "/candidate-home", element: <CandidateHomePage /> },
   { path: "/candidate-interview", element: <CandidateInterviewPage /> },
   { path: "/candidate-feedback", element: <CandidateFeedbackPage /> },
