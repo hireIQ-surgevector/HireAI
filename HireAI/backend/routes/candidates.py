@@ -346,6 +346,15 @@ def upload_candidates():
 
                 continue
 
+            if parsed.get("status") != "success":
+                failed_files.append(
+                    {
+                        "fileName": original_filename,
+                        "error": parsed.get("error") or "Resume parsing failed",
+                    }
+                )
+                continue
+
             # ------------------------------------------------
             # VALIDATION
             # ------------------------------------------------

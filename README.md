@@ -1,277 +1,201 @@
-# HireAI Application Setup Guide
+# HireAI
 
-## 1. Prerequisites
+HireAI is a recruiter-first applicant tracking and hiring workflow application. It brings job openings, candidate profiles, resume screening, candidate-to-job matching, interview coordination, evaluations, and offer tracking into one place.
 
-Before starting the project setup, make sure the following software is installed on your system:
+The goal is to help recruiting teams move from an open role to an informed hiring decision with less manual resume review and a clearer view of each candidate's progress.
 
-* Git
-* Python
-* Node.js and npm
-* SQL Server
-* Visual Studio Code (recommended)
+## Who it's for
 
----
+- Recruiters and talent acquisition teams managing open roles and candidate pipelines.
+- Hiring teams reviewing candidate fit, interview feedback, and next steps.
+- Developers contributing to the recruiting platform.
 
-# 2. Clone the Repository
+The frontend also contains candidate-facing interview, feedback, and offer pages; the product and this guide are organized around the recruiter workflow.
 
-Do **not** directly download the project files from the GitHub link.
+## What the application does
 
-First, install Git on your system.
+- **Manage jobs:** create, edit, and browse job openings with role requirements and skills.
+- **Import job details:** retrieve structured details from a supported job-posting URL.
+- **Screen resumes:** upload PDF, DOCX, or TXT resumes and extract candidate contact information, skills, experience, and other available details.
+- **Review matches:** compare candidates with a job, see match scores and skill gaps, and record shortlist or other decisions.
+- **Track candidates:** review candidate profiles, update hiring stages, and manage the pipeline.
+- **Coordinate interviews:** schedule interviews and maintain interview notes and evaluations.
+- **Manage offers:** follow offer status and related candidate actions.
+- **Secure recruiter workflows:** authenticate users and protect recruiter pages and APIs.
 
-After installing Git:
+Matching uses sentence-transformer semantic similarity together with experience scoring. Mandatory skills affect the match category, and the application exposes matched and missing skills to help explain the result. Treat AI scores as decision support—not as an automatic hiring decision.
 
-1. Open the GitHub repository.
-2. Click the **Code** button.
-3. Copy the repository URL.
-4. Create or navigate to an empty folder where you want to store the project.
-5. Open a terminal in that folder.
-6. Clone the repository using:
+### Resume format support
 
-```bash
-git clone <repository-url>
+The parser supports PDF, DOCX, and TXT uploads. It preserves layout clues from PDFs and reads text in DOCX tables, which helps with multi-column resumes. Scanned/image-only PDFs require the external Tesseract OCR executable; install it separately as described below.
+
+## Technology
+
+| Area | Technologies |
+|---|---|
+| Frontend | React, JavaScript, Vite, Tailwind CSS |
+| Frontend state and navigation | Redux Toolkit, React Redux, React Router |
+| Backend/API | Python, Flask, Flask-JWT-Extended, Flask-Bcrypt, Flask-CORS |
+| Database | Microsoft SQL Server, accessed through `pyodbc` |
+| Matching | Sentence Transformers (`all-MiniLM-L6-v2`), scikit-learn |
+| Resume extraction | `pdfplumber`, `python-docx`, `pytesseract`, Pillow |
+| Job-page extraction | Requests, BeautifulSoup, Playwright |
+
+## Repository layout
+
+```text
+HireAI/
+├── README.md
+└── HireAI/
+    ├── backend/
+    │   ├── config/       # Database connection
+    │   ├── routes/       # Flask API endpoints
+    │   ├── scraper/      # Job-posting extraction
+    │   ├── services/     # Matching and application services
+    │   ├── tests/        # Backend tests
+    │   └── utils/        # Resume parsing, schema, and helpers
+    └── frontend/
+        └── src/
+            ├── components/
+            ├── pages/
+            ├── store/
+            └── utils/
 ```
 
-Replace `<repository-url>` with the URL copied from GitHub.
+## Getting started
 
----
+### Prerequisites
 
-# 3. Create Your GitHub Profile
+- Git
+- Python 3
+- Node.js and npm
+- Microsoft SQL Server and a compatible Microsoft ODBC Driver for SQL Server
+- Tesseract OCR, if scanned/image-only PDF resumes need to be processed
 
-Before making any changes to the project:
+The matching model is loaded on the first match request. That first run may need internet access to download the model, unless it is already cached.
 
-1. Create your own GitHub profile.
-2. Use your organization email address while creating the GitHub account.
-3. Configure your Git environment using the following commands:
-
-```bash
-git config --global user.name "Your Name"
-```
+### 1. Clone the repository
 
 ```bash
-git config --global user.email "Your GitHub Email"
+git clone https://github.com/hireIQ-surgevector/HireAI.git
+cd HireAI
 ```
 
-Replace:
+### 2. Configure the backend
 
-* `Your Name` with your name.
-* `Your GitHub Email` with the email address used for your GitHub account.
-
----
-
-# 4. Create a Python Virtual Environment
-
-After cloning the repository, navigate to the first `HireAI` folder.
-
-Create a virtual environment using:
+Create and activate a virtual environment from the repository root:
 
 ```bash
-python -m venv venv
+python -m venv .venv
 ```
 
----
-
-# 5. Activate the Virtual Environment
-
-After creating the virtual environment, activate it.
-
-When the environment is activated, you should see the virtual environment name at the beginning of the terminal path.
-
-For PowerShell, the command can be similar to:
+Windows PowerShell:
 
 ```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+.\.venv\Scripts\Activate.ps1
 ```
 
-Then activate the environment:
-
-```powershell
-& "C:\Users\<YourUsername>\<ProjectPath>\HireAI\venv\Scripts\Activate.ps1"
-```
-
-The folder path should be changed according to your system and project location.
-
-Once activated, the terminal should display something similar to:
-
-```text
-(venv)
-```
-
-or
-
-```text
-(.venv)
-```
-
-at the beginning of the terminal path.
-
----
-
-# 6. Install Required Python Packages
-
-After activating the virtual environment, install the required Python packages using:
+macOS/Linux:
 
 ```bash
-pip install bcrypt beautifulsoup4 blinker certifi cffi charset-normalizer click \
-colorama cryptography Flask Flask-Bcrypt Flask-Cors Flask-JWT-Extended \
-greenlet idna itsdangerous Jinja2 lxml MarkupSafe pdfminer.six pdfplumber \
-pillow playwright pycparser pyee PyJWT pyodbc pypdfium2 python-docx \
-python-dotenv requests soupsieve typing_extensions urllib3 Werkzeug
+source .venv/bin/activate
 ```
 
-
----
-
-# 7. Install Frontend Dependencies
-
-Navigate to the frontend folder:
+Install backend packages:
 
 ```bash
-cd .\HireAI\frontend
+python -m pip install -r HireAI/backend/requirements.txt
+python -m pip install requests beautifulsoup4 playwright sentence-transformers scikit-learn numpy torch
+python -m playwright install chromium
 ```
 
-Install the required Node.js packages:
+Create `HireAI/backend/.env` with values for your own development database and a private JWT signing key. Do not commit this file:
+
+```dotenv
+DB_CONNECTION_STRING=DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=HireAI;UID=YOUR_DATABASE_USER;PWD=YOUR_DATABASE_PASSWORD;TrustServerCertificate=yes;
+JWT_SECRET=REPLACE_WITH_A_LONG_RANDOM_SECRET
+
+# Optional: use this when Tesseract is not available on PATH.
+# Windows example: TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe
+TESSERACT_CMD=
+```
+
+Use a database and credentials authorized for your environment. The application creates or updates its required tables through its schema helper when API routes initialize; a working SQL Server connection and ODBC driver are still required.
+
+If your SQL Server uses Windows/integrated authentication, configure `DB_CONNECTION_STRING` with the authentication options appropriate for your local driver and setup instead of the SQL-authentication example above.
+
+### 3. Configure the frontend
 
 ```bash
-npm i
+cd HireAI/frontend
+npm install
 ```
 
-Wait until all frontend dependencies are installed successfully.
+### 4. Run the application
 
----
+Open two terminals from the repository root.
 
-# 8. Create Required Terminals
-
-Once all installations are complete:
-
-1. Create two additional CMD/terminal windows using the **+ button** in the VS Code terminal section.
-2. Use one terminal for running the backend.
-3. Keep another terminal available for installing additional packages or running project-level commands.
-
-Navigate to the backend folder in the backend terminal:
+Terminal 1 — backend:
 
 ```bash
-cd .\HireAI\backend
+cd HireAI/backend
+python app.py
 ```
 
----
+The Flask development server listens at `http://localhost:5001`.
 
-# 9. Configure the Environment File
-
-Inside the backend folder, create a new file named:
-
-```text
-.env
-```
-
-Add the following configuration:
-
-```env
-DB_SERVER=AIPLLTH441\SQLEXPRESS_2019
-
-DB_NAME=TalentSyncDB
-
-DB_USER=sa
-
-DB_PASSWORD=sa@12345
-
-DB_CONNECTION_STRING=DRIVER={ODBC Driver 17 for SQL Server};SERVER=AIPLLTH441\SQLEXPRESS_2019;DATABASE=TalentSyncDB;UID=sa;PWD=sa@12345;Encrypt=no;TrustServerCertificate=yes;Connection Timeout=30;
-
-JWT_SECRET=talentsync_secret_key_2024
-```
-
-## Important
-
-The database connection details may be different on your system.
-
-To obtain your SQL Server connection details:
-
-1. Open SQL Server Management Studio.
-2. Go to **File**.
-3. Select **Connect Object Explorer**.
-4. Navigate to the connection string option and copy the connection details.
-
-You can then use ChatGPT to modify the `.env` configuration based on your SQL Server connection.
-
-Provide the connection details and ask for the `.env` file values to be updated according to your SQL Server configuration.
-
----
-
-# 10. Restore the TalentSync Database
-
-Download the following database backup file from the group:
-
-```text
-TalentSyncDB.bak
-```
-
-## Restore Process
-
-Before restoring the database:
-
-1. Open SQL Server Management Studio.
-2. Check whether a database named `TalentSyncDB` already exists.
-3. If it exists and is no longer required, delete the existing database.
-
-To restore the database:
-
-1. Right-click on **Databases** in SQL Server Management Studio.
-2. Select **Restore Database**.
-3. Select the **Device** option.
-4. Browse for the downloaded `.bak` file.
-
-The file will usually be located at:
-
-```text
-C:\Users\<YourUsername>\Downloads
-```
-
-Select the `TalentSyncDB.bak` file and restore the database.
-
-After restoration, the required tables and data should be available for the application.
-
----
-
-# 11. Git Branching Guidelines
-
-Do not commit changes directly to the main branch.
-
-Whenever you make changes to the project, first create your own branch.
-
-Use the following command:
+Terminal 2 — frontend:
 
 ```bash
-git checkout -b your_name
+cd HireAI/frontend
+npm run dev
 ```
 
-Replace `your_name` with your name.
+Open the local URL printed by Vite (typically `http://localhost:5173`). The frontend currently calls the backend at `http://localhost:5001`.
 
-For example:
+### OCR setup for scanned PDFs
+
+The Python `pytesseract` package is only a wrapper; the Tesseract executable must also be installed. Install Tesseract for your operating system and either:
+
+1. Add the Tesseract executable to `PATH`, or
+2. Set `TESSERACT_CMD` in `HireAI/backend/.env` to the full path to the executable.
+
+Text-based PDFs do not need OCR. If an image-only PDF is uploaded without Tesseract configured, the upload response reports the file-specific error instead of creating an empty candidate.
+
+## Development checks
+
+Run backend tests from the backend directory:
 
 ```bash
-git checkout -b john
+cd HireAI/backend
+python -m unittest discover -s tests -v
 ```
 
-After creating your branch:
+Run frontend lint and build from the frontend directory:
 
-1. Make the required changes.
-2. Open the **Source Control** section in Visual Studio Code.
-3. Review your changes.
-4. Commit the changes.
-5. Make sure that your commits are pushed only to your own branch.
+```bash
+npm run lint
+npm run build
+```
 
----
+## Contributors
 
-# 12. Important Guidelines
+The Git history records contributions under these author names:
 
-* Do not download project files directly from GitHub.
-* Always clone the repository using Git.
-* Create and configure your own GitHub profile before making changes.
-* Use your organization email for your GitHub account.
-* Configure your Git username and email.
-* Create and activate a Python virtual environment before installing Python packages.
-* Install all required Python and frontend dependencies.
-* Configure the `.env` file according to your local SQL Server configuration.
-* Restore the `TalentSyncDB` database using the provided `.bak` file.
-* Do not commit changes directly to the main branch.
-* Always create and work on your own branch.
-* Commit and push only to your assigned branch.
+- Govardhan
+- Harishwar Reddy Jara
+- Krishna
+- `hireIQ-surgevector`
+
+These are the names recorded in commits; they do not define project roles or represent a complete team roster. Please add or correct contributor details as the team confirms preferred names, profile links, and areas of contribution.
+
+## Contributing
+
+1. Create a feature branch from the current development branch.
+2. Keep changes focused and avoid committing credentials, `.env` files, uploaded resumes, or other private data.
+3. Run the relevant backend tests, frontend lint, and/or production build.
+4. Open a pull request describing the user-facing change and how it was verified.
+
+## Security and candidate data
+
+Candidate resumes and contact information are sensitive personal data. Use only authorized development data, protect database credentials and signing keys, and follow your organization's retention, access-control, and privacy requirements.

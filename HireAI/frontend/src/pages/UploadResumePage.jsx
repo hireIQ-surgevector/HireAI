@@ -171,12 +171,29 @@ function UploadResumePage() {
 
       console.log("Resume processing result:", data);
 
-      toast.success(`${data.created_count} candidate(s) added successfully.`);
+      const failedFiles = Array.isArray(data.failed) ? data.failed : [];
+      const createdCount = Number(data.created_count) || 0;
 
-      // Clear selected files after successful upload
+      if (createdCount > 0) {
+        toast.success(`${createdCount} candidate(s) added successfully.`);
+      }
+
+      if (failedFiles.length > 0) {
+        const failedNames = new Set(
+          failedFiles.map((file) => file.fileName),
+        );
+        setSelectedFiles((previous) =>
+          previous.filter((file) => failedNames.has(file.name)),
+        );
+
+        const failureSummary = failedFiles
+          .map((file) => `${file.fileName}: ${file.error}`)
+          .join("\n");
+        toast.error(failureSummary, { duration: 8000 });
+        return;
+      }
+
       setSelectedFiles([]);
-
-      // Candidates are now in the system — send the recruiter to review them
       navigate("/candidates");
     } catch (error) {
       console.error("Resume upload error:", error);

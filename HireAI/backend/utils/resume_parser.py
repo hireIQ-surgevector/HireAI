@@ -2,7 +2,10 @@ import os
 import re
 
 import pdfplumber
+import pytesseract
 from docx import Document
+from docx.table import Table
+from docx.text.paragraph import Paragraph
 
 # ============================================================
 # SKILL MAPPINGS
@@ -68,6 +71,17 @@ def clean_text(text):
     return re.sub(r"\s+", " ", str(text)).strip()
 
 
+def preserve_text_lines(text):
+    lines = []
+
+    for line in str(text or "").splitlines():
+        cleaned_line = clean_text(line)
+        if cleaned_line:
+            lines.append(cleaned_line)
+
+    return "\n".join(lines)
+
+
 def extract_job_skills_from_resume(text, job_skills):
     """Return the job's own skill labels when equivalent resume wording appears."""
     resume_text = clean_text(text).lower()
@@ -106,18 +120,64 @@ def extract_job_skills_from_resume(text, job_skills):
 
 def extract_text_from_pdf(pdf_path):
 
-    text = ""
-
     with pdfplumber.open(pdf_path) as pdf:
+        pages = list(pdf.pages)
+        extracted_pages = [_extract_layout_text(page) for page in pages]
+        has_selectable_text = any(extracted_pages)
+        text_pages = []
 
-        for page in pdf.pages:
+        for page, extracted in zip(pages, extracted_pages):
 
-            extracted = page.extract_text()
+            needs_ocr = (
+                not extracted and (page.images or not has_selectable_text)
+            ) or (
+                bool(extracted)
+                and bool(page.images)
+                and len(clean_text(extracted)) < 80
+            )
+
+            if needs_ocr:
+                extracted = _extract_text_with_ocr(page)
 
             if extracted:
-                text += extracted + " "
+                text_pages.append(extracted)
 
-    return clean_text(text)
+        return preserve_text_lines("\n".join(text_pages))
+
+
+def _extract_layout_text(page):
+    """Preserve visible line and column boundaries from PDF text layout."""
+    layout_text = page.extract_text(layout=True) or ""
+    lines = []
+
+    for line in layout_text.splitlines():
+        columns = [
+            column.strip()
+            for column in re.split(r"[ \t]{4,}", line.strip())
+            if column.strip()
+        ]
+
+        if columns:
+            lines.append(" | ".join(columns))
+
+    return "\n".join(lines)
+
+
+def _extract_text_with_ocr(page):
+    """OCR pages without an extractable text layer."""
+    try:
+        tesseract_cmd = os.getenv("TESSERACT_CMD")
+        if tesseract_cmd:
+            pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+
+        image = page.to_image(resolution=300).original
+        return pytesseract.image_to_string(image)
+    except pytesseract.TesseractNotFoundError as error:
+        raise RuntimeError(
+            "This PDF has no extractable text and requires OCR. Install Tesseract "
+            "OCR and ensure tesseract.exe is on PATH, or set TESSERACT_CMD to its "
+            "full path."
+        ) from error
 
 
 # ============================================================
@@ -129,14 +189,32 @@ def extract_text_from_docx(docx_path):
 
     doc = Document(docx_path)
 
-    text = ""
+    blocks = []
 
-    for paragraph in doc.paragraphs:
+    for block in doc.element.body.iterchildren():
+        if block.tag.endswith("}p"):
+            text = Paragraph(block, doc).text
+            if text.strip():
+                blocks.append(text)
+        elif block.tag.endswith("}tbl"):
+            table = Table(block, doc)
+            for row in table.rows:
+                cells = []
+                seen_cells = set()
+                for cell in row.cells:
+                    cell_element = cell._tc
+                    if cell_element in seen_cells:
+                        continue
+                    seen_cells.add(cell_element)
 
-        if paragraph.text:
-            text += paragraph.text + " "
+                    cell_text = clean_text(cell.text)
+                    if cell_text:
+                        cells.append(cell_text)
 
-    return clean_text(text)
+                if cells:
+                    blocks.append(" | ".join(cells))
+
+    return preserve_text_lines("\n".join(blocks))
 
 
 # ============================================================
@@ -150,7 +228,7 @@ def extract_text_from_txt(txt_path):
 
         text = file.read()
 
-    return clean_text(text)
+    return preserve_text_lines(text)
 
 
 # ============================================================
@@ -235,19 +313,18 @@ def extract_name(text, file_name=None):
     # Fallback: first few words
     # --------------------------------------------------------
 
-    words = text.split()
+    blocked = {
+        "resume", "curriculum", "vitae", "profile", "summary", "objective",
+        "data", "software", "cloud", "senior", "junior", "lead", "engineer",
+        "developer", "specialist", "professional", "bengaluru", "bangalore",
+        "pune", "india", "hyderabad", "mumbai", "delhi", "email", "phone",
+        "contact", "linkedin", "skills", "experience", "education", "location",
+    }
 
-    if len(words) >= 2:
-
-        blocked = {
-            "resume", "curriculum", "vitae", "profile", "summary", "objective",
-            "data", "software", "cloud", "senior", "junior", "lead", "engineer",
-            "developer", "specialist", "professional", "bengaluru", "bangalore",
-            "pune", "india", "hyderabad", "mumbai", "delhi",
-        }
+    for line in text.splitlines()[:8]:
         name_words = []
 
-        for word in words[:8]:
+        for word in line.split()[:3]:
             cleaned = re.sub(r"[^A-Za-z'-]", "", word)
             if not cleaned:
                 continue
