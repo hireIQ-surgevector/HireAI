@@ -1,18 +1,20 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Search,
-  Users,
-  UserCheck,
-  Send,
-  UserX,
   Filter,
   RotateCcw,
+  Upload,
 } from "lucide-react";
 
-import PageShell from "../components/PageShell";
-import scoreBar from "../components/scoreBar";
-import badgeClass from "../components/badgeClass";
+import PageShell from "../components/common/PageShell";
+import scoreBar from "../components/common/scoreBar";
+import Button from "../components/common/Button";
+import Card from "../components/common/Card";
+import { Input, Select } from "../components/common/FormField";
+import PageState from "../components/common/PageState";
+import StatusBadge from "../components/common/StatusBadge";
+import CandidateSummaryCards from "../components/candidates/CandidateSummaryCards";
 
 import {
   API_URL,
@@ -32,37 +34,38 @@ function CandidatesPage() {
   const session = getSession();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const loadCandidates = async () => {
-      try {
-        setLoading(true);
-        setError("");
+  const loadCandidates = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-        const response = await fetch(`${API_URL}/api/candidates`, {
-          headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeader(),
-          },
-        });
+      const response = await fetch(`${API_URL}/api/candidates`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(data.error || "Unable to load candidates");
-        }
-
-        setCandidates(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Unable to load candidates", err);
-        setError(err.message);
-        setCandidates([]);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to load candidates");
       }
-    };
 
-    loadCandidates();
+      setCandidates(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Unable to load candidates", err);
+      setError(err.message);
+      setCandidates([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    const taskId = window.setTimeout(loadCandidates, 0);
+    return () => window.clearTimeout(taskId);
+  }, [loadCandidates]);
 
   const getCandidateStage = (candidate) => {
     return candidate.stage || candidate.status || "Applied";
@@ -144,110 +147,43 @@ function CandidatesPage() {
       active="candidates"
       actions={
         canManageCandidates(session) && (
-          <Link to="/upload-resume" className="btn btn-primary btn-sm [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#133f7d] [color:#fff] [padding:6px_14px] [font-size:12px]">
-            📤 Upload Resumes
+          <Link to="/upload-resume" className="btn btn-primary btn-sm [border:none] [border-radius:9px] [cursor:pointer] [font-weight:600] [transition:all_0.18s_ease] [display:inline-flex] [align-items:center] [justify-content:center] [gap:7px] [font-size:13px] [padding:9px_18px] [background:#133f7d] [color:#fff] [padding:8px_14px] [font-size:12px] [box-shadow:0_4px_10px_rgba(19,63,125,0.14)] hover:[transform:translateY(-1px)] hover:[background:#0d2d5e] focus-visible:[outline:2px_solid_#00b4d8] focus-visible:[outline-offset:2px]">
+              <Upload size={14} />
+              Upload Resumes
           </Link>
         )
       }
     >
       {/* Summary Cards */}
 
-      <div className="candidate-summary-grid [display:grid] [grid-template-columns:repeat(4,_1fr)] [gap:14px] [margin-bottom:18px] max-[960px]:[grid-template-columns:repeat(2,_1fr)] max-[600px]:[grid-template-columns:1fr]">
-        <button
-          type="button"
-          className={`${(`candidate-summary-card ${
-            stageFilter === "all" ? "selected" : ""
-          }`)} [font:inherit] [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:16px] [display:flex] [align-items:center] [gap:12px] [text-align:left] [cursor:pointer] [transition:all_0.18s_ease] hover:[transform:translateY(-2px)] hover:[border-color:#133f7d] hover:[box-shadow:0_6px_18px_rgba(19,_63,_125,_0.08)] [&.selected]:[border-color:#133f7d] [&.selected]:[background:#e8f0fb] [&.selected]:[box-shadow:0_4px_14px_rgba(19,_63,_125,_0.08)]`}
-          onClick={() => setStageFilter("all")}
-        >
-          <div className="candidate-summary-icon icon-blue [width:42px] [height:42px] [border-radius:10px] [display:flex] [align-items:center] [justify-content:center] [flex-shrink:0] [background:#e8f0fb] [color:#133f7d]">
-            <Users size={20} />
-          </div>
-
-          <div>
-            <div className="candidate-summary-label [font-size:11px] [font-weight:700] [color:#64748b] [text-transform:uppercase] [letter-spacing:0.4px]">Total Candidates</div>
-
-            <div className="candidate-summary-value [font-size:24px] [font-weight:800] [color:#1e293b] [margin-top:2px]">{stageCounts.all}</div>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          className={`${(`candidate-summary-card ${
-            stageFilter === "active" ? "selected" : ""
-          }`)} [font:inherit] [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:16px] [display:flex] [align-items:center] [gap:12px] [text-align:left] [cursor:pointer] [transition:all_0.18s_ease] hover:[transform:translateY(-2px)] hover:[border-color:#133f7d] hover:[box-shadow:0_6px_18px_rgba(19,_63,_125,_0.08)] [&.selected]:[border-color:#133f7d] [&.selected]:[background:#e8f0fb] [&.selected]:[box-shadow:0_4px_14px_rgba(19,_63,_125,_0.08)]`}
-          onClick={() => setStageFilter("active")}
-        >
-          <div className="candidate-summary-icon icon-teal [width:42px] [height:42px] [border-radius:10px] [display:flex] [align-items:center] [justify-content:center] [flex-shrink:0] [background:#e0f7fa] [color:#006064]">
-            <UserCheck size={20} />
-          </div>
-
-          <div>
-            <div className="candidate-summary-label [font-size:11px] [font-weight:700] [color:#64748b] [text-transform:uppercase] [letter-spacing:0.4px]">Active Pipeline</div>
-
-            <div className="candidate-summary-value [font-size:24px] [font-weight:800] [color:#1e293b] [margin-top:2px]">{stageCounts.active}</div>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          className={`${(`candidate-summary-card ${
-            stageFilter === "offered" ? "selected" : ""
-          }`)} [font:inherit] [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:16px] [display:flex] [align-items:center] [gap:12px] [text-align:left] [cursor:pointer] [transition:all_0.18s_ease] hover:[transform:translateY(-2px)] hover:[border-color:#133f7d] hover:[box-shadow:0_6px_18px_rgba(19,_63,_125,_0.08)] [&.selected]:[border-color:#133f7d] [&.selected]:[background:#e8f0fb] [&.selected]:[box-shadow:0_4px_14px_rgba(19,_63,_125,_0.08)]`}
-          onClick={() => setStageFilter("offered")}
-        >
-          <div className="candidate-summary-icon icon-green [width:42px] [height:42px] [border-radius:10px] [display:flex] [align-items:center] [justify-content:center] [flex-shrink:0] [background:#dcfce7] [color:#166534]">
-            <Send size={20} />
-          </div>
-
-          <div>
-            <div className="candidate-summary-label [font-size:11px] [font-weight:700] [color:#64748b] [text-transform:uppercase] [letter-spacing:0.4px]">Offers Sent</div>
-
-            <div className="candidate-summary-value [font-size:24px] [font-weight:800] [color:#1e293b] [margin-top:2px]">{stageCounts.offered}</div>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          className={`${(`candidate-summary-card ${
-            stageFilter === "rejected" ? "selected" : ""
-          }`)} [font:inherit] [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:16px] [display:flex] [align-items:center] [gap:12px] [text-align:left] [cursor:pointer] [transition:all_0.18s_ease] hover:[transform:translateY(-2px)] hover:[border-color:#133f7d] hover:[box-shadow:0_6px_18px_rgba(19,_63,_125,_0.08)] [&.selected]:[border-color:#133f7d] [&.selected]:[background:#e8f0fb] [&.selected]:[box-shadow:0_4px_14px_rgba(19,_63,_125,_0.08)]`}
-          onClick={() => setStageFilter("rejected")}
-        >
-          <div className="candidate-summary-icon icon-red [width:42px] [height:42px] [border-radius:10px] [display:flex] [align-items:center] [justify-content:center] [flex-shrink:0] [background:#fee2e2] [color:#991b1b]">
-            <UserX size={20} />
-          </div>
-
-          <div>
-            <div className="candidate-summary-label [font-size:11px] [font-weight:700] [color:#64748b] [text-transform:uppercase] [letter-spacing:0.4px]">Rejected</div>
-
-            <div className="candidate-summary-value [font-size:24px] [font-weight:800] [color:#1e293b] [margin-top:2px]">
-              {stageCounts.rejected}
-            </div>
-          </div>
-        </button>
-      </div>
+      <CandidateSummaryCards
+        counts={stageCounts}
+        selectedFilter={stageFilter}
+        onFilterChange={setStageFilter}
+      />
 
       {/* Search and Filters */}
 
       <div className="candidate-toolbar [display:flex] [align-items:center] [gap:10px] [margin-bottom:12px] max-[960px]:[flex-wrap:wrap] max-[600px]:[align-items:stretch] max-[600px]:[flex-direction:column]">
         <div className="candidate-search [flex:1] [min-width:220px] [position:relative] [display:flex] [align-items:center] max-[960px]:[flex:1_1_100%]">
-          <Search size={17} />
+          <Search size={17} className="[position:absolute] [left:12px] [z-index:1] [color:#94a3b8] [pointer-events:none]" />
 
-          <input className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] [.candidate-search_&]:[padding-left:38px]"
+          <Input className="w-full" controlClassName="pl-10"
             type="text"
             placeholder="Search by candidate, role or email..."
+            aria-label="Search candidates"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
           />
         </div>
 
-        <div className="candidate-filter [display:flex] [align-items:center] [gap:8px] [background:#fff] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [padding-left:10px] [min-width:180px] max-[960px]:[flex:1] max-[600px]:[width:100%]">
+        <div className="candidate-filter [display:flex] [align-items:center] [gap:8px] [background:#fff] [border:1.5px_solid_#e2e8f0] [border-radius:10px] [padding-left:10px] [min-width:180px] [color:#94a3b8] [transition:border-color_0.18s_ease,_box-shadow_0.18s_ease] focus-within:[border-color:#00b4d8] focus-within:[box-shadow:0_0_0_3px_rgba(0,180,216,0.12)] max-[960px]:[flex:1] max-[600px]:[width:100%]">
           <Filter size={16} />
 
-          <select className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] [.candidate-filter_&]:[border:none] [.candidate-filter_&]:[padding:10px_10px_10px_0] [.candidate-filter_&]:[outline:none] [.candidate-filter_&]:[cursor:pointer] [.candidate-filter_&]:[background:transparent]"
+          <Select className="w-full" controlClassName="border-0 bg-transparent pl-0 pr-2 focus:border-transparent focus:ring-0"
             value={stageFilter}
             onChange={(event) => setStageFilter(event.target.value)}
+            aria-label="Filter candidates by stage"
           >
             <option value="all">All Stages</option>
             <option value="active">Active Candidates</option>
@@ -259,18 +195,19 @@ function CandidatesPage() {
                 {stage}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {(stageFilter !== "all" || searchTerm) && (
-          <button
+          <Button
             type="button"
-            className="btn btn-ghost btn-sm [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:transparent] [color:#64748b] [border:1px_solid_#e2e8f0] [padding:6px_14px] [font-size:12px]"
+            variant="ghost"
+            size="sm"
             onClick={clearFilters}
           >
             <RotateCcw size={14} />
             Reset
-          </button>
+          </Button>
         )}
       </div>
 
@@ -285,38 +222,41 @@ function CandidatesPage() {
 
       {/* Candidates Table */}
 
-      <div className="card table-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [padding:0] [overflow:hidden]">
-        {loading ? (
-          <div className="candidate-empty-state [min-height:280px] [padding:40px_20px] [display:flex] [flex-direction:column] [align-items:center] [justify-content:center] [text-align:center]">
-            <div className="loading-spinner [width:30px] [height:30px] [border:3px_solid_#e2e8f0] [border-top-color:#133f7d] [border-radius:50%] animate-spin" />
-            <p className="[.candidate-empty-state_&]:[color:#64748b] [.candidate-empty-state_&]:[font-size:13px] [.candidate-empty-state_&]:[margin-bottom:16px]">Loading candidates...</p>
-          </div>
-        ) : error ? (
-          <div className="error-box [margin:16px] [background:#fee2e2] [color:#991b1b] [padding:10px] [border-radius:8px] [font-size:12px] [margin-bottom:10px]" >
-            {error}
-          </div>
-        ) : visibleCandidates.length === 0 ? (
-          <div className="candidate-empty-state [min-height:280px] [padding:40px_20px] [display:flex] [flex-direction:column] [align-items:center] [justify-content:center] [text-align:center]">
-            <div className="empty-icon [width:58px] [height:58px] [border-radius:50%] [background:#e8f0fb] [color:#133f7d] [display:flex] [align-items:center] [justify-content:center]">
-              <Users size={30} />
-            </div>
-
-            <h3 className="[.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px] [.candidate-empty-state_&]:[margin:14px_0_5px] [.candidate-empty-state_&]:[font-size:16px]">No candidates found</h3>
-
-            <p className="[.candidate-empty-state_&]:[color:#64748b] [.candidate-empty-state_&]:[font-size:13px] [.candidate-empty-state_&]:[margin-bottom:16px]">Try changing your search or filter criteria.</p>
-
-            {(stageFilter !== "all" || searchTerm) && (
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#fff] [color:#133f7d] [border:1.5px_solid_#133f7d] [padding:6px_14px] [font-size:12px]"
-                onClick={clearFilters}
-              >
-                Clear Filters
-              </button>
-            )}
-          </div>
-        ) : (
-          <table className="[width:100%] [border-collapse:collapse]">
+      {loading ? (
+        <PageState variant="loading" title="Loading candidates" rows={6} />
+      ) : error ? (
+        <PageState
+          variant="error"
+          title="Couldn't load candidates"
+          description={error}
+          onRetry={loadCandidates}
+        />
+      ) : visibleCandidates.length === 0 ? (
+        <PageState
+          variant="empty"
+          title={candidates.length ? "No candidates match these filters" : "No candidates yet"}
+          description={
+            candidates.length
+              ? "Try another search or stage, or clear your current filters."
+              : "Upload resumes to start building your candidate pipeline."
+          }
+          action={
+            candidates.length ? (
+              <Button type="button" variant="secondary" size="sm" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            ) : canManageCandidates(session) ? (
+              <Button as={Link} to="/upload-resume" size="sm">
+                <Upload size={14} />
+                Upload resumes
+              </Button>
+            ) : null
+          }
+          className="min-h-72"
+        />
+      ) : (
+      <Card className="overflow-x-auto p-0">
+          <table className="[width:100%] [min-width:760px] [border-collapse:collapse]">
             <thead>
               <tr>
                 <th className="[padding:11px_14px] [border-bottom:1px_solid_#e2e8f0] [font-size:13px] [text-align:left] [font-size:11px] [color:#64748b] [font-weight:700] [text-transform:uppercase] [letter-spacing:0.4px] [background:#f8fafc]">Candidate</th>
@@ -382,21 +322,15 @@ function CandidatesPage() {
                     <td className="[padding:11px_14px] [border-bottom:1px_solid_#e2e8f0] [font-size:13px] [tr:hover_&]:[background:#f8fafc] [.candidate-table-row:hover_&]:[background:#f8fbff]">{candidate.notice_period || "—"}</td>
 
                     <td className="[padding:11px_14px] [border-bottom:1px_solid_#e2e8f0] [font-size:13px] [tr:hover_&]:[background:#f8fafc] [.candidate-table-row:hover_&]:[background:#f8fbff]">
-                      <span
-                        className={`${(`badge ${badgeClass(
-                          candidate.status || stage,
-                        )}`)} [font-size:11px] [font-weight:700] [padding:3px_9px] [border-radius:20px] [white-space:nowrap] [display:inline-block]`}
-                      >
-                        {stage}
-                      </span>
+                      <StatusBadge status={stage} />
                     </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-        )}
-      </div>
+      </Card>
+      )}
     </PageShell>
   );
 }

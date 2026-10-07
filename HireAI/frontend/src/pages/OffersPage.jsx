@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Check, FileText, CalendarDays } from "lucide-react";
-import PageShell from "../components/PageShell";
-import StatCard from "../components/StatCard";
+import PageShell from "../components/common/PageShell";
+import StatCard from "../components/common/StatCard";
 
 const CheckIcon = (props) => <Check {...props} />;
 const CalendarIcon = (props) => <CalendarDays {...props} />;

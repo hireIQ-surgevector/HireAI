@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import PageShell from "../components/PageShell";
+import PageShell from "../components/common/PageShell";
+import PageState from "../components/common/PageState";
 import { API_URL, getAuthHeader } from "../utils/auth";
 
 function EditCandidatePage() {
@@ -20,6 +21,7 @@ function EditCandidatePage() {
   const [error, setError] = useState("");
   const [candidateName, setCandidateName] = useState("");
   const [candidateEmail, setCandidateEmail] = useState("");
+  const [reloadCount, setReloadCount] = useState(0);
 
   const [formData, setFormData] = useState({
     full_name: "",
@@ -83,7 +85,7 @@ function EditCandidatePage() {
     };
 
     loadCandidate();
-  }, [candidateId]);
+  }, [candidateId, reloadCount]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -141,12 +143,7 @@ function EditCandidatePage() {
   if (loading) {
     return (
       <PageShell title="Edit Candidate" backTo={`/candidates/${candidateId}`}>
-        <div
-          className="card [padding:40px] [text-align:center] [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px]"
-
-        >
-          Loading candidate details...
-        </div>
+        <PageState variant="loading" title="Loading candidate details" rows={3} />
       </PageShell>
     );
   }
@@ -154,7 +151,12 @@ function EditCandidatePage() {
   if (error) {
     return (
       <PageShell title="Edit Candidate" backTo={`/candidates/${candidateId}`}>
-        <div className="error-box [background:#fee2e2] [color:#991b1b] [padding:10px] [border-radius:8px] [font-size:12px] [margin-bottom:10px]">{error}</div>
+        <PageState
+          variant="error"
+          title="Couldn't load candidate details"
+          description={error}
+          onRetry={() => setReloadCount((count) => count + 1)}
+        />
       </PageShell>
     );
   }

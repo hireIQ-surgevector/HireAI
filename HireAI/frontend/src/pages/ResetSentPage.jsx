@@ -10,7 +10,7 @@ function ResetSentPage() {
 
   return (
     <div className="screen fullpage active [min-height:100vh] [display:flex] [flex-direction:column] [align-items:center] [justify-content:center] [background:linear-gradient(135deg,_#0d2d5e,_#133f7d)]">
-      <div className="auth-card compact text-center [background:#fff] [border-radius:16px] [padding:38px] [width:420px] [box-shadow:0_20px_60px_rgba(0,0,0,0.22)] [width:400px] [text-align:center]">
+      <div className="auth-card compact text-center [width:min(400px,calc(100vw-2rem))] [background:#fff] [border:1px_solid_rgba(255,255,255,0.65)] [border-radius:20px] [padding:36px] [box-shadow:0_24px_70px_rgba(7,24,54,0.28)] [text-align:center] max-[480px]:[padding:24px]">
         <div className="success-icon [width:72px] [height:72px] [border-radius:50%] [background:#dcfce7] [display:flex] [align-items:center] [justify-content:center] [margin:0_auto_18px] [font-size:32px]">
           <CheckIcon size={32} />
         </div>

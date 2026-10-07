@@ -1,7 +1,10 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import PageShell from "../components/PageShell";
-import badgeClass from "../components/badgeClass";
+import PageShell from "../components/common/PageShell";
+import PageState from "../components/common/PageState";
+import StatusBadge from "../components/common/StatusBadge";
+import StatCard from "../components/common/StatCard";
+import { CheckCircle2, Clock3, UserPlus, Users } from "lucide-react";
 import {
   API_URL,
   canAccessSensitive,
@@ -36,6 +39,7 @@ function JobCandidatesPage() {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reloadCount, setReloadCount] = useState(0);
 
   useEffect(() => {
     const fetchJobCandidates = async () => {
@@ -75,7 +79,7 @@ function JobCandidatesPage() {
     if (jobId) {
       fetchJobCandidates();
     }
-  }, [jobId]);
+  }, [jobId, reloadCount]);
 
   const totalCandidates = candidates.length;
 
@@ -112,57 +116,30 @@ function JobCandidatesPage() {
       </div>
 
       <div className="grid4 [display:grid] [grid-template-columns:repeat(4,_1fr)] [gap:14px] max-[960px]:[grid-template-columns:1fr] max-[960px]:[flex-direction:column]">
-        <div className="stat-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:18px] [position:relative]">
-          <div className="stat-label [font-size:11px] [font-weight:700] [color:#64748b] [text-transform:uppercase] [letter-spacing:0.4px]">Total Candidates</div>
-
-          <div className="stat-num [font-size:28px] [font-weight:800] [color:#1e293b] [margin:4px_0]">{totalCandidates}</div>
-
-          <div
-            className="stat-icon [background:#e8f0fb] [color:#133f7d] [position:absolute] [top:18px] [right:18px] [width:42px] [height:42px] [border-radius:10px] [display:flex] [align-items:center] [justify-content:center] [font-size:18px]"
-
-          >
-            👥
-          </div>
-        </div>
-
-        <div className="stat-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:18px] [position:relative]">
-          <div className="stat-label [font-size:11px] [font-weight:700] [color:#64748b] [text-transform:uppercase] [letter-spacing:0.4px]">New Applications</div>
-
-          <div className="stat-num [font-size:28px] [font-weight:800] [color:#1e293b] [margin:4px_0]">{newCandidates}</div>
-
-          <div
-            className="stat-icon [background:#e0f7fa] [color:#00b4d8] [position:absolute] [top:18px] [right:18px] [width:42px] [height:42px] [border-radius:10px] [display:flex] [align-items:center] [justify-content:center] [font-size:18px]"
-
-          >
-            📩
-          </div>
-        </div>
-
-        <div className="stat-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:18px] [position:relative]">
-          <div className="stat-label [font-size:11px] [font-weight:700] [color:#64748b] [text-transform:uppercase] [letter-spacing:0.4px]">In Progress</div>
-
-          <div className="stat-num [font-size:28px] [font-weight:800] [color:#1e293b] [margin:4px_0]">{shortlistedCandidates}</div>
-
-          <div
-            className="stat-icon [background:#fef3c7] [color:#f59e0b] [position:absolute] [top:18px] [right:18px] [width:42px] [height:42px] [border-radius:10px] [display:flex] [align-items:center] [justify-content:center] [font-size:18px]"
-
-          >
-            ⏳
-          </div>
-        </div>
-
-        <div className="stat-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:18px] [position:relative]">
-          <div className="stat-label [font-size:11px] [font-weight:700] [color:#64748b] [text-transform:uppercase] [letter-spacing:0.4px]">Selected / Offered</div>
-
-          <div className="stat-num [font-size:28px] [font-weight:800] [color:#1e293b] [margin:4px_0]">{selectedCandidates}</div>
-
-          <div
-            className="stat-icon [background:#dcfce7] [color:#22c55e] [position:absolute] [top:18px] [right:18px] [width:42px] [height:42px] [border-radius:10px] [display:flex] [align-items:center] [justify-content:center] [font-size:18px]"
-
-          >
-            ✓
-          </div>
-        </div>
+        <StatCard
+          label="Total Candidates"
+          value={totalCandidates}
+          icon={<Users size={18} />}
+          color="brand"
+        />
+        <StatCard
+          label="New Applications"
+          value={newCandidates}
+          icon={<UserPlus size={18} />}
+          color="teal"
+        />
+        <StatCard
+          label="In Progress"
+          value={shortlistedCandidates}
+          icon={<Clock3 size={18} />}
+          color="orange"
+        />
+        <StatCard
+          label="Selected / Offered"
+          value={selectedCandidates}
+          icon={<CheckCircle2 size={18} />}
+          color="green"
+        />
       </div>
 
       <div className="[height:20px]"  />
@@ -180,31 +157,20 @@ function JobCandidatesPage() {
 
       <div className="card table-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [padding:0] [overflow:hidden]">
         {loading ? (
-          <div className="[padding:30px] [text-align:center]"
-
-          >
-            Loading candidates...
-          </div>
+          <PageState variant="loading" title="Loading job candidates" rows={5} />
         ) : error ? (
-          <div className="error-box [margin:16px] [background:#fee2e2] [color:#991b1b] [padding:10px] [border-radius:8px] [font-size:12px] [margin-bottom:10px]" >
-            {error}
-          </div>
+          <PageState
+            variant="error"
+            title="Couldn't load job candidates"
+            description={error}
+            onRetry={() => setReloadCount((count) => count + 1)}
+          />
         ) : candidates.length === 0 ? (
-          <div className="[padding:40px] [text-align:center]"
-
-          >
-            <div className="[font-size:32px] [margin-bottom:10px]"
-
-            >
-              👥
-            </div>
-
-            <div className="font-bold">No candidates yet</div>
-
-            <div className="muted [margin-top:5px] [font-size:12px] [color:#64748b]" >
-              No candidates have applied to this job yet.
-            </div>
-          </div>
+          <PageState
+            variant="empty"
+            title="No applicants yet"
+            description="Candidates who apply to this job will appear here."
+          />
         ) : (
           <table className="[width:100%] [border-collapse:collapse]">
             <thead>
@@ -259,11 +225,7 @@ function JobCandidatesPage() {
                     <td className="[padding:11px_14px] [border-bottom:1px_solid_#e2e8f0] [font-size:13px] [tr:hover_&]:[background:#f8fafc]">{candidate.email || "—"}</td>
 
                     <td className="[padding:11px_14px] [border-bottom:1px_solid_#e2e8f0] [font-size:13px] [tr:hover_&]:[background:#f8fafc]">
-                      <span
-                        className={`${(`badge ${badgeClass(status.toLowerCase())}`)} [font-size:11px] [font-weight:700] [padding:3px_9px] [border-radius:20px] [white-space:nowrap] [display:inline-block]`}
-                      >
-                        {status}
-                      </span>
+                      <StatusBadge status={status} />
                     </td>
 
                     <td className="[padding:11px_14px] [border-bottom:1px_solid_#e2e8f0] [font-size:13px] [tr:hover_&]:[background:#f8fafc]">

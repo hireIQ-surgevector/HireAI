@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import PageShell from "../components/PageShell";
+import PageShell from "../components/common/PageShell";
+import PageState from "../components/common/PageState";
 import { Upload, FileText, X, Briefcase } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -16,6 +17,7 @@ function UploadResumePage() {
 
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [jobsError, setJobsError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   // ============================================================
   // LOAD JOBS
@@ -46,7 +48,7 @@ function UploadResumePage() {
     };
 
     fetchJobs();
-  }, []);
+  }, [loadAttempt]);
 
   // ============================================================
   // FILE PICKER
@@ -232,20 +234,32 @@ function UploadResumePage() {
             </select>
           </div>
 
-          {jobsError && (
-            <div className="[margin-top:8px] [color:#dc2626] [font-size:13px]"
+          {loadingJobs && (
+            <PageState
+              variant="loading"
+              title="Loading job openings"
+              rows={2}
+              className="mt-3"
+            />
+          )}
 
-            >
-              {jobsError}
-            </div>
+          {jobsError && (
+            <PageState
+              variant="error"
+              title="Couldn't load job openings"
+              description={jobsError}
+              onRetry={() => setLoadAttempt((attempt) => attempt + 1)}
+              className="mt-3"
+            />
           )}
 
           {!loadingJobs && !jobsError && jobs.length === 0 && (
-            <div className="[margin-top:8px] [color:#64748b] [font-size:13px]"
-
-            >
-              No jobs available.
-            </div>
+            <PageState
+              variant="empty"
+              title="No jobs available"
+              description="Create a job opening before uploading candidate resumes."
+              className="mt-3"
+            />
           )}
         </div>
 

@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import PageShell from "../components/PageShell";
+import PageShell from "../components/common/PageShell";
+import Button from "../components/common/Button";
+import { Select } from "../components/common/FormField";
+import PageState from "../components/common/PageState";
+import JobCard from "../components/jobs/JobCard";
 import {
-  CalendarDays,
-  Users,
-  X,
+  Search,
   BriefcaseBusiness,
-  MapPin,
-  Building2,
+  X,
   Plus,
 } from "lucide-react";
 
@@ -173,9 +174,9 @@ function JobsPage() {
       title="Job Openings"
       active="jobs"
       actions={
-        <Link to="/post-job" className="btn btn-primary [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#133f7d] [color:#fff]">
+        <Button as={Link} to="/post-job">
           + Post New Job
-        </Link>
+        </Button>
       }
     >
       <div className="jobs-page [max-width:1180px] [margin:0_auto]">
@@ -221,18 +222,18 @@ function JobsPage() {
             <div className="jobs-filter-group [display:flex] [flex-direction:column] [gap:5px]">
               <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold] [.jobs-filter-group_&]:[font-size:12px] [.jobs-filter-group_&]:[font-weight:600] [.jobs-filter-group_&]:[color:#64748b]" htmlFor="dept-filter">Department</label>
 
-              <select
+              <Select
+                className="min-w-40"
                 id="dept-filter"
                 value={selectedDept}
                 onChange={(e) => setSelectedDept(e.target.value)}
-                className="select-input [font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
               >
                 {departments.map((dept) => (
                   <option key={dept} value={dept}>
                     {dept}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             {/* STATUS FILTER */}
@@ -240,11 +241,11 @@ function JobsPage() {
             <div className="jobs-filter-group [display:flex] [flex-direction:column] [gap:5px]">
               <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold] [.jobs-filter-group_&]:[font-size:12px] [.jobs-filter-group_&]:[font-weight:600] [.jobs-filter-group_&]:[color:#64748b]" htmlFor="status-filter">Status</label>
 
-              <select
+              <Select
+                className="min-w-40"
                 id="status-filter"
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="select-input [font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
               >
                 <option value="All">All Statuses</option>
 
@@ -253,20 +254,21 @@ function JobsPage() {
                 <option value="Closing Soon">Closing Soon</option>
 
                 <option value="Overdue">Overdue</option>
-              </select>
+              </Select>
             </div>
 
             {/* CLEAR FILTERS */}
 
             {hasActiveFilters && (
-              <button
+              <Button
                 type="button"
-                className="btn btn-ghost btn-sm [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:transparent] [color:#64748b] [border:1px_solid_#e2e8f0] [padding:6px_14px] [font-size:12px]"
+                variant="ghost"
+                size="sm"
                 onClick={clearFilters}
               >
                 <X size={14} />
                 Clear
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -276,30 +278,19 @@ function JobsPage() {
           LOADING
       ========================= */}
 
-      {loading && (
-        <div className="jobs-loading [padding:48px_24px] [text-align:center] [background:initial] [border:1px_solid_initial] [border-radius:12px]">
-          <div className="loading-spinner [width:30px] [height:30px] [border:3px_solid_#e2e8f0] [border-top-color:#133f7d] [border-radius:50%] animate-spin" />
-
-          <p>Loading job openings...</p>
-        </div>
-      )}
+      {loading && <PageState variant="loading" title="Loading job openings" rows={5} />}
 
       {/* =========================
           ERROR
       ========================= */}
 
       {!loading && error && (
-        <div className="error-box [background:#fee2e2] [color:#991b1b] [padding:10px] [border-radius:8px] [font-size:12px] [margin-bottom:10px]">
-          <p>{error}</p>
-
-          <button
-            type="button"
-            className="btn btn-primary btn-sm [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#133f7d] [color:#fff] [padding:6px_14px] [font-size:12px]"
-            onClick={fetchJobs}
-          >
-            Try Again
-          </button>
-        </div>
+        <PageState
+          variant="error"
+          title="Couldn't load job openings"
+          description={error}
+          onRetry={fetchJobs}
+        />
       )}
 
       {/* =========================
@@ -307,20 +298,18 @@ function JobsPage() {
       ========================= */}
 
       {!loading && !error && jobs.length === 0 && (
-        <div className="jobs-empty-state [padding:48px_24px] [text-align:center] [background:initial] [border:1px_solid_initial] [border-radius:12px]">
-          <div className="jobs-empty-icon [display:inline-flex] [align-items:center] [justify-content:center] [width:58px] [height:58px] [margin-bottom:16px] [border-radius:50%] [background:#e8f0fb] [color:#133f7d]">
-            <BriefcaseBusiness size={30} />
-          </div>
-
-          <h3>No job openings yet</h3>
-
-          <p>Get started by creating your first job opening.</p>
-
-          <Link to="/post-job" className="btn btn-primary [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#133f7d] [color:#fff]">
-                <Plus size={15} />
-                Post New Job
-          </Link>
-        </div>
+        <PageState
+          variant="empty"
+          title="No job openings yet"
+          description="Create your first opening to start building a hiring pipeline."
+          icon={BriefcaseBusiness}
+          action={
+            <Button as={Link} to="/post-job">
+              <Plus size={15} />
+              Post new job
+            </Button>
+          }
+        />
       )}
 
       {/* =========================
@@ -328,23 +317,17 @@ function JobsPage() {
       ========================= */}
 
       {!loading && !error && jobs.length > 0 && filteredJobs.length === 0 && (
-        <div className="jobs-empty-state [padding:48px_24px] [text-align:center] [background:initial] [border:1px_solid_initial] [border-radius:12px]">
-          <div className="jobs-empty-icon [display:inline-flex] [align-items:center] [justify-content:center] [width:58px] [height:58px] [margin-bottom:16px] [border-radius:50%] [background:#e8f0fb] [color:#133f7d]">
-            <BriefcaseBusiness size={30} />
-          </div>
-
-          <h3>No matching jobs</h3>
-
-          <p>Try changing your filters.</p>
-
-          <button
-            type="button"
-            className="btn btn-secondary [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#fff] [color:#133f7d] [border:1.5px_solid_#133f7d]"
-            onClick={clearFilters}
-          >
-            Reset Filters
-          </button>
-        </div>
+        <PageState
+          variant="empty"
+          title="No jobs match these filters"
+          description="Adjust your department or status filters and try again."
+          icon={Search}
+          action={
+            <Button type="button" variant="secondary" onClick={clearFilters}>
+              Reset filters
+            </Button>
+          }
+        />
       )}
 
       {/* =========================
@@ -354,97 +337,15 @@ function JobsPage() {
       {!loading && !error && filteredJobs.length > 0 && (
         <div className="stack jobs-list [gap:12px]">
           {filteredJobs.map((job) => {
-            const jobId = job.job_id || job.id;
-
-            const title = job.title || "Untitled Position";
-
-            const department = job.department || "General";
-
-            const location = job.location || "Remote";
-
-            const candidateCount = job.candidate_count ?? job.count ?? 0;
-
-            const formattedDueDate = formatDate(job.due_date);
-
-            const statusInfo = getJobStatusDetails(job.due_date);
-
-            const isExpired = statusInfo.label === "Overdue";
+            const status = getJobStatusDetails(job.due_date).label;
 
             return (
-              <div
-                key={jobId || title}
-                className={`${(`card job-card ${
-                  isExpired ? "job-card-expired" : ""
-                }`)} [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [padding:18px] [.jobs-list_&]:[border-radius:12px] [.jobs-list_&]:[padding:20px] [.jobs-list_&]:[box-shadow:0_2px_8px_rgba(15,_23,_42,_0.03)] hover:[.jobs-list_&]:[border-color:#bfd2eb] hover:[.jobs-list_&]:[box-shadow:0_8px_22px_rgba(19,_63,_125,_0.09)] [transition:transform_0.2s_ease,_box-shadow_0.2s_ease] hover:[transform:translateY(-2px)] [&.job-card-expired]:[opacity:0.8]`}
-              >
-                <div className="job-main [display:flex] [align-items:center] [gap:14px]">
-                  {/* JOB ICON */}
-
-                  <div className="job-icon [width:46px] [height:46px] [border-radius:10px] [background:#e8f0fb] [display:flex] [align-items:center] [justify-content:center] [font-size:20px]">
-                    <BriefcaseBusiness size={22} />
-                  </div>
-
-                  {/* JOB DETAILS */}
-
-                  <div className="job-body [flex:1]">
-                    <div className="job-title-row [display:flex] [align-items:center] [gap:10px] [margin-bottom:4px] [align-items:flex-start] [justify-content:space-between] [gap:16px] max-[768px]:[align-items:flex-start]">
-                      <div>
-                        <h3 className="[.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px] [.job-title-row_&]:[margin:0] [.job-title-row_&]:[font-size:14px] [.job-title-row_&]:[font-weight:700] [.job-title-row_&]:[color:#1e293b]">{title}</h3>
-                      </div>
-
-                      <span className={`${(`badge ${statusInfo.badgeClass}`)} [font-size:11px] [font-weight:700] [padding:3px_9px] [border-radius:20px] [white-space:nowrap] [display:inline-block]`}>
-                        {statusInfo.label}
-                      </span>
-                    </div>
-
-                    {/* META */}
-
-                    <div className="job-meta [display:flex] [gap:14px] [font-size:12px] [color:#64748b] [flex-wrap:wrap] [gap:16px] [margin-top:14px] max-[768px]:[gap:10px]">
-                      <span className="[.job-meta_&]:[display:inline-flex] [.job-meta_&]:[align-items:center] [.job-meta_&]:[gap:6px] [.job-meta_&]:[color:#64748b] [.job-meta_&]:[font-size:13px]">
-                        <Building2 size={14} />
-                        {department}
-                      </span>
-
-                      <span className="[.job-meta_&]:[display:inline-flex] [.job-meta_&]:[align-items:center] [.job-meta_&]:[gap:6px] [.job-meta_&]:[color:#64748b] [.job-meta_&]:[font-size:13px]">
-                        <MapPin size={14} />
-                        {location}
-                      </span>
-
-                      <span className="[.job-meta_&]:[display:inline-flex] [.job-meta_&]:[align-items:center] [.job-meta_&]:[gap:6px] [.job-meta_&]:[color:#64748b] [.job-meta_&]:[font-size:13px]">
-                        <Users size={14} />
-                        {candidateCount}{" "}
-                        {candidateCount === 1 ? "candidate" : "candidates"}
-                      </span>
-
-                      <span className="[.job-meta_&]:[display:inline-flex] [.job-meta_&]:[align-items:center] [.job-meta_&]:[gap:6px] [.job-meta_&]:[color:#64748b] [.job-meta_&]:[font-size:13px]">
-                        <CalendarDays size={14} />
-
-                        {formattedDueDate
-                          ? `Target: ${formattedDueDate}`
-                          : "No target date"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* ACTIONS */}
-
-                  <div className="job-actions [display:flex] [gap:8px]">
-                    <Link
-                      to={`/jobs/${jobId}/candidates`}
-                      className="btn btn-secondary btn-sm [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#fff] [color:#133f7d] [border:1.5px_solid_#133f7d] [padding:6px_14px] [font-size:12px]"
-                    >
-                      View Candidates
-                    </Link>
-
-                    <Link
-                      to={`/edit-job/${jobId}`}
-                      className="btn btn-ghost btn-sm [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:transparent] [color:#64748b] [border:1px_solid_#e2e8f0] [padding:6px_14px] [font-size:12px]"
-                    >
-                      Edit
-                    </Link>
-                  </div>
-                </div>
-              </div>
+              <JobCard
+                key={job.job_id || job.id || job.title}
+                job={job}
+                formattedDueDate={formatDate(job.due_date)}
+                status={status}
+              />
             );
           })}
         </div>

@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import PageShell from "../components/PageShell";
+import PageShell from "../components/common/PageShell";
+import PageState from "../components/common/PageState";
 
 import { API_URL, getAuthHeader } from "../utils/auth";
 import toast from "react-hot-toast";
@@ -27,6 +28,7 @@ function EditInterviewSchedulePage() {
   const [saving, setSaving] = useState(false);
 
   const [error, setError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   /* =========================
      GET INTERVIEW
@@ -85,7 +87,7 @@ function EditInterviewSchedulePage() {
     };
 
     fetchInterview();
-  }, [interviewId]);
+  }, [interviewId, loadAttempt]);
 
   /* =========================
      TODAY
@@ -156,12 +158,7 @@ function EditInterviewSchedulePage() {
   if (loading) {
     return (
       <PageShell title="Edit Interview" backTo="/interviews">
-        <div
-          className="card [padding:32px] [text-align:center] [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px]"
-
-        >
-          Loading interview...
-        </div>
+        <PageState variant="loading" title="Loading interview" rows={3} />
       </PageShell>
     );
   }
@@ -173,7 +170,12 @@ function EditInterviewSchedulePage() {
   if (error) {
     return (
       <PageShell title="Edit Interview" backTo="/interviews">
-        <div className="error-box [background:#fee2e2] [color:#991b1b] [padding:10px] [border-radius:8px] [font-size:12px] [margin-bottom:10px]">{error}</div>
+        <PageState
+          variant="error"
+          title="Couldn't load interview"
+          description={error}
+          onRetry={() => setLoadAttempt((attempt) => attempt + 1)}
+        />
       </PageShell>
     );
   }

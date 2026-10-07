@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, X } from "lucide-react";
 
-import PageShell from "../components/PageShell";
+import PageShell from "../components/common/PageShell";
+import PageState from "../components/common/PageState";
+import Button from "../components/common/Button";
 import { API_URL, getAuthHeader } from "../utils/auth";
 
 const STAGES = [
@@ -23,8 +25,9 @@ function EvaluationsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [reloadCount, setReloadCount] = useState(0);
 
-  const loadCandidates = async () => {
+  const loadCandidates = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -55,12 +58,12 @@ function EvaluationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const taskId = window.setTimeout(loadCandidates, 0);
     return () => window.clearTimeout(taskId);
-  }, []);
+  }, [loadCandidates, reloadCount]);
 
   const selectedCandidate = useMemo(
     () => candidates.find((candidate) => String(candidate.candidate_id) === String(selectedCandidateId)),
@@ -104,7 +107,19 @@ function EvaluationsPage() {
           </div>
         </div>
 
-        {error && <div className="error-box [background:#fee2e2] [color:#991b1b] [padding:10px] [border-radius:8px] [font-size:12px] [margin-bottom:10px]">{error}</div>}
+        {error && candidates.length > 0 && (
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            <span>{error}</span>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setReloadCount((count) => count + 1)}
+            >
+              Retry
+            </Button>
+          </div>
+        )}
         {feedback && <div className="info-box success [background:#e0f7fa] [border:1px_solid_#b2ebf2] [border-radius:8px] [padding:12px] [font-size:13px] [color:#006064] [margin-bottom:16px] [background:#dcfce7] [border-color:#86efac] [color:#166534]">{feedback}</div>}
 
         <div className="evaluation-selector card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [margin-bottom:20px]">
@@ -189,9 +204,26 @@ function EvaluationsPage() {
               </div>
             </div>
           </div>
-        ) : !loading ? (
-          <div className="evaluation-empty card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [padding:48px_24px] [color:#64748b] [text-align:center]">No active candidates are available for evaluation.</div>
-        ) : null}
+        ) : loading ? (
+          <PageState
+            variant="loading"
+            title="Loading evaluation candidates"
+            rows={3}
+          />
+        ) : error ? (
+          <PageState
+            variant="error"
+            title="Couldn't load evaluation candidates"
+            description={error}
+            onRetry={() => setReloadCount((count) => count + 1)}
+          />
+        ) : (
+          <PageState
+            variant="empty"
+            title="No active candidates to evaluate"
+            description="Candidates with a saved match score and an active pipeline stage will appear here."
+          />
+        )}
       </div>
     </PageShell>
   );

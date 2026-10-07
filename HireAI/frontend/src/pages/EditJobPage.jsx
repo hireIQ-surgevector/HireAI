@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import PageShell from "../components/PageShell";
+import PageShell from "../components/common/PageShell";
+import PageState from "../components/common/PageState";
 
 function EditJobPage() {
   const { jobId } = useParams();
@@ -9,7 +10,9 @@ function EditJobPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
   const [success, setSuccess] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -31,13 +34,10 @@ function EditJobPage() {
     created_by: "",
   });
 
-  useEffect(() => {
-    fetchJobDetails();
-  }, [jobId]);
-
-  const fetchJobDetails = async () => {
+  const fetchJobDetails = useCallback(async () => {
     try {
       setLoading(true);
+      setLoadError("");
       const token = localStorage.getItem("token");
 
       const response = await fetch(`http://localhost:5001/api/jobs/${jobId}`, {
@@ -75,11 +75,16 @@ function EditJobPage() {
         created_by: data.created_by || "System",
       });
     } catch (err) {
-      setError(err.message);
+      setLoadError(err.message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [jobId]);
+
+  useEffect(() => {
+    const taskId = window.setTimeout(fetchJobDetails, 0);
+    return () => window.clearTimeout(taskId);
+  }, [fetchJobDetails, loadAttempt]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -151,9 +156,20 @@ function EditJobPage() {
   if (loading) {
     return (
       <PageShell title="Edit Job Opening" active="jobs">
-        <div className="card [padding:24px] [text-align:center] [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px]" >
-          Loading job details...
-        </div>
+        <PageState variant="loading" title="Loading job details" rows={4} />
+      </PageShell>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <PageShell title="Edit Job Opening" active="jobs">
+        <PageState
+          variant="error"
+          title="Couldn't load job details"
+          description={loadError}
+          onRetry={() => setLoadAttempt((attempt) => attempt + 1)}
+        />
       </PageShell>
     );
   }

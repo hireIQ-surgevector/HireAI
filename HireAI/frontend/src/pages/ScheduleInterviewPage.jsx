@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import PageShell from "../components/PageShell";
+import PageShell from "../components/common/PageShell";
+import PageState from "../components/common/PageState";
 import { API_URL, getAuthHeader } from "../utils/auth";
 import toast from "react-hot-toast";
 
@@ -17,6 +18,7 @@ function ScheduleInterviewPage() {
   const [loadingCandidates, setLoadingCandidates] = useState(true);
   const [candidateError, setCandidateError] = useState("");
   const [scheduling, setScheduling] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   /*
    * Fetch candidates from the existing API.
@@ -57,7 +59,7 @@ function ScheduleInterviewPage() {
     };
 
     fetchCandidates();
-  }, []);
+  }, [loadAttempt]);
 
   /* Only candidates at the scheduling entry stages should be displayed. */
   const eligibleCandidates = useMemo(() => {
@@ -242,13 +244,18 @@ function ScheduleInterviewPage() {
             <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]">Candidate</label>
 
             {loadingCandidates ? (
-              <div className="[padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [color:#64748b] [background:#f8fafc]"
-
-              >
-                Loading candidates...
-              </div>
+              <PageState
+                variant="loading"
+                title="Loading eligible candidates"
+                rows={2}
+              />
             ) : candidateError ? (
-              <div className="error-box [background:#fee2e2] [color:#991b1b] [padding:10px] [border-radius:8px] [font-size:12px] [margin-bottom:10px]">{candidateError}</div>
+              <PageState
+                variant="error"
+                title="Couldn't load candidates"
+                description={candidateError}
+                onRetry={() => setLoadAttempt((attempt) => attempt + 1)}
+              />
             ) : (
               <select className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] focus:[.interview-card_&]:[border-color:#133f7d] focus:[.interview-card_&]:[box-shadow:0_0_0_3px_rgba(19,_63,_125,_0.08)] [.interview-card_&]:[cursor:pointer]"
                 value={selectedCandidateId}
@@ -272,22 +279,12 @@ function ScheduleInterviewPage() {
           {!loadingCandidates &&
             !candidateError &&
             eligibleCandidates.length === 0 && (
-              <div className="candidate-empty-state [min-height:280px] [padding:40px_20px] [display:flex] [flex-direction:column] [align-items:center] [justify-content:center] [text-align:center]">
-                <div className="empty-icon [width:58px] [height:58px] [border-radius:50%] [background:#e8f0fb] [color:#133f7d] [display:flex] [align-items:center] [justify-content:center]">
-                  <span className="[font-size:24px]"
-
-                  >
-                    👤
-                  </span>
-                </div>
-
-                <h3 className="[.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px] [.candidate-empty-state_&]:[margin:14px_0_5px] [.candidate-empty-state_&]:[font-size:16px]">No candidates available</h3>
-
-                <p className="[.candidate-empty-state_&]:[color:#64748b] [.candidate-empty-state_&]:[font-size:13px] [.candidate-empty-state_&]:[margin-bottom:16px]">
-                  There are currently no candidates eligible for another
-                  interview round.
-                </p>
-              </div>
+              <PageState
+                variant="empty"
+                title="No candidates available"
+                description="There are currently no candidates eligible for another interview round."
+                className="my-4"
+              />
             )}
 
           {/* SELECTED CANDIDATE */}

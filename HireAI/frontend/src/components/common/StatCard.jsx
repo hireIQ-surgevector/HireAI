@@ -1,3 +1,5 @@
+import Card from "./Card";
+
 function StatCard({ label, value, icon, color }) {
   const colorMap = {
     brand: "[background:#e8f0fb]",
@@ -13,7 +15,7 @@ function StatCard({ label, value, icon, color }) {
     teal: "[color:#00b4d8]",
   };
   return (
-    <div className="stat-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:18px] [position:relative]">
+    <Card className="stat-card relative p-[18px]">
       <div className="stat-label [font-size:11px] [font-weight:700] [color:#64748b] [text-transform:uppercase] [letter-spacing:0.4px]">{label}</div>
       <div
         className={`stat-num [font-size:28px] [font-weight:800] [color:#1e293b] [margin:4px_0] ${valueColorMap[color] || "[color:#7c3aed]"}`}
@@ -23,7 +25,7 @@ function StatCard({ label, value, icon, color }) {
       <div className={`stat-icon [position:absolute] [top:18px] [right:18px] [width:42px] [height:42px] [border-radius:10px] [display:flex] [align-items:center] [justify-content:center] [font-size:18px] ${colorMap[color] || colorMap.brand}`}>
         {icon}
       </div>
-    </div>
+    </Card>
   );
 }
 

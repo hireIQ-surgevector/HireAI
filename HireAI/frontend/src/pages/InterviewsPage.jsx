@@ -1,21 +1,28 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import PageShell from "../components/PageShell";
-import { CalendarDays, Clock, Pencil, Plus, User } from "lucide-react";
+import PageShell from "../components/common/PageShell";
+import { CalendarDays, Clock, Pencil, Plus } from "lucide-react";
 import { API_URL, canManageCandidates, getSession } from "../utils/auth";
+import PageState from "../components/common/PageState";
+import Button from "../components/common/Button";
+import StatusBadge from "../components/common/StatusBadge";
 
 function InterviewsPage() {
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [reloadCount, setReloadCount] = useState(0);
 
   const session = getSession();
 
   useEffect(() => {
     const loadInterviews = async () => {
       try {
+        setLoading(true);
+        setError("");
         const token = localStorage.getItem("token");
 
-        const response = await fetch(`http://localhost:5001/api/interviews`, {
+        const response = await fetch(`${API_URL}/api/interviews`, {
           headers: {
             "Content-Type": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -24,18 +31,22 @@ function InterviewsPage() {
 
         const data = await response.json();
 
-        if (response.ok) {
-          setInterviews(Array.isArray(data) ? data : []);
+        if (!response.ok) {
+          throw new Error(data.error || "Unable to load interviews.");
         }
-      } catch (error) {
-        console.error("Failed to load interviews:", error);
+
+        setInterviews(Array.isArray(data) ? data : []);
+      } catch (loadError) {
+        console.error("Failed to load interviews:", loadError);
+        setError(loadError.message || "Unable to load interviews.");
+        setInterviews([]);
       } finally {
         setLoading(false);
       }
     };
 
     loadInterviews();
-  }, []);
+  }, [reloadCount]);
 
   const getInitials = (name = "") => {
     return name
@@ -72,13 +83,10 @@ function InterviewsPage() {
       active="interviews"
       actions={
         canManageCandidates(session) ? (
-          <Link
-            to="/schedule-interview"
-            className="btn btn-primary btn-sm interview-schedule-btn [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#133f7d] [color:#fff] [padding:6px_14px] [font-size:12px] [gap:7px]"
-          >
+          <Button as={Link} to="/schedule-interview" size="sm">
             <Plus size={15} />
-            Schedule Interview
-          </Link>
+            Schedule interview
+          </Button>
         ) : null
       }
     >
@@ -110,31 +118,29 @@ function InterviewsPage() {
 
         <div className="interviews-table-card [background:#ffffff] [border:1px_solid_#e2e8f0] [border-radius:16px] [overflow:hidden] [box-shadow:0_1px_2px_rgba(15,_23,_42,_0.03),_0_8px_24px_rgba(15,_23,_42,_0.04)] max-[520px]:[border-radius:12px]">
           {loading ? (
-            <div className="interviews-loading [min-height:320px] [display:flex] [flex-direction:column] [align-items:center] [justify-content:center] [gap:14px] [color:#64748b] [font-size:13px]">
-              <div className="loading-spinner [width:30px] [height:30px] [border:3px_solid_#e2e8f0] [border-top-color:#133f7d] [border-radius:50%] animate-spin [.interviews-loading_&]:[width:32px] [.interviews-loading_&]:[height:32px] [.interviews-loading_&]:[border-width:3px]" />
-
-              <p>Loading interviews...</p>
-            </div>
+            <PageState variant="loading" title="Loading interviews" rows={5} />
+          ) : error ? (
+            <PageState
+              variant="error"
+              title="Couldn't load interviews"
+              description={error}
+              onRetry={() => setReloadCount((count) => count + 1)}
+            />
           ) : interviews.length === 0 ? (
-            <div className="interviews-empty-state [min-height:340px] [padding:40px_20px] [display:flex] [flex-direction:column] [align-items:center] [justify-content:center] [text-align:center]">
-              <div className="interviews-empty-icon [width:62px] [height:62px] [display:flex] [align-items:center] [justify-content:center] [margin-bottom:16px] [border-radius:50%] [background:#e8f0fb] [color:#133f7d]">
-                <CalendarDays size={28} />
-              </div>
-
-              <h3 className="[.interviews-empty-state_&]:[margin:0_0_7px] [.interviews-empty-state_&]:[font-size:17px] [.interviews-empty-state_&]:[font-weight:750] [.interviews-empty-state_&]:[color:#1e293b]">No interviews scheduled</h3>
-
-              <p className="[.interviews-empty-state_&]:[max-width:360px] [.interviews-empty-state_&]:[margin:0_0_20px] [.interviews-empty-state_&]:[font-size:13px] [.interviews-empty-state_&]:[line-height:1.6] [.interviews-empty-state_&]:[color:#64748b]">
-                Schedule an interview to start managing candidate interview
-                sessions.
-              </p>
-
-              {canManageCandidates(session) && (
-                <Link to="/schedule-interview" className="btn btn-primary [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#133f7d] [color:#fff]">
-                  <Plus size={16} />
-                  Schedule Interview
-                </Link>
-              )}
-            </div>
+            <PageState
+              variant="empty"
+              title="No interviews scheduled"
+              description="Schedule an interview to start managing candidate interview sessions."
+              icon={CalendarDays}
+              action={
+                canManageCandidates(session) && (
+                  <Button as={Link} to="/schedule-interview">
+                    <Plus size={16} />
+                    Schedule interview
+                  </Button>
+                )
+              }
+            />
           ) : (
             <div className="interviews-table-wrapper [width:100%] [overflow-x:auto]">
               <table className="interviews-table [width:100%] [border-collapse:collapse] [min-width:760px] max-[520px]:[min-width:700px]">
@@ -214,9 +220,7 @@ function InterviewsPage() {
                         {/* ROUND */}
 
                         <td className="[padding:11px_14px] [border-bottom:1px_solid_#e2e8f0] [font-size:13px] [tr:hover_&]:[background:#f8fafc] [.interviews-table_&]:[padding:16px_18px] [.interviews-table_&]:[border-bottom:1px_solid_#edf0f3] [.interviews-table_&]:[vertical-align:middle] [.interviews-table_&]:[font-size:13px] [.interviews-table_&]:[color:#1e293b] [.interviews-table_&]:[background:#ffffff] [.interviews-table_tbody_tr:last-child_&]:[border-bottom:none] [.interviews-table_tbody_tr:hover_&]:[background:#f9fbfd] max-[520px]:[.interviews-table_&]:[padding-left:14px] max-[520px]:[.interviews-table_&]:[padding-right:14px]">
-                          <span className="interview-round-badge [display:inline-flex] [align-items:center] [padding:6px_10px] [border-radius:999px] [background:#e0f7fa] [color:#006064] [font-size:11px] [font-weight:700] [white-space:nowrap]">
-                            Round {interview.round}
-                          </span>
+                          <StatusBadge status={`Round ${interview.round}`} />
                         </td>
 
                         {/* ACTIONS */}

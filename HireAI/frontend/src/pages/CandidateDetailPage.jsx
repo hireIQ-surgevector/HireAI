@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   Check,
@@ -13,8 +13,9 @@ import {
   IndianRupee,
 } from "lucide-react";
 
-import PageShell from "../components/PageShell";
-import badgeClass from "../components/badgeClass";
+import PageShell from "../components/common/PageShell";
+import PageState from "../components/common/PageState";
+import badgeClass from "../components/common/badgeClass";
 import { API_URL, getAuthHeader } from "../utils/auth";
 
 const SparkIcon = (props) => <Sparkles {...props} />;
@@ -30,15 +31,14 @@ function CandidateDetailPage() {
   const { candidateId } = useParams();
 
   const [candidate, setCandidate] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(candidateId));
   const [error, setError] = useState("");
+  const [reloadCount, setReloadCount] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
 
     if (!candidateId) {
-      setError("No candidate selected");
-      setLoading(false);
       return () => controller.abort();
     }
 
@@ -66,7 +66,7 @@ function CandidateDetailPage() {
 
         setCandidate(data);
       } catch (err) {
-        if (err.name !== "AbortError" && localStorage.getItem("token")) {
+        if (err.name !== "AbortError") {
           console.error("Unable to load candidate", err);
           setError(err.message);
         }
@@ -78,9 +78,10 @@ function CandidateDetailPage() {
     loadCandidate();
 
     return () => controller.abort();
-  }, [candidateId]);
+  }, [candidateId, reloadCount]);
 
   const candidateName = candidate?.name || candidate?.full_name || "Candidate";
+  const profileError = candidateId ? error : "No candidate selected";
 
   const candidateStage =
     candidate?.stage || candidate?.current_status || candidate?.status || "New";
@@ -175,14 +176,14 @@ function CandidateDetailPage() {
       }
     >
       {loading ? (
-        <div
-          className="card [padding:40px] [text-align:center] [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px]"
-
-        >
-          Loading candidate profile...
-        </div>
-      ) : error ? (
-        <div className="error-box [background:#fee2e2] [color:#991b1b] [padding:10px] [border-radius:8px] [font-size:12px] [margin-bottom:10px]">{error}</div>
+        <PageState variant="loading" title="Loading candidate profile" rows={4} />
+      ) : profileError ? (
+        <PageState
+          variant="error"
+          title="Couldn't load candidate profile"
+          description={profileError}
+          onRetry={() => setReloadCount((count) => count + 1)}
+        />
       ) : (
         <>
           {/* Candidate Header */}
