@@ -455,20 +455,6 @@ function CandidateMatcherPage() {
         )
       }
     >
-      {/* =====================================
-          PAGE INTRO
-      ===================================== */}
-
-      <div className="matcher-header [margin-bottom:24px]">
-        <div>
-          <h2 className="matcher-title [margin:0_0_6px] [font-size:22px]">Find the Best Candidates</h2>
-
-          <p className="matcher-description [margin:0] [color:#64748b] [font-size:14px]">
-            Select a job to compare candidate profiles against the job
-            requirements.
-          </p>
-        </div>
-      </div>
 
       {/* =====================================
           JOB SELECTOR
