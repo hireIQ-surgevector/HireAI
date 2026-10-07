@@ -319,32 +319,30 @@ function PostJobPage() {
 
   return (
     <PageShell title="Post New Job" active="jobs" backTo="/jobs">
-      <div className="post-job-container">
+      <div className="w-full">
         {/* =====================================
           IMPORT JOB FROM WEBSITE
       ====================================== */}
 
-        <div className="card large-card post-job-card">
-          <div className="form-section">
-            <div className="form-section-header">
+        <div className="card large-card post-job-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [max-width:760px] [margin:0_auto] [max-width:860px] max-[640px]:[max-width:100%]">
+          <div className="form-section [padding:22px_0] [border-bottom:1px_solid_#e2e8f0] [&:first-of-type]:[padding-top:0] [&:last-of-type]:[border-bottom:none] [&:last-of-type]:[padding-bottom:0]">
+            <div className="form-section-header [margin-bottom:18px]">
               <h2>Import Job From Website</h2>
 
-              <p>
+              <p className="[.form-section-header_&]:[font-size:12px] [.form-section-header_&]:[color:#64748b]">
                 Paste a job posting URL and automatically populate the job
                 details. You can review and edit everything before publishing.
               </p>
             </div>
 
-            <div className="field">
-              <label htmlFor="jobUrl">Job Posting URL</label>
+            <div className="field [margin-bottom:14px]">
+              <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]" htmlFor="jobUrl">Job Posting URL</label>
 
               <div
-                className="skill-input-row"
-                style={{
-                  alignItems: "stretch",
-                }}
+                className="skill-input-row [align-items:stretch] [display:flex] [gap:8px] max-[640px]:[flex-direction:column]"
+
               >
-                <input
+                <input className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] [.skill-input-row_&]:[flex:1]"
                   id="jobUrl"
                   type="url"
                   placeholder="https://example.com/jobs/geospatial-engineer"
@@ -361,25 +359,16 @@ function PostJobPage() {
 
                 <button
                   type="button"
-                  className="btn btn-secondary skill-add-btn"
+                  className={`btn btn-secondary skill-add-btn [min-width:180px] [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#fff] [color:#133f7d] [border:1.5px_solid_#133f7d] [min-width:85px] max-[640px]:[width:100%] ${scraping ? "[opacity:0.7] [cursor:not-allowed]" : "[opacity:1] [cursor:pointer]"}`}
                   onClick={handleScrapeJob}
                   disabled={scraping}
-                  style={{
-                    minWidth: "180px",
-                    opacity: scraping ? 0.7 : 1,
-                    cursor: scraping ? "not-allowed" : "pointer",
-                  }}
                 >
                   {scraping ? "Importing..." : "🔍 Import Job Details"}
                 </button>
               </div>
 
-              <small
-                style={{
-                  display: "block",
-                  marginTop: "8px",
-                  color: "#6b7280",
-                }}
+              <small className="[display:block] [margin-top:8px] [color:#6b7280]"
+
               >
                 Paste the URL of a job posting. The job details will be
                 extracted and placed into the form below.
@@ -393,40 +382,21 @@ function PostJobPage() {
       ====================================== */}
 
         <div
-          className="job-entry-divider"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            margin: "20px 0",
-          }}
+          className="job-entry-divider [display:flex] [align-items:center] [gap:16px] [margin:20px_0]"
+
         >
-          <div
-            style={{
-              flex: 1,
-              height: "1px",
-              background: "#e5e7eb",
-            }}
+          <div className="[flex:1] [height:1px] [background:#e5e7eb]"
+
           />
 
-          <span
-            style={{
-              fontSize: "13px",
-              fontWeight: "600",
-              color: "#6b7280",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-            }}
+          <span className="[font-size:13px] [font-weight:600] [color:#6b7280] [text-transform:uppercase] [letter-spacing:0.08em]"
+
           >
             OR
           </span>
 
-          <div
-            style={{
-              flex: 1,
-              height: "1px",
-              background: "#e5e7eb",
-            }}
+          <div className="[flex:1] [height:1px] [background:#e5e7eb]"
+
           />
         </div>
 
@@ -434,38 +404,38 @@ function PostJobPage() {
           MANUAL JOB FORM
       ====================================== */}
 
-        <div className="card large-card post-job-card">
+        <div className="card large-card post-job-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [max-width:760px] [margin:0_auto] [max-width:860px] max-[640px]:[max-width:100%]">
           <form onSubmit={handleSubmit}>
             {/* =====================================
               FORM HEADER
           ====================================== */}
 
-            <div className="post-job-header">
-              <h2>Create a New Job</h2>
+            <div className="post-job-header [margin-bottom:24px]">
+              <h2 className="[.post-job-header_&]:[font-size:22px] [.post-job-header_&]:[font-weight:800] [.post-job-header_&]:[color:#1e293b] [.post-job-header_&]:[margin-bottom:6px]">Create a New Job</h2>
 
-              <p>
+              <p className="[.post-job-header_&]:[color:#64748b] [.post-job-header_&]:[font-size:13px]">
                 Add the job details, requirements, compensation, and interview
                 configuration manually.
               </p>
             </div>
 
-            {errorMsg && <div className="error-box">{errorMsg}</div>}
+            {errorMsg && <div className="error-box [background:#fee2e2] [color:#991b1b] [padding:10px] [border-radius:8px] [font-size:12px] [margin-bottom:10px]">{errorMsg}</div>}
 
             {/* =====================================
               BASIC INFORMATION
           ====================================== */}
 
-            <div className="form-section">
-              <div className="form-section-header">
-                <h3>Basic Job Information</h3>
+            <div className="form-section [padding:22px_0] [border-bottom:1px_solid_#e2e8f0] [&:first-of-type]:[padding-top:0] [&:last-of-type]:[border-bottom:none] [&:last-of-type]:[padding-bottom:0]">
+              <div className="form-section-header [margin-bottom:18px]">
+                <h3 className="[.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px] [.form-section-header_&]:[margin-bottom:5px] [.form-section-header_&]:[font-size:16px]">Basic Job Information</h3>
 
-                <p>Enter the main details for the position.</p>
+                <p className="[.form-section-header_&]:[font-size:12px] [.form-section-header_&]:[color:#64748b]">Enter the main details for the position.</p>
               </div>
 
-              <div className="field">
-                <label htmlFor="title">Job Title</label>
+              <div className="field [margin-bottom:14px]">
+                <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]" htmlFor="title">Job Title</label>
 
-                <input
+                <input className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
                   id="title"
                   name="title"
                   type="text"
@@ -476,11 +446,11 @@ function PostJobPage() {
                 />
               </div>
 
-              <div className="grid2">
-                <div className="field">
-                  <label htmlFor="department">Department</label>
+              <div className="grid2 [display:grid] [grid-template-columns:1fr_1fr] [gap:14px] max-[960px]:[grid-template-columns:1fr] max-[960px]:[flex-direction:column]">
+                <div className="field [margin-bottom:14px]">
+                  <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]" htmlFor="department">Department</label>
 
-                  <select
+                  <select className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
                     id="department"
                     name="department"
                     required
@@ -497,10 +467,10 @@ function PostJobPage() {
                   </select>
                 </div>
 
-                <div className="field">
-                  <label htmlFor="location">Location</label>
+                <div className="field [margin-bottom:14px]">
+                  <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]" htmlFor="location">Location</label>
 
-                  <input
+                  <input className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
                     id="location"
                     name="location"
                     type="text"
@@ -512,10 +482,10 @@ function PostJobPage() {
                 </div>
               </div>
 
-              <div className="field">
-                <label htmlFor="description">Job Description</label>
+              <div className="field [margin-bottom:14px]">
+                <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]" htmlFor="description">Job Description</label>
 
-                <textarea
+                <textarea className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
                   id="description"
                   name="description"
                   rows="8"
@@ -531,20 +501,20 @@ function PostJobPage() {
               SKILLS
           ====================================== */}
 
-            <div className="form-section">
-              <div className="form-section-header">
-                <h3>Skills & Requirements</h3>
+            <div className="form-section [padding:22px_0] [border-bottom:1px_solid_#e2e8f0] [&:first-of-type]:[padding-top:0] [&:last-of-type]:[border-bottom:none] [&:last-of-type]:[padding-bottom:0]">
+              <div className="form-section-header [margin-bottom:18px]">
+                <h3 className="[.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px] [.form-section-header_&]:[margin-bottom:5px] [.form-section-header_&]:[font-size:16px]">Skills & Requirements</h3>
 
-                <p>Add the skills required for this position.</p>
+                <p className="[.form-section-header_&]:[font-size:12px] [.form-section-header_&]:[color:#64748b]">Add the skills required for this position.</p>
               </div>
 
               {/* MANDATORY SKILLS */}
 
-              <div className="field">
-                <label htmlFor="mandatoryInput">Mandatory Skills</label>
+              <div className="field [margin-bottom:14px]">
+                <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]" htmlFor="mandatoryInput">Mandatory Skills</label>
 
-                <div className="skill-input-row">
-                  <input
+                <div className="skill-input-row [display:flex] [gap:8px] [align-items:stretch] max-[640px]:[flex-direction:column]">
+                  <input className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] [.skill-input-row_&]:[flex:1]"
                     id="mandatoryInput"
                     name="mandatoryInput"
                     type="text"
@@ -556,7 +526,7 @@ function PostJobPage() {
 
                   <button
                     type="button"
-                    className="btn btn-secondary skill-add-btn"
+                    className="btn btn-secondary skill-add-btn [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#fff] [color:#133f7d] [border:1.5px_solid_#133f7d] [min-width:85px] max-[640px]:[width:100%]"
                     onClick={addMandatorySkill}
                   >
                     + Add
@@ -564,12 +534,12 @@ function PostJobPage() {
                 </div>
 
                 {formData.mandatorySkills.length > 0 && (
-                  <div className="skill-tags">
+                  <div className="skill-tags [display:flex] [flex-wrap:wrap] [gap:8px] [margin-top:10px]">
                     {formData.mandatorySkills.map((skill) => (
                       <button
                         key={skill}
                         type="button"
-                        className="tag skill-tag"
+                        className="tag skill-tag [font:inherit] [background:#e8f0fb] [color:#133f7d] [font-size:12px] [font-weight:600] [padding:4px_12px] [border-radius:20px] [display:inline-block] [display:inline-flex] [align-items:center] [gap:6px] [border:none] [cursor:pointer] [font-family:inherit] hover:[opacity:0.8]"
                         onClick={() => removeMandatorySkill(skill)}
                         title="Click to remove"
                       >
@@ -582,11 +552,11 @@ function PostJobPage() {
 
               {/* NICE-TO-HAVE SKILLS */}
 
-              <div className="field">
-                <label htmlFor="requiredInput">Nice-to-Have Skills</label>
+              <div className="field [margin-bottom:14px]">
+                <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]" htmlFor="requiredInput">Nice-to-Have Skills</label>
 
-                <div className="skill-input-row">
-                  <input
+                <div className="skill-input-row [display:flex] [gap:8px] [align-items:stretch] max-[640px]:[flex-direction:column]">
+                  <input className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] [.skill-input-row_&]:[flex:1]"
                     id="requiredInput"
                     name="requiredInput"
                     type="text"
@@ -598,7 +568,7 @@ function PostJobPage() {
 
                   <button
                     type="button"
-                    className="btn btn-secondary skill-add-btn"
+                    className="btn btn-secondary skill-add-btn [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#fff] [color:#133f7d] [border:1.5px_solid_#133f7d] [min-width:85px] max-[640px]:[width:100%]"
                     onClick={addRequiredSkill}
                   >
                     + Add
@@ -606,12 +576,12 @@ function PostJobPage() {
                 </div>
 
                 {formData.requiredSkills.length > 0 && (
-                  <div className="skill-tags">
+                  <div className="skill-tags [display:flex] [flex-wrap:wrap] [gap:8px] [margin-top:10px]">
                     {formData.requiredSkills.map((skill) => (
                       <button
                         key={skill}
                         type="button"
-                        className="tag skill-tag required-skill-tag"
+                        className="tag skill-tag required-skill-tag [font:inherit] [background:#e8f0fb] [color:#133f7d] [font-size:12px] [font-weight:600] [padding:4px_12px] [border-radius:20px] [display:inline-block] [display:inline-flex] [align-items:center] [gap:6px] [border:none] [cursor:pointer] [font-family:inherit] hover:[opacity:0.8] [background:#f1f5f9] [color:#475569]"
                         onClick={() => removeRequiredSkill(skill)}
                         title="Click to remove"
                       >
@@ -622,11 +592,11 @@ function PostJobPage() {
                 )}
               </div>
 
-              <div className="grid2">
-                <div className="field">
-                  <label htmlFor="minExp">Minimum Experience</label>
+              <div className="grid2 [display:grid] [grid-template-columns:1fr_1fr] [gap:14px] max-[960px]:[grid-template-columns:1fr] max-[960px]:[flex-direction:column]">
+                <div className="field [margin-bottom:14px]">
+                  <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]" htmlFor="minExp">Minimum Experience</label>
 
-                  <input
+                  <input className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
                     id="minExp"
                     name="minExp"
                     type="number"
@@ -638,10 +608,10 @@ function PostJobPage() {
                   />
                 </div>
 
-                <div className="field">
-                  <label htmlFor="dueDate">Target Fill Date</label>
+                <div className="field [margin-bottom:14px]">
+                  <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]" htmlFor="dueDate">Target Fill Date</label>
 
-                  <input
+                  <input className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
                     id="dueDate"
                     name="dueDate"
                     type="date"
@@ -658,21 +628,21 @@ function PostJobPage() {
               COMPENSATION
           ====================================== */}
 
-            <div className="form-section">
-              <div className="form-section-header">
-                <h3>Allocated CTC Range</h3>
+            <div className="form-section [padding:22px_0] [border-bottom:1px_solid_#e2e8f0] [&:first-of-type]:[padding-top:0] [&:last-of-type]:[border-bottom:none] [&:last-of-type]:[padding-bottom:0]">
+              <div className="form-section-header [margin-bottom:18px]">
+                <h3 className="[.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px] [.form-section-header_&]:[margin-bottom:5px] [.form-section-header_&]:[font-size:16px]">Allocated CTC Range</h3>
 
-                <p>Specify the compensation range for this role.</p>
+                <p className="[.form-section-header_&]:[font-size:12px] [.form-section-header_&]:[color:#64748b]">Specify the compensation range for this role.</p>
               </div>
 
-              <div className="grid2">
-                <div className="field">
-                  <label htmlFor="minSalary">Minimum CTC (LPA)</label>
+              <div className="grid2 [display:grid] [grid-template-columns:1fr_1fr] [gap:14px] max-[960px]:[grid-template-columns:1fr] max-[960px]:[flex-direction:column]">
+                <div className="field [margin-bottom:14px]">
+                  <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]" htmlFor="minSalary">Minimum CTC (LPA)</label>
 
-                  <div className="salary-input">
-                    <span className="salary-prefix">₹</span>
+                  <div className="salary-input [position:relative]">
+                    <span className="salary-prefix [position:absolute] [left:13px] [top:50%] [transform:translateY(-50%)] [color:#64748b] [font-size:13px] [font-weight:600] [pointer-events:none]">₹</span>
 
-                    <input
+                    <input className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] [.salary-input_&]:[padding-left:42px]"
                       id="minSalary"
                       name="minSalary"
                       type="number"
@@ -685,13 +655,13 @@ function PostJobPage() {
                   </div>
                 </div>
 
-                <div className="field">
-                  <label htmlFor="maxSalary">Maximum CTC (LPA)</label>
+                <div className="field [margin-bottom:14px]">
+                  <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]" htmlFor="maxSalary">Maximum CTC (LPA)</label>
 
-                  <div className="salary-input">
-                    <span className="salary-prefix">₹</span>
+                  <div className="salary-input [position:relative]">
+                    <span className="salary-prefix [position:absolute] [left:13px] [top:50%] [transform:translateY(-50%)] [color:#64748b] [font-size:13px] [font-weight:600] [pointer-events:none]">₹</span>
 
-                    <input
+                    <input className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] [.salary-input_&]:[padding-left:42px]"
                       id="maxSalary"
                       name="maxSalary"
                       type="number"
@@ -710,24 +680,20 @@ function PostJobPage() {
               ACTIONS
           ====================================== */}
 
-            <div className="form-footer">
-              <span className="form-footer-info">
+            <div className="form-footer [display:flex] [justify-content:space-between] [align-items:center] [gap:14px] [margin-top:28px] [padding-top:20px] [border-top:1px_solid_#e2e8f0] max-[640px]:[flex-direction:column-reverse] max-[640px]:[align-items:stretch]">
+              <span className="form-footer-info [font-size:12px] [color:#64748b]">
                 All required fields must be completed before publishing.
               </span>
 
-              <div className="inline-actions">
-                <Link to="/jobs" className="btn btn-ghost">
+              <div className="inline-actions [display:flex] [gap:10px] [margin-top:8px] max-[640px]:[.form-footer_&]:[width:100%]">
+                <Link to="/jobs" className="btn btn-ghost [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:transparent] [color:#64748b] [border:1px_solid_#e2e8f0] max-[640px]:[.form-footer_&]:[flex:1]">
                   Cancel
                 </Link>
 
                 <button
                   type="submit"
-                  className="btn btn-primary btn-lg publish-btn"
+                  className={`btn btn-primary btn-lg publish-btn [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#133f7d] [color:#fff] [padding:13px_28px] [font-size:15px] [min-width:160px] max-[640px]:[.form-footer_&]:[flex:1] ${loading ? "[opacity:0.7] [cursor:not-allowed]" : "[opacity:1] [cursor:pointer]"}`}
                   disabled={loading}
-                  style={{
-                    opacity: loading ? 0.7 : 1,
-                    cursor: loading ? "not-allowed" : "pointer",
-                  }}
                 >
                   {loading ? "Publishing..." : "🚀 Publish Job"}
                 </button>

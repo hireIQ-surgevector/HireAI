@@ -1,9 +1,9 @@
 function badgeClass(status) {
   return status === "active"
-    ? "badge-blue"
+    ? "[background:#e8f0fb] [color:#133f7d]"
     : status === "offered"
-      ? "badge-orange"
-      : "badge-red";
+      ? "[background:#fef3c7] [color:#92400e]"
+      : "[background:#fee2e2] [color:#991b1b]";
 }
 
 export default badgeClass;

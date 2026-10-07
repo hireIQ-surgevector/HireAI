@@ -8,7 +8,6 @@ import {
 import { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 
-import "./App.css";
 import LoginPage from "./pages/LoginPage";
 import {
   AUTH_CHANGED_EVENT,
@@ -146,7 +145,7 @@ function App() {
   const hasSession = useAuthSession();
 
   return (
-    <>
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
       <Toaster position="top-center" />
       <BrowserRouter>
         <Routes>
@@ -169,7 +168,7 @@ function App() {
           ))}
         </Routes>
       </BrowserRouter>
-    </>
+    </div>
   );
 }
 

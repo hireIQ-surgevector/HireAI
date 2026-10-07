@@ -157,11 +157,8 @@ function EditInterviewSchedulePage() {
     return (
       <PageShell title="Edit Interview" backTo="/interviews">
         <div
-          className="card"
-          style={{
-            padding: "32px",
-            textAlign: "center",
-          }}
+          className="card [padding:32px] [text-align:center] [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px]"
+
         >
           Loading interview...
         </div>
@@ -176,7 +173,7 @@ function EditInterviewSchedulePage() {
   if (error) {
     return (
       <PageShell title="Edit Interview" backTo="/interviews">
-        <div className="error-box">{error}</div>
+        <div className="error-box [background:#fee2e2] [color:#991b1b] [padding:10px] [border-radius:8px] [font-size:12px] [margin-bottom:10px]">{error}</div>
       </PageShell>
     );
   }
@@ -187,21 +184,19 @@ function EditInterviewSchedulePage() {
 
   return (
     <PageShell title="Edit Interview Schedule" backTo="/interviews">
-      <div className="interview-card">
-        <div className="card">
+      <div className="interview-card [max-width:640px] [margin:0_auto] [max-width:760px] max-[640px]:[max-width:100%]">
+        <div className="card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [.interview-card_&]:[width:100%]">
           {/* HEADER */}
 
-          <div className="section-header">
+          <div className="section-header [display:flex] [justify-content:space-between] [align-items:center] [margin-bottom:14px]">
             <div>
-              <h3
-                style={{
-                  marginBottom: "4px",
-                }}
+              <h3 className="[margin-bottom:4px] [.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px]"
+
               >
                 Edit Interview Schedule
               </h3>
 
-              <p className="muted">
+              <p className="muted [font-size:12px] [color:#64748b]">
                 You can only change the interview date and time.
               </p>
             </div>
@@ -210,86 +205,71 @@ function EditInterviewSchedulePage() {
           {/* INTERVIEW DETAILS */}
 
           <div
-            className="info-box"
-            style={{
-              marginBottom: "24px",
-            }}
+            className="info-box [margin-bottom:24px] [background:#e0f7fa] [border:1px_solid_#b2ebf2] [border-radius:8px] [padding:12px] [font-size:13px] [color:#006064] [margin-bottom:16px]"
+
           >
-            <strong>{interview?.candidate_name}</strong>
+            <strong className="[font-weight:700]">{interview?.candidate_name}</strong>
 
             <br />
 
             <span>
-              Position: <strong>{interview?.role_name}</strong>
+              Position: <strong className="[font-weight:700]">{interview?.role_name}</strong>
             </span>
 
             <br />
 
             <span>
-              Interview Round: <strong>{interview?.round}</strong>
+              Interview Round: <strong className="[font-weight:700]">{interview?.round}</strong>
             </span>
           </div>
 
           {/* READ ONLY INFORMATION */}
 
-          <div className="grid2">
-            <div className="field">
-              <label>Candidate</label>
+          <div className="grid2 [display:grid] [grid-template-columns:1fr_1fr] [gap:14px] max-[960px]:[grid-template-columns:1fr] max-[960px]:[flex-direction:column] max-[640px]:[.interview-card_&]:[grid-template-columns:1fr]">
+            <div className="field [margin-bottom:14px]">
+              <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]">Candidate</label>
 
-              <input
+              <input className="[background:#f8fafc] [cursor:not-allowed] [font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] [.interview-card_&]:[opacity:0.95] [.interview-card_&]:[cursor:pointer] focus:[.interview-card_&]:[border-color:#133f7d] focus:[.interview-card_&]:[box-shadow:0_0_0_3px_rgba(19,_63,_125,_0.08)] [.interview-card_&]:[border-color:#e2e8f0]"
                 type="text"
                 value={interview?.candidate_name || ""}
                 readOnly
-                style={{
-                  background: "var(--gray)",
 
-                  cursor: "not-allowed",
-                }}
               />
             </div>
 
-            <div className="field">
-              <label>Interview Round</label>
+            <div className="field [margin-bottom:14px]">
+              <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]">Interview Round</label>
 
-              <input
+              <input className="[background:#f8fafc] [cursor:not-allowed] [font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] [.interview-card_&]:[opacity:0.95] [.interview-card_&]:[cursor:pointer] focus:[.interview-card_&]:[border-color:#133f7d] focus:[.interview-card_&]:[box-shadow:0_0_0_3px_rgba(19,_63,_125,_0.08)] [.interview-card_&]:[border-color:#e2e8f0]"
                 type="text"
                 value={interview?.round || ""}
                 readOnly
-                style={{
-                  background: "var(--gray)",
 
-                  cursor: "not-allowed",
-                }}
               />
             </div>
           </div>
 
           {/* EDITABLE SCHEDULE */}
 
-          <div
-            style={{
-              marginTop: "24px",
-              marginBottom: "12px",
-            }}
+          <div className="[margin-top:24px] [margin-bottom:12px]"
+
           >
-            <h3
-              style={{
-                marginBottom: "4px",
-              }}
+            <h3 className="[margin-bottom:4px] [.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px]"
+
             >
               Schedule
             </h3>
 
-            <p className="muted">Update the interview date and time.</p>
+            <p className="muted [font-size:12px] [color:#64748b]">Update the interview date and time.</p>
           </div>
 
-          <div className="grid2">
+          <div className="grid2 [display:grid] [grid-template-columns:1fr_1fr] [gap:14px] max-[960px]:[grid-template-columns:1fr] max-[960px]:[flex-direction:column] max-[640px]:[.interview-card_&]:[grid-template-columns:1fr]">
             {/* DATE */}
 
-            <div className="field">
-              <label>Interview Date</label>
+            <div className="field [margin-bottom:14px]">
+              <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]">Interview Date</label>
 
-              <input
+              <input className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] [.interview-card_&]:[opacity:0.95] [.interview-card_&]:[cursor:pointer] focus:[.interview-card_&]:[border-color:#133f7d] focus:[.interview-card_&]:[box-shadow:0_0_0_3px_rgba(19,_63,_125,_0.08)] [.interview-card_&]:[border-color:#e2e8f0]"
                 type="date"
                 min={today}
                 value={interviewDate}
@@ -299,10 +279,10 @@ function EditInterviewSchedulePage() {
 
             {/* TIME */}
 
-            <div className="field">
-              <label>Interview Time</label>
+            <div className="field [margin-bottom:14px]">
+              <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]">Interview Time</label>
 
-              <input
+              <input className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] [.interview-card_&]:[opacity:0.95] [.interview-card_&]:[cursor:pointer] focus:[.interview-card_&]:[border-color:#133f7d] focus:[.interview-card_&]:[box-shadow:0_0_0_3px_rgba(19,_63,_125,_0.08)] [.interview-card_&]:[border-color:#e2e8f0]"
                 type="time"
                 value={interviewTime}
                 onChange={(e) => setInterviewTime(e.target.value)}
@@ -314,12 +294,10 @@ function EditInterviewSchedulePage() {
 
           {(interviewDate || interviewTime) && (
             <div
-              className="info-box success"
-              style={{
-                marginTop: "20px",
-              }}
+              className="info-box success [margin-top:20px] [background:#e0f7fa] [border:1px_solid_#b2ebf2] [border-radius:8px] [padding:12px] [font-size:13px] [color:#006064] [margin-bottom:16px] [background:#dcfce7] [border-color:#86efac] [color:#166534]"
+
             >
-              <strong>Updated Schedule</strong>
+              <strong className="[font-weight:700]">Updated Schedule</strong>
               <br />
               Date: {interviewDate || "Not selected"}
               <br />
@@ -330,27 +308,18 @@ function EditInterviewSchedulePage() {
           {/* ACTIONS */}
 
           <div
-            className="flex-row"
-            style={{
-              justifyContent: "space-between",
+            className="flex-row [justify-content:space-between] [margin-top:24px] [display:flex] [align-items:center] [gap:10px]"
 
-              marginTop: "24px",
-            }}
           >
-            <Link to="/interviews" className="btn btn-secondary">
+            <Link to="/interviews" className="btn btn-secondary [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#fff] [color:#133f7d] [border:1.5px_solid_#133f7d]">
               Cancel
             </Link>
 
             <button
               type="button"
-              className="btn btn-primary"
+              className={`btn btn-primary [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#133f7d] [color:#fff] ${saving ? "[opacity:0.6] [cursor:not-allowed]" : "[opacity:1] [cursor:pointer]"}`}
               onClick={handleSave}
               disabled={saving}
-              style={{
-                opacity: saving ? 0.6 : 1,
-
-                cursor: saving ? "not-allowed" : "pointer",
-              }}
             >
               {saving ? "Saving..." : "Save Changes"}
             </button>

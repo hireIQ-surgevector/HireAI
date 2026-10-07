@@ -60,14 +60,14 @@ const getJobSecondarySkills = (job) => {
 */
 
 const CATEGORY_CLASS_MAP = {
-  "Strong Match": "match-strong",
-  "Good Match": "match-good",
-  "Moderate Match": "match-moderate",
-  "Low Match": "match-low",
+  "Strong Match": "[background:#dcfce7] [color:#166534]",
+  "Good Match": "[background:#dbeafe] [color:#1d4ed8]",
+  "Moderate Match": "[background:#fef3c7] [color:#92400e]",
+  "Low Match": "[background:#fee2e2] [color:#991b1b]",
 };
 
 const getMatchClassName = (category) =>
-  CATEGORY_CLASS_MAP[category] || "match-low";
+  CATEGORY_CLASS_MAP[category] || "[background:#fee2e2] [color:#991b1b]";
 
 /*
   A good AI match is what unlocks the one-click "Move to L1"
@@ -447,7 +447,7 @@ function CandidateMatcherPage() {
         selectedJobId && (
           <button
             type="button"
-            className="btn btn-secondary"
+            className="btn btn-secondary [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#fff] [color:#133f7d] [border:1.5px_solid_#133f7d]"
             onClick={() => handleJobChange(selectedJobId)}
           >
             <RefreshCw size={16} />
@@ -460,11 +460,11 @@ function CandidateMatcherPage() {
           PAGE INTRO
       ===================================== */}
 
-      <div className="matcher-header">
+      <div className="matcher-header [margin-bottom:24px]">
         <div>
-          <h2 className="matcher-title">Find the Best Candidates</h2>
+          <h2 className="matcher-title [margin:0_0_6px] [font-size:22px]">Find the Best Candidates</h2>
 
-          <p className="matcher-description">
+          <p className="matcher-description [margin:0] [color:#64748b] [font-size:14px]">
             Select a job to compare candidate profiles against the job
             requirements.
           </p>
@@ -475,19 +475,19 @@ function CandidateMatcherPage() {
           JOB SELECTOR
       ===================================== */}
 
-      <div className="matcher-job-selector card">
-        <div className="matcher-selector-label">
+      <div className="matcher-job-selector card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [padding:20px] [margin-bottom:20px]">
+        <div className="matcher-selector-label [display:flex] [align-items:center] [gap:8px] [font-size:14px] [font-weight:600] [margin-bottom:10px]">
           <BriefcaseBusiness size={18} />
 
           <span>Select Job</span>
         </div>
 
-        <div className="matcher-select-wrapper">
+        <div className="matcher-select-wrapper [position:relative]">
           <select
             value={selectedJobId}
             onChange={(event) => handleJobChange(event.target.value)}
             disabled={loadingJobs}
-            className="matcher-select"
+            className="matcher-select [font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] [appearance:none] [padding:12px_42px_12px_14px] [border:1px_solid_#d1d5db] [background:white] [cursor:pointer] focus:[outline:none] focus:[border-color:#2563eb]"
           >
             <option value="">
               {loadingJobs ? "Loading jobs..." : "Choose a job opening"}
@@ -501,7 +501,7 @@ function CandidateMatcherPage() {
             ))}
           </select>
 
-          <ChevronDown size={18} className="matcher-select-icon" />
+          <ChevronDown size={18} className="matcher-select-icon [position:absolute] [right:14px] [top:50%] [transform:translateY(-50%)] [pointer-events:none] [color:#64748b]" />
         </div>
       </div>
 
@@ -509,36 +509,36 @@ function CandidateMatcherPage() {
           ERROR
       ===================================== */}
 
-      {error && <div className="error-box">{error}</div>}
+      {error && <div className="error-box [background:#fee2e2] [color:#991b1b] [padding:10px] [border-radius:8px] [font-size:12px] [margin-bottom:10px]">{error}</div>}
 
       {/* =====================================
           SELECTED JOB DETAILS
       ===================================== */}
 
       {selectedJob && (
-        <div className="matcher-job-details card">
-          <div className="matcher-job-main">
-            <div className="matcher-job-icon">
+        <div className="matcher-job-details card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [display:flex] [align-items:center] [justify-content:space-between] [gap:20px] [padding:20px] [margin-bottom:20px] [flex-wrap:wrap] max-[700px]:[flex-direction:column] max-[700px]:[align-items:flex-start]">
+          <div className="matcher-job-main [display:flex] [align-items:center] [gap:14px]">
+            <div className="matcher-job-icon [width:48px] [height:48px] [display:flex] [align-items:center] [justify-content:center] [border-radius:10px] [background:#f3f4f6]">
               <BriefcaseBusiness size={22} />
             </div>
 
             <div>
-              <h2>{selectedJob.title}</h2>
+              <h2 className="[.matcher-job-main_&]:[margin:0_0_8px] [.matcher-job-main_&]:[font-size:18px]">{selectedJob.title}</h2>
 
-              <div className="matcher-job-meta">
+              <div className="matcher-job-meta [display:flex] [flex-wrap:wrap] [gap:14px] [color:#64748b] [font-size:13px]">
                 {selectedJob.department && (
-                  <span>🏢 {selectedJob.department}</span>
+                  <span className="[.matcher-job-meta_&]:[display:flex] [.matcher-job-meta_&]:[align-items:center] [.matcher-job-meta_&]:[gap:5px]">🏢 {selectedJob.department}</span>
                 )}
 
                 {selectedJob.location && (
-                  <span>
+                  <span className="[.matcher-job-meta_&]:[display:flex] [.matcher-job-meta_&]:[align-items:center] [.matcher-job-meta_&]:[gap:5px]">
                     <MapPin size={14} />
 
                     {selectedJob.location}
                   </span>
                 )}
 
-                <span>
+                <span className="[.matcher-job-meta_&]:[display:flex] [.matcher-job-meta_&]:[align-items:center] [.matcher-job-meta_&]:[gap:5px]">
                   <Users size={14} />
                   {selectedJob.candidate_count || 0} applicants
                 </span>
@@ -546,26 +546,26 @@ function CandidateMatcherPage() {
             </div>
           </div>
 
-          <div className="matcher-job-experience">
-            <span>Minimum Experience</span>
+          <div className="matcher-job-experience [display:flex] [flex-direction:column] [text-align:right] [gap:4px] max-[700px]:[text-align:left]">
+            <span className="[.matcher-job-experience_&]:[font-size:12px] [.matcher-job-experience_&]:[color:#64748b]">Minimum Experience</span>
 
-            <strong>{selectedJob.min_exp || 0} years</strong>
+            <strong className="[font-weight:700] [.matcher-job-experience_&]:[font-size:16px]">{selectedJob.min_exp || 0} years</strong>
           </div>
 
           {/* JD SKILLS - LEFT AS NORMAL */}
 
-          <div className="matcher-job-skills-panel">
+          <div className="matcher-job-skills-panel [display:flex] [flex-wrap:wrap] [gap:20px] [flex-basis:100%] [padding-top:16px] [margin-top:4px] [border-top:1px_solid_#e2e8f0]">
             {getJobPrimarySkills(selectedJob).length > 0 && (
-              <div className="matcher-job-skill-group">
-                <span className="matcher-job-skill-group-label">
+              <div className="matcher-job-skill-group [display:flex] [flex-direction:column] [gap:8px] [min-width:200px] [flex:1]">
+                <span className="matcher-job-skill-group-label [font-size:12px] [font-weight:600] [color:#64748b] [text-transform:uppercase] [letter-spacing:0.03em]">
                   Primary Skills
                 </span>
 
-                <div className="matcher-skills">
+                <div className="matcher-skills [display:flex] [flex-wrap:wrap] [align-items:center] [gap:7px]">
                   {getJobPrimarySkills(selectedJob).map((skill) => (
                     <span
                       key={`primary-${skill}`}
-                      className="matcher-skill matcher-skill-primary"
+                      className="matcher-skill matcher-skill-primary [display:inline-flex] [align-items:center] [width:fit-content] [padding:5px_10px] [border:1px_solid_#e2e8f0] [border-radius:999px] [background:#f1f5f9] [color:#475569] [font-size:12px] [line-height:1.2] [text-transform:capitalize] [white-space:nowrap] [background:#ede9fe] [color:#5b21b6]"
                     >
                       {skill}
                     </span>
@@ -575,16 +575,16 @@ function CandidateMatcherPage() {
             )}
 
             {getJobSecondarySkills(selectedJob).length > 0 && (
-              <div className="matcher-job-skill-group">
-                <span className="matcher-job-skill-group-label">
+              <div className="matcher-job-skill-group [display:flex] [flex-direction:column] [gap:8px] [min-width:200px] [flex:1]">
+                <span className="matcher-job-skill-group-label [font-size:12px] [font-weight:600] [color:#64748b] [text-transform:uppercase] [letter-spacing:0.03em]">
                   Secondary Skills
                 </span>
 
-                <div className="matcher-skills">
+                <div className="matcher-skills [display:flex] [flex-wrap:wrap] [align-items:center] [gap:7px]">
                   {getJobSecondarySkills(selectedJob).map((skill) => (
                     <span
                       key={`secondary-${skill}`}
-                      className="matcher-skill matcher-skill-secondary"
+                      className="matcher-skill matcher-skill-secondary [display:inline-flex] [align-items:center] [width:fit-content] [padding:5px_10px] [border:1px_solid_#e2e8f0] [border-radius:999px] [background:#f1f5f9] [color:#475569] [font-size:12px] [line-height:1.2] [text-transform:capitalize] [white-space:nowrap] [background:#e0f2fe] [color:#075985]"
                     >
                       {skill}
                     </span>
@@ -601,8 +601,8 @@ function CandidateMatcherPage() {
       ===================================== */}
 
       {loadingCandidates && (
-        <div className="card matcher-loading">
-          <RefreshCw size={22} className="matcher-spinner" />
+        <div className="card matcher-loading [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [display:flex] [align-items:center] [justify-content:center] [gap:10px] [padding:30px]">
+          <RefreshCw size={22} className="matcher-spinner animate-spin" />
 
           <span>Matching candidates...</span>
         </div>
@@ -616,51 +616,51 @@ function CandidateMatcherPage() {
         <>
           {/* SUMMARY */}
 
-          <div className="matcher-summary-grid">
-            <div className="matcher-summary-card card">
-              <div className="matcher-summary-icon">
+          <div className="matcher-summary-grid [display:grid] [grid-template-columns:repeat(3,_minmax(0,_1fr))] [gap:16px] [margin-bottom:20px] max-[700px]:[grid-template-columns:1fr]">
+            <div className="matcher-summary-card card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [display:flex] [align-items:center] [gap:14px] [padding:18px]">
+              <div className="matcher-summary-icon [width:42px] [height:42px] [display:flex] [align-items:center] [justify-content:center] [border-radius:10px] [background:#f3f4f6] last:[.matcher-summary-card_&]:[display:flex] last:[.matcher-summary-card_&]:[flex-direction:column] last:[.matcher-summary-card_&]:[gap:3px]">
                 <Users size={20} />
               </div>
 
-              <div>
-                <span>Total Candidates</span>
+              <div className="last:[.matcher-summary-card_&]:[display:flex] last:[.matcher-summary-card_&]:[flex-direction:column] last:[.matcher-summary-card_&]:[gap:3px]">
+                <span className="[.matcher-summary-card_&]:[font-size:13px] [.matcher-summary-card_&]:[color:#64748b]">Total Candidates</span>
 
-                <strong>{candidates.length}</strong>
+                <strong className="[font-weight:700] [.matcher-summary-card_&]:[font-size:22px]">{candidates.length}</strong>
               </div>
             </div>
 
-            <div className="matcher-summary-card card">
-              <div className="matcher-summary-icon">
+            <div className="matcher-summary-card card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [display:flex] [align-items:center] [gap:14px] [padding:18px]">
+              <div className="matcher-summary-icon [width:42px] [height:42px] [display:flex] [align-items:center] [justify-content:center] [border-radius:10px] [background:#f3f4f6] last:[.matcher-summary-card_&]:[display:flex] last:[.matcher-summary-card_&]:[flex-direction:column] last:[.matcher-summary-card_&]:[gap:3px]">
                 <Award size={20} />
               </div>
 
-              <div>
-                <span>Strong Matches</span>
+              <div className="last:[.matcher-summary-card_&]:[display:flex] last:[.matcher-summary-card_&]:[flex-direction:column] last:[.matcher-summary-card_&]:[gap:3px]">
+                <span className="[.matcher-summary-card_&]:[font-size:13px] [.matcher-summary-card_&]:[color:#64748b]">Strong Matches</span>
 
-                <strong>{strongMatches}</strong>
+                <strong className="[font-weight:700] [.matcher-summary-card_&]:[font-size:22px]">{strongMatches}</strong>
               </div>
             </div>
 
-            <div className="matcher-summary-card card">
-              <div className="matcher-summary-icon">
+            <div className="matcher-summary-card card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [display:flex] [align-items:center] [gap:14px] [padding:18px]">
+              <div className="matcher-summary-icon [width:42px] [height:42px] [display:flex] [align-items:center] [justify-content:center] [border-radius:10px] [background:#f3f4f6] last:[.matcher-summary-card_&]:[display:flex] last:[.matcher-summary-card_&]:[flex-direction:column] last:[.matcher-summary-card_&]:[gap:3px]">
                 <CheckCircle2 size={20} />
               </div>
 
-              <div>
-                <span>Good Matches</span>
+              <div className="last:[.matcher-summary-card_&]:[display:flex] last:[.matcher-summary-card_&]:[flex-direction:column] last:[.matcher-summary-card_&]:[gap:3px]">
+                <span className="[.matcher-summary-card_&]:[font-size:13px] [.matcher-summary-card_&]:[color:#64748b]">Good Matches</span>
 
-                <strong>{goodMatches}</strong>
+                <strong className="[font-weight:700] [.matcher-summary-card_&]:[font-size:22px]">{goodMatches}</strong>
               </div>
             </div>
           </div>
 
           {/* FILTERS */}
 
-          <div className="matcher-toolbar card">
-            <div className="matcher-search">
+          <div className="matcher-toolbar card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [display:grid] [grid-template-columns:minmax(0,_1fr)_180px] [align-items:center] [gap:12px] [padding:14px] [margin-bottom:20px] max-[700px]:[grid-template-columns:1fr] max-[700px]:[align-items:stretch]">
+            <div className="matcher-search [min-width:0] [width:100%] [height:40px] [display:flex] [align-items:center] [gap:10px] [padding:0_12px] [border:1px_solid_#d1d5db] [border-radius:8px] [background:#fff]">
               <Search size={18} />
 
-              <input
+              <input className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] [.matcher-search_&]:[width:100%] [.matcher-search_&]:[min-width:0] [.matcher-search_&]:[height:100%] [.matcher-search_&]:[border:none] [.matcher-search_&]:[outline:none] [.matcher-search_&]:[font-size:14px] [.matcher-search_&]:[background:transparent]"
                 type="text"
                 placeholder="Search candidates..."
                 value={searchQuery}
@@ -671,7 +671,7 @@ function CandidateMatcherPage() {
             <select
               value={minimumScore}
               onChange={(event) => setMinimumScore(event.target.value)}
-              className="matcher-score-filter"
+              className="matcher-score-filter [font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] [min-width:0] [height:40px] [padding:0_12px] [border:1px_solid_#d1d5db] [background:white] [cursor:pointer]"
             >
               <option value="All">All Scores</option>
 
@@ -687,7 +687,7 @@ function CandidateMatcherPage() {
                 CANDIDATE RESULTS
             ===================================== */}
 
-          <div className="matcher-results">
+          <div className="matcher-results [display:flex] [flex-direction:column] [gap:14px]">
             {filteredCandidates.map((candidate) => {
               const decision = candidateDecisions[candidate.candidate_id] || {};
 
@@ -700,7 +700,7 @@ function CandidateMatcherPage() {
               return (
                 <div
                   key={candidate.candidate_id}
-                  className="matcher-candidate-card card"
+                  className="matcher-candidate-card card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [display:grid] [grid-template-columns:minmax(220px,_1.5fr)_minmax(200px,_1fr)_120px_auto] [align-items:center] [gap:20px] [padding:18px] max-[900px]:[grid-template-columns:1fr] max-[900px]:[align-items:flex-start]"
                 >
                   {/* =====================================
                         CANDIDATE INFO
@@ -708,15 +708,15 @@ function CandidateMatcherPage() {
 
                   <Link
                     to={`/candidate-detail/${candidate.candidate_id}`}
-                    className="matcher-candidate-info-link"
+                    className="block text-inherit no-underline"
                   >
-                    <div className="matcher-candidate-info">
-                      <div className="matcher-avatar">
+                    <div className="matcher-candidate-info [display:flex] [align-items:center] [gap:12px]">
+                      <div className="matcher-avatar [width:46px] [height:46px] [display:flex] [align-items:center] [justify-content:center] [border-radius:50%] [background:#f3f4f6]">
                         <UserRound size={22} />
                       </div>
 
                       <div>
-                        <h3 className="matcher-candidate-name">
+                        <h3 className="matcher-candidate-name [.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px] [.matcher-candidate-info_&]:[margin:0_0_4px] [.matcher-candidate-info_&]:[font-size:15px] [font-size:18px] [font-weight:700] [color:#133f7d] [margin:0_0_4px]">
                           {candidate.name || candidate.full_name || "Candidate"}
                         </h3>
                       </div>
@@ -730,7 +730,7 @@ function CandidateMatcherPage() {
                         Grey = skill does not match JD
                     ===================================== */}
 
-                  <div className="matcher-skills">
+                  <div className="matcher-skills [display:flex] [flex-wrap:wrap] [align-items:center] [gap:7px]">
                     {candidateSkills.slice(0, 5).map((skill) => {
                       /*
                             Check against selected Job Description
@@ -743,11 +743,9 @@ function CandidateMatcherPage() {
                       return (
                         <span
                           key={skill}
-                          className={
-                            matchesJD
+                          className={`${(matchesJD
                               ? "matcher-skill matcher-skill-matched"
-                              : "matcher-skill matcher-skill-unmatched"
-                          }
+                              : "matcher-skill matcher-skill-unmatched")} [&.matcher-skill]:[display:inline-flex] [&.matcher-skill]:[align-items:center] [&.matcher-skill]:[width:fit-content] [&.matcher-skill]:[padding:5px_10px] [&.matcher-skill]:[border:1px_solid_#e2e8f0] [&.matcher-skill]:[border-radius:999px] [&.matcher-skill]:[background:#f1f5f9] [&.matcher-skill]:[color:#475569] [&.matcher-skill]:[font-size:12px] [&.matcher-skill]:[line-height:1.2] [&.matcher-skill]:[text-transform:capitalize] [&.matcher-skill]:[white-space:nowrap] [&.matcher-skill-matched]:[background:#dcfce7] [&.matcher-skill-matched]:[color:#166534] [&.matcher-skill-matched]:[font-weight:600] [&.matcher-skill-matched]:[box-shadow:inset_0_0_0_1px_#86efac]`}
                         >
                           {skill}
                         </span>
@@ -755,7 +753,7 @@ function CandidateMatcherPage() {
                     })}
 
                     {candidateSkills.length === 0 && (
-                      <span className="matcher-no-skills">
+                      <span className="matcher-no-skills [font-size:13px] [color:#64748b]">
                         No skills available
                       </span>
                     )}
@@ -765,15 +763,15 @@ function CandidateMatcherPage() {
                         SCORE
                     ===================================== */}
 
-                  <div className="matcher-score">
+                  <div className="matcher-score [display:flex] [flex-direction:column] [align-items:center] [gap:6px] max-[900px]:[align-items:flex-start]">
                     <div
-                      className={`matcher-score-circle ${candidate.matchDetails.className}`}
+                      className={`${(`matcher-score-circle ${candidate.matchDetails.className}`)} [width:62px] [height:62px] [display:flex] [align-items:center] [justify-content:center] [border-radius:50%] [font-size:15px] [font-weight:700]`}
                     >
                       {candidate.matchScore}%
                     </div>
 
                     <span
-                      className={`matcher-score-label ${candidate.matchDetails.className}`}
+                      className={`${(`matcher-score-label ${candidate.matchDetails.className}`)} [font-size:12px] [font-weight:600] [text-align:center]`}
                     >
                       {candidate.matchDetails.label}
                     </span>
@@ -783,18 +781,16 @@ function CandidateMatcherPage() {
                         AI MATCH DECISION WORKFLOW
                     ===================================== */}
 
-                  <div className="matcher-decision">
+                  <div className="matcher-decision [min-width:172px] [display:flex] [flex-direction:column] [align-items:stretch] [gap:8px]">
                     {/* =====================================
                             FINAL STAGE
                         ===================================== */}
 
                     {decision.stage ? (
                       <span
-                        className={
-                          decision.stage === "L1"
+                        className={`${(decision.stage === "L1"
                             ? "matcher-decision-badge matcher-decision-badge-l1"
-                            : "matcher-decision-badge matcher-decision-badge-rejected"
-                        }
+                            : "matcher-decision-badge matcher-decision-badge-rejected")} [&.matcher-decision-badge]:[display:inline-flex] [&.matcher-decision-badge]:[align-items:center] [&.matcher-decision-badge]:[justify-content:center] [&.matcher-decision-badge]:[gap:6px] [&.matcher-decision-badge]:[min-height:36px] [&.matcher-decision-badge]:[padding:8px_10px] [&.matcher-decision-badge]:[border-radius:8px] [&.matcher-decision-badge]:[font-size:11px] [&.matcher-decision-badge]:[font-weight:700] [&.matcher-decision-badge]:[text-align:center] [&.matcher-decision-badge-l1]:[background:#dcfce7] [&.matcher-decision-badge-l1]:[color:#166534] [&.matcher-decision-badge-rejected]:[background:#fee2e2] [&.matcher-decision-badge-rejected]:[color:#991b1b]`}
                       >
                         {decision.stage === "L1" ? (
                           <>
@@ -815,7 +811,7 @@ function CandidateMatcherPage() {
       Nothing else needs to be selected because
       the recruiter has accepted the AI recommendation.
     */
-                      <span className="matcher-decision-badge matcher-decision-badge-l1">
+                      <span className="matcher-decision-badge matcher-decision-badge-l1 [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [min-height:36px] [padding:8px_10px] [border-radius:8px] [font-size:11px] [font-weight:700] [text-align:center] [background:#dcfce7] [color:#166534]">
                         <CheckCircle2 size={14} />
                         AI Match Accepted
                       </span>
@@ -827,10 +823,10 @@ function CandidateMatcherPage() {
         1. Advance to L1
         2. Reject Candidate
     */
-                      <div className="matcher-decision-actions">
+                      <div className="matcher-decision-actions [display:flex] [flex-direction:column] [align-items:stretch] [gap:8px]">
                         <button
                           type="button"
-                          className="btn btn-success btn-sm"
+                          className="btn btn-success btn-sm [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#22c55e] [color:#fff] [padding:6px_14px] [font-size:12px] [.matcher-decision_&]:[width:100%] [.matcher-decision_&]:[min-height:36px] [.matcher-decision_&]:[justify-content:center] [.matcher-decision_&]:[white-space:normal] [.matcher-decision_&]:[line-height:1.25] disabled:[.matcher-decision_&]:[cursor:wait] disabled:[.matcher-decision_&]:[opacity:0.6]"
                           disabled={
                             processingCandidateId === candidate.candidate_id
                           }
@@ -844,7 +840,7 @@ function CandidateMatcherPage() {
 
                         <button
                           type="button"
-                          className="btn btn-danger btn-sm"
+                          className="btn btn-danger btn-sm [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#ef4444] [color:#fff] [padding:6px_14px] [font-size:12px] [.matcher-decision_&]:[width:100%] [.matcher-decision_&]:[min-height:36px] [.matcher-decision_&]:[justify-content:center] [.matcher-decision_&]:[white-space:normal] [.matcher-decision_&]:[line-height:1.25] disabled:[.matcher-decision_&]:[cursor:wait] disabled:[.matcher-decision_&]:[opacity:0.6]"
                           disabled={
                             processingCandidateId === candidate.candidate_id
                           }
@@ -863,10 +859,10 @@ function CandidateMatcherPage() {
                       /*
       No recruiter decision has been selected yet.
     */
-                      <div className="matcher-decision-actions">
+                      <div className="matcher-decision-actions [display:flex] [flex-direction:column] [align-items:stretch] [gap:8px]">
                         <button
                           type="button"
-                          className="btn btn-primary btn-sm"
+                          className="btn btn-primary btn-sm [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#133f7d] [color:#fff] [padding:6px_14px] [font-size:12px] [.matcher-decision_&]:[width:100%] [.matcher-decision_&]:[min-height:36px] [.matcher-decision_&]:[justify-content:center] [.matcher-decision_&]:[white-space:normal] [.matcher-decision_&]:[line-height:1.25] disabled:[.matcher-decision_&]:[cursor:wait] disabled:[.matcher-decision_&]:[opacity:0.6]"
                           onClick={() =>
                             saveAIDecision(candidate.candidate_id, "accept")
                           }
@@ -877,7 +873,7 @@ function CandidateMatcherPage() {
 
                         <button
                           type="button"
-                          className="btn btn-outline btn-sm"
+                          className="btn btn-outline btn-sm [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [padding:6px_14px] [font-size:12px] [.matcher-decision_&]:[width:100%] [.matcher-decision_&]:[min-height:36px] [.matcher-decision_&]:[justify-content:center] [.matcher-decision_&]:[white-space:normal] [.matcher-decision_&]:[line-height:1.25] disabled:[.matcher-decision_&]:[cursor:wait] disabled:[.matcher-decision_&]:[opacity:0.6]"
                           onClick={() =>
                             saveAIDecision(candidate.candidate_id, "override")
                           }
@@ -893,12 +889,12 @@ function CandidateMatcherPage() {
             })}
 
             {filteredCandidates.length === 0 && (
-              <div className="matcher-empty card">
+              <div className="matcher-empty card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [display:flex] [flex-direction:column] [align-items:center] [justify-content:center] [text-align:center] [padding:50px_20px] [color:#64748b]">
                 <AlertCircle size={30} />
 
-                <h3>No matching candidates found</h3>
+                <h3 className="[.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px] [.matcher-empty_&]:[margin:14px_0_6px] [.matcher-empty_&]:[color:inherit]">No matching candidates found</h3>
 
-                <p>Try changing your search or score filter.</p>
+                <p className="[.matcher-empty_&]:[margin:0] [.matcher-empty_&]:[max-width:450px]">Try changing your search or score filter.</p>
               </div>
             )}
           </div>
@@ -910,12 +906,12 @@ function CandidateMatcherPage() {
       ===================================== */}
 
       {!loadingCandidates && selectedJob && candidates.length === 0 && (
-        <div className="matcher-empty card">
+        <div className="matcher-empty card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [display:flex] [flex-direction:column] [align-items:center] [justify-content:center] [text-align:center] [padding:50px_20px] [color:#64748b]">
           <Users size={32} />
 
-          <h3>No new candidates to evaluate</h3>
+          <h3 className="[.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px] [.matcher-empty_&]:[margin:14px_0_6px] [.matcher-empty_&]:[color:inherit]">No new candidates to evaluate</h3>
 
-          <p>
+          <p className="[.matcher-empty_&]:[margin:0] [.matcher-empty_&]:[max-width:450px]">
             All candidates for this job have already been evaluated or moved
             beyond the new stage.
           </p>
@@ -927,12 +923,12 @@ function CandidateMatcherPage() {
       ===================================== */}
 
       {!selectedJob && !loadingJobs && (
-        <div className="matcher-empty matcher-initial card">
+        <div className="matcher-empty matcher-initial card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [display:flex] [flex-direction:column] [align-items:center] [justify-content:center] [text-align:center] [padding:50px_20px] [color:#64748b] [margin-top:20px]">
           <Search size={34} />
 
-          <h3>Select a job to start matching</h3>
+          <h3 className="[.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px] [.matcher-empty_&]:[margin:14px_0_6px] [.matcher-empty_&]:[color:inherit]">Select a job to start matching</h3>
 
-          <p>
+          <p className="[.matcher-empty_&]:[margin:0] [.matcher-empty_&]:[max-width:450px]">
             Choose a job opening above to analyze its applicants and identify
             the strongest matches.
           </p>

@@ -151,7 +151,7 @@ function EditJobPage() {
   if (loading) {
     return (
       <PageShell title="Edit Job Opening" active="jobs">
-        <div className="card" style={{ padding: "24px", textAlign: "center" }}>
+        <div className="card [padding:24px] [text-align:center] [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px]" >
           Loading job details...
         </div>
       </PageShell>
@@ -160,17 +160,17 @@ function EditJobPage() {
 
   return (
     <PageShell title={`Edit Job`} active="jobs">
-      <div style={{ maxWidth: "720px", margin: "0 auto" }}>
-        <div style={{ marginBottom: "16px" }}>
-          <Link to="/jobs" className="btn btn-ghost btn-sm">
+      <div className="[max-width:720px] [margin:0_auto]" >
+        <div className="[margin-bottom:16px]" >
+          <Link to="/jobs" className="btn btn-ghost btn-sm [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:transparent] [color:#64748b] [border:1px_solid_#e2e8f0] [padding:6px_14px] [font-size:12px]">
             ← Back to Jobs
           </Link>
         </div>
 
         {error && (
           <div
-            className="error-box"
-            style={{ marginBottom: "16px", color: "red" }}
+            className="error-box [margin-bottom:16px] [color:red] [background:#fee2e2] [color:#991b1b] [padding:10px] [border-radius:8px] [font-size:12px] [margin-bottom:10px]"
+
           >
             {error}
           </div>
@@ -178,8 +178,8 @@ function EditJobPage() {
 
         {success && (
           <div
-            className="success-box"
-            style={{ marginBottom: "16px", color: "green" }}
+            className="mb-4 rounded-lg bg-green-100 p-2.5 text-xs text-green-800"
+
           >
             {success}
           </div>
@@ -187,41 +187,29 @@ function EditJobPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="card"
-          style={{ padding: "24px" }}
+          className="card [padding:24px] [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px]"
+
         >
-          <h3>Edit Job Details</h3>
-          <p className="muted" style={{ marginBottom: "20px" }}>
+          <h3 className="[.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px]">Edit Job Details</h3>
+          <p className="muted [margin-bottom:20px] [font-size:12px] [color:#64748b]" >
             Update requirements, compensation, location, or job specifications.
           </p>
 
           {/* Read-only Metadata Banner */}
-          <div
-            style={{
-              padding: "12px",
-              backgroundColor: "#f5f5f5",
-              borderRadius: "6px",
-              marginBottom: "20px",
-              fontSize: "0.85rem",
-              display: "flex",
-              gap: "24px",
-            }}
+          <div className="[padding:12px] [background-color:#f5f5f5] [border-radius:6px] [margin-bottom:20px] [font-size:0.85rem] [display:flex] [gap:24px]"
+
           >
             <div>
-              <strong>Job ID:</strong> {jobId}
+              <strong className="[font-weight:700]">Job ID:</strong> {jobId}
             </div>
             <div>
-              <strong>Posted On:</strong> {meta.created_at}
+              <strong className="[font-weight:700]">Posted On:</strong> {meta.created_at}
             </div>
           </div>
 
-          <div className="form-group" style={{ marginBottom: "16px" }}>
-            <label
-              style={{
-                display: "block",
-                fontWeight: "bold",
-                marginBottom: "6px",
-              }}
+          <div className="form-group [margin-bottom:16px] [display:flex] [flex-direction:column] [gap:8px]" >
+            <label className="[display:block] [font-weight:bold] [margin-bottom:6px] [font-size:13px] [font-weight:600] [color:#1e293b] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold] [.form-group_&]:[display:flex] [.form-group_&]:[align-items:center] [.form-group_&]:[gap:6px] [.form-group_&]:[font-size:13px] [.form-group_&]:[font-weight:600] [.form-group_&]:[color:#1e293b]"
+
             >
               Job Title
             </label>
@@ -231,27 +219,18 @@ function EditJobPage() {
               value={formData.title}
               onChange={handleChange}
               required
-              className="form-control"
-              style={{ width: "100%", padding: "8px" }}
+              className="form-control [width:100%] [padding:8px] [font:inherit] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] [.form-group_&]:[width:100%] [.form-group_&]:[height:42px] [.form-group_&]:[padding:0_12px] [.form-group_&]:[border:1px_solid_#dfe3e8] [.form-group_&]:[border-radius:8px] [.form-group_&]:[background:#ffffff] [.form-group_&]:[color:#1e293b] [.form-group_&]:[font-size:14px] [.form-group_&]:[outline:none] [.form-group_&]:[box-sizing:border-box] [.form-group_&]:[transition:border-color_0.2s_ease,_box-shadow_0.2s_ease] focus:[.form-group_&]:[border-color:#133f7d] focus:[.form-group_&]:[box-shadow:0_0_0_3px_rgba(19,_63,_125,_0.08)]"
+
             />
           </div>
 
           <div
-            className="form-row"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "16px",
-              marginBottom: "16px",
-            }}
+            className="form-row [display:grid] [grid-template-columns:1fr_1fr] [gap:16px] [margin-bottom:16px]"
+
           >
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontWeight: "bold",
-                  marginBottom: "6px",
-                }}
+              <label className="[display:block] [font-weight:bold] [margin-bottom:6px] [font-size:13px] [font-weight:600] [color:#1e293b] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]"
+
               >
                 Department
               </label>
@@ -260,17 +239,13 @@ function EditJobPage() {
                 name="department"
                 value={formData.department}
                 onChange={handleChange}
-                className="form-control"
-                style={{ width: "100%", padding: "8px" }}
+                className="form-control [width:100%] [padding:8px] [font:inherit] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
+
               />
             </div>
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontWeight: "bold",
-                  marginBottom: "6px",
-                }}
+              <label className="[display:block] [font-weight:bold] [margin-bottom:6px] [font-size:13px] [font-weight:600] [color:#1e293b] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]"
+
               >
                 Location
               </label>
@@ -280,19 +255,15 @@ function EditJobPage() {
                 value={formData.location}
                 onChange={handleChange}
                 required
-                className="form-control"
-                style={{ width: "100%", padding: "8px" }}
+                className="form-control [width:100%] [padding:8px] [font:inherit] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
+
               />
             </div>
           </div>
 
-          <div className="form-group" style={{ marginBottom: "16px" }}>
-            <label
-              style={{
-                display: "block",
-                fontWeight: "bold",
-                marginBottom: "6px",
-              }}
+          <div className="form-group [margin-bottom:16px] [display:flex] [flex-direction:column] [gap:8px]" >
+            <label className="[display:block] [font-weight:bold] [margin-bottom:6px] [font-size:13px] [font-weight:600] [color:#1e293b] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold] [.form-group_&]:[display:flex] [.form-group_&]:[align-items:center] [.form-group_&]:[gap:6px] [.form-group_&]:[font-size:13px] [.form-group_&]:[font-weight:600] [.form-group_&]:[color:#1e293b]"
+
             >
               Description
             </label>
@@ -302,27 +273,18 @@ function EditJobPage() {
               onChange={handleChange}
               required
               rows={5}
-              className="form-control"
-              style={{ width: "100%", padding: "8px" }}
+              className="form-control [width:100%] [padding:8px] [font:inherit] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
+
             />
           </div>
 
           <div
-            className="form-row"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "16px",
-              marginBottom: "16px",
-            }}
+            className="form-row [display:grid] [grid-template-columns:1fr_1fr] [gap:16px] [margin-bottom:16px]"
+
           >
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontWeight: "bold",
-                  marginBottom: "6px",
-                }}
+              <label className="[display:block] [font-weight:bold] [margin-bottom:6px] [font-size:13px] [font-weight:600] [color:#1e293b] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]"
+
               >
                 Mandatory Skills
               </label>
@@ -332,17 +294,13 @@ function EditJobPage() {
                 value={formData.mandatory_skills}
                 onChange={handleChange}
                 placeholder="e.g. React, Node.js"
-                className="form-control"
-                style={{ width: "100%", padding: "8px" }}
+                className="form-control [width:100%] [padding:8px] [font:inherit] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
+
               />
             </div>
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontWeight: "bold",
-                  marginBottom: "6px",
-                }}
+              <label className="[display:block] [font-weight:bold] [margin-bottom:6px] [font-size:13px] [font-weight:600] [color:#1e293b] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]"
+
               >
                 Required / Desired Skills
               </label>
@@ -352,28 +310,19 @@ function EditJobPage() {
                 value={formData.required_skills}
                 onChange={handleChange}
                 placeholder="e.g. Docker, AWS"
-                className="form-control"
-                style={{ width: "100%", padding: "8px" }}
+                className="form-control [width:100%] [padding:8px] [font:inherit] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
+
               />
             </div>
           </div>
 
           <div
-            className="form-row"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "16px",
-              marginBottom: "16px",
-            }}
+            className="form-row [display:grid] [grid-template-columns:1fr_1fr] [gap:16px] [margin-bottom:16px]"
+
           >
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontWeight: "bold",
-                  marginBottom: "6px",
-                }}
+              <label className="[display:block] [font-weight:bold] [margin-bottom:6px] [font-size:13px] [font-weight:600] [color:#1e293b] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]"
+
               >
                 Min Experience (Years)
               </label>
@@ -383,17 +332,13 @@ function EditJobPage() {
                 value={formData.min_exp}
                 onChange={handleChange}
                 min="0"
-                className="form-control"
-                style={{ width: "100%", padding: "8px" }}
+                className="form-control [width:100%] [padding:8px] [font:inherit] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
+
               />
             </div>
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontWeight: "bold",
-                  marginBottom: "6px",
-                }}
+              <label className="[display:block] [font-weight:bold] [margin-bottom:6px] [font-size:13px] [font-weight:600] [color:#1e293b] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]"
+
               >
                 Target Fill Date / Due Date
               </label>
@@ -402,28 +347,19 @@ function EditJobPage() {
                 name="due_date"
                 value={formData.due_date}
                 onChange={handleChange}
-                className="form-control"
-                style={{ width: "100%", padding: "8px" }}
+                className="form-control [width:100%] [padding:8px] [font:inherit] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
+
               />
             </div>
           </div>
 
           <div
-            className="form-row"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "16px",
-              marginBottom: "16px",
-            }}
+            className="form-row [display:grid] [grid-template-columns:1fr_1fr] [gap:16px] [margin-bottom:16px]"
+
           >
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontWeight: "bold",
-                  marginBottom: "6px",
-                }}
+              <label className="[display:block] [font-weight:bold] [margin-bottom:6px] [font-size:13px] [font-weight:600] [color:#1e293b] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]"
+
               >
                 Min Salary (LPA)
               </label>
@@ -434,17 +370,13 @@ function EditJobPage() {
                 onChange={handleChange}
                 min="0"
                 placeholder="e.g. 80000"
-                className="form-control"
-                style={{ width: "100%", padding: "8px" }}
+                className="form-control [width:100%] [padding:8px] [font:inherit] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
+
               />
             </div>
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontWeight: "bold",
-                  marginBottom: "6px",
-                }}
+              <label className="[display:block] [font-weight:bold] [margin-bottom:6px] [font-size:13px] [font-weight:600] [color:#1e293b] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]"
+
               >
                 Max Salary (LPA)
               </label>
@@ -455,19 +387,15 @@ function EditJobPage() {
                 onChange={handleChange}
                 min="0"
                 placeholder="e.g. 120000"
-                className="form-control"
-                style={{ width: "100%", padding: "8px" }}
+                className="form-control [width:100%] [padding:8px] [font:inherit] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
+
               />
             </div>
           </div>
 
-          <div className="form-group" style={{ marginBottom: "24px" }}>
-            <label
-              style={{
-                display: "block",
-                fontWeight: "bold",
-                marginBottom: "6px",
-              }}
+          <div className="form-group [margin-bottom:24px] [display:flex] [flex-direction:column] [gap:8px]" >
+            <label className="[display:block] [font-weight:bold] [margin-bottom:6px] [font-size:13px] [font-weight:600] [color:#1e293b] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold] [.form-group_&]:[display:flex] [.form-group_&]:[align-items:center] [.form-group_&]:[gap:6px] [.form-group_&]:[font-size:13px] [.form-group_&]:[font-weight:600] [.form-group_&]:[color:#1e293b]"
+
             >
               Interview Mode
             </label>
@@ -475,8 +403,8 @@ function EditJobPage() {
               name="interview_mode"
               value={formData.interview_mode}
               onChange={handleChange}
-              className="form-control"
-              style={{ width: "100%", padding: "8px" }}
+              className="form-control [width:100%] [padding:8px] [font:inherit] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
+
             >
               <option value="Video Interview (IncVid)">
                 Video Interview (IncVid)
@@ -487,13 +415,13 @@ function EditJobPage() {
             </select>
           </div>
 
-          <div
-            style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}
+          <div className="[display:flex] [gap:12px] [justify-content:flex-end]"
+
           >
-            <Link to="/jobs" className="btn btn-secondary">
+            <Link to="/jobs" className="btn btn-secondary [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#fff] [color:#133f7d] [border:1.5px_solid_#133f7d]">
               Cancel
             </Link>
-            <button type="submit" className="btn btn-primary" disabled={saving}>
+            <button type="submit" className="btn btn-primary [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#133f7d] [color:#fff]" disabled={saving}>
               {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>

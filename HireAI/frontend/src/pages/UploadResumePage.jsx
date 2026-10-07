@@ -189,58 +189,35 @@ function UploadResumePage() {
       active="candidates"
       backTo="/candidates"
     >
-      <div className="card large-card">
-        <h3>Upload Resumes</h3>
+      <div className="card large-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [max-width:760px] [margin:0_auto]">
+        <h3 className="[.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px]">Upload Resumes</h3>
 
         {/* ==================================================
             JOB SELECTION
         ================================================== */}
 
-        <div style={{ marginBottom: "20px" }}>
-          <label
+        <div className="[margin-bottom:20px]" >
+          <label className="[display:block] [margin-bottom:8px] [font-weight:600] [color:#1e293b] [font-size:13px] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]"
             htmlFor="job-select"
-            style={{
-              display: "block",
-              marginBottom: "8px",
-              fontWeight: 600,
-              color: "var(--text)",
-            }}
+
           >
             Select Job
           </label>
 
-          <div
-            style={{
-              position: "relative",
-            }}
+          <div className="[position:relative]"
+
           >
-            <Briefcase
+            <Briefcase className="[position:absolute] [left:12px] [top:50%] [transform:translateY(-50%)] [color:#64748b] [pointer-events:none]"
               size={18}
-              style={{
-                position: "absolute",
-                left: "12px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "var(--muted)",
-                pointerEvents: "none",
-              }}
+
             />
 
-            <select
+            <select className="[width:100%] [padding:12px_12px_12px_40px] [border:1px_solid_#e2e8f0] [border-radius:8px] [background:initial] [color:#1e293b] [font-size:14px] [outline:none] [font:inherit] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [background:#fff]"
               id="job-select"
               value={selectedJobId}
               onChange={(e) => setSelectedJobId(e.target.value)}
               disabled={loadingJobs}
-              style={{
-                width: "100%",
-                padding: "12px 12px 12px 40px",
-                border: "1px solid var(--border)",
-                borderRadius: "8px",
-                background: "var(--surface)",
-                color: "var(--text)",
-                fontSize: "14px",
-                outline: "none",
-              }}
+
             >
               <option value="">
                 {loadingJobs ? "Loading jobs..." : "Select a job"}
@@ -256,24 +233,16 @@ function UploadResumePage() {
           </div>
 
           {jobsError && (
-            <div
-              style={{
-                marginTop: "8px",
-                color: "#dc2626",
-                fontSize: "13px",
-              }}
+            <div className="[margin-top:8px] [color:#dc2626] [font-size:13px]"
+
             >
               {jobsError}
             </div>
           )}
 
           {!loadingJobs && !jobsError && jobs.length === 0 && (
-            <div
-              style={{
-                marginTop: "8px",
-                color: "var(--muted)",
-                fontSize: "13px",
-              }}
+            <div className="[margin-top:8px] [color:#64748b] [font-size:13px]"
+
             >
               No jobs available.
             </div>
@@ -285,30 +254,17 @@ function UploadResumePage() {
         ================================================== */}
 
         {selectedJobId && (
-          <div
-            style={{
-              padding: "12px 14px",
-              marginBottom: "16px",
-              borderRadius: "8px",
-              background: "var(--surface-2, #f5f7fa)",
-              border: "1px solid var(--border)",
-            }}
+          <div className="[padding:12px_14px] [margin-bottom:16px] [border-radius:8px] [background:#f5f7fa] [border:1px_solid_#e2e8f0]"
+
           >
-            <div
-              style={{
-                fontSize: "12px",
-                color: "var(--muted)",
-                marginBottom: "3px",
-              }}
+            <div className="[font-size:12px] [color:#64748b] [margin-bottom:3px]"
+
             >
               Resumes will be screened against
             </div>
 
-            <div
-              style={{
-                fontWeight: 600,
-                color: "var(--text)",
-              }}
+            <div className="[font-weight:600] [color:#1e293b]"
+
             >
               {
                 jobs.find((job) => String(job.job_id) === String(selectedJobId))
@@ -322,13 +278,13 @@ function UploadResumePage() {
             HIDDEN FILE INPUT
         ================================================== */}
 
-        <input
+        <input className="[display:none] [font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
           type="file"
           ref={fileInputRef}
           onChange={handleFileChange}
           multiple
           accept=".pdf,.docx,.doc,.txt"
-          style={{ display: "none" }}
+
         />
 
         {/* ==================================================
@@ -336,7 +292,7 @@ function UploadResumePage() {
         ================================================== */}
 
         <div
-          className="upload-zone"
+          className={`upload-zone [cursor:pointer] [border:2px_dashed_#e2e8f0] [border-radius:12px] [padding:32px] [text-align:center] [margin-bottom:16px] [color:#64748b] ${selectedJobId ? "[opacity:1]" : "[opacity:0.6]"}`}
           onClick={() => {
             if (selectedJobId) {
               handleBrowseClick();
@@ -344,43 +300,27 @@ function UploadResumePage() {
           }}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
-          style={{
-            cursor: "pointer",
-            opacity: selectedJobId ? 1 : 0.6,
-          }}
         >
-          <Upload
+          <Upload className="[margin-bottom:10px] [color:#133f7d]"
             size={36}
-            style={{
-              marginBottom: "10px",
-              color: "var(--brand)",
-            }}
+
           />
 
-          <p
-            style={{
-              fontWeight: 600,
-              color: "var(--text)",
-              marginBottom: "4px",
-            }}
+          <p className="[font-weight:600] [color:#1e293b] [margin-bottom:4px]"
+
           >
             Drag & Drop Resumes Here
           </p>
 
-          <span
-            style={{
-              fontSize: "12px",
-              color: "var(--muted)",
-              display: "block",
-              marginBottom: "14px",
-            }}
+          <span className="[font-size:12px] [color:#64748b] [display:block] [margin-bottom:14px]"
+
           >
             Supports PDF, DOCX, DOC, or TXT
           </span>
 
           <button
             type="button"
-            className="btn btn-secondary btn-sm"
+            className="btn btn-secondary btn-sm [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#fff] [color:#133f7d] [border:1.5px_solid_#133f7d] [padding:6px_14px] [font-size:12px]"
             disabled={!selectedJobId}
             onClick={(e) => {
               e.stopPropagation();
@@ -396,18 +336,11 @@ function UploadResumePage() {
         ================================================== */}
 
         {selectedFiles.length > 0 && (
-          <div
-            style={{
-              marginTop: "16px",
-              marginBottom: "16px",
-            }}
+          <div className="[margin-top:16px] [margin-bottom:16px]"
+
           >
-            <label
-              style={{
-                display: "block",
-                marginBottom: "8px",
-                fontWeight: 600,
-              }}
+            <label className="[display:block] [margin-bottom:8px] [font-weight:600] [font-size:13px] [color:#1e293b] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]"
+
             >
               Selected Files ({selectedFiles.length})
             </label>
@@ -415,23 +348,19 @@ function UploadResumePage() {
             {selectedFiles.map((file, index) => (
               <div
                 key={`${file.name}-${file.size}-${index}`}
-                className="list-row"
-                style={{
-                  justifyContent: "space-between",
-                }}
+                className="list-row [justify-content:space-between] [display:flex] [align-items:center] [gap:10px] [padding:9px_0] [border-bottom:1px_solid_#e2e8f0]"
+
               >
-                <div className="flex-row">
-                  <FileText
+                <div className="flex-row [display:flex] [align-items:center] [gap:10px]">
+                  <FileText className="[color:#133f7d]"
                     size={18}
-                    style={{
-                      color: "var(--brand)",
-                    }}
+
                   />
 
                   <div>
-                    <div className="list-title">{file.name}</div>
+                    <div className="list-title [font-size:13px] [font-weight:600] [color:#1e293b]">{file.name}</div>
 
-                    <div className="list-sub">
+                    <div className="list-sub [font-size:12px] [color:#64748b]">
                       {(file.size / 1024).toFixed(1)} KB
                     </div>
                   </div>
@@ -439,12 +368,9 @@ function UploadResumePage() {
 
                 <button
                   type="button"
-                  className="btn-ghost"
+                  className="btn-ghost [padding:4px] [cursor:pointer] [font:inherit] [background:transparent] [color:#64748b] [border:1px_solid_#e2e8f0]"
                   onClick={() => removeFile(index)}
-                  style={{
-                    padding: "4px",
-                    cursor: "pointer",
-                  }}
+
                 >
                   <X size={16} />
                 </button>
@@ -459,12 +385,9 @@ function UploadResumePage() {
 
         <button
           type="button"
-          className="btn btn-primary full-width btn-lg"
+          className={`btn btn-primary full-width btn-lg [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#133f7d] [color:#fff] [padding:13px_28px] [font-size:15px] [width:100%] ${!selectedJobId || selectedFiles.length === 0 ? "[opacity:0.6]" : "[opacity:1]"}`}
           disabled={!selectedJobId || selectedFiles.length === 0}
           onClick={handleRunScreening}
-          style={{
-            opacity: !selectedJobId || selectedFiles.length === 0 ? 0.6 : 1,
-          }}
         >
           ✨ Run AI Screening
           {selectedFiles.length > 0 && ` (${selectedFiles.length})`}

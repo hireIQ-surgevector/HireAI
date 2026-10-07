@@ -101,139 +101,118 @@ function JobCandidatesPage() {
 
   return (
     <PageShell title="Job Candidates" backTo="/jobs">
-      <div className="section-header">
+      <div className="section-header [display:flex] [justify-content:space-between] [align-items:center] [margin-bottom:14px]">
         <div>
-          <h2 className="page-heading">{jobTitle || `Job #${jobId}`}</h2>
+          <h2 className="page-heading [font-size:20px] [font-weight:800] [color:#1e293b] [margin:0]">{jobTitle || `Job #${jobId}`}</h2>
 
-          <p className="muted" style={{ marginTop: "5px" }}>
+          <p className="muted [margin-top:5px] [font-size:12px] [color:#64748b]" >
             Candidates who have applied for this position
           </p>
         </div>
       </div>
 
-      <div className="grid4">
-        <div className="stat-card">
-          <div className="stat-label">Total Candidates</div>
+      <div className="grid4 [display:grid] [grid-template-columns:repeat(4,_1fr)] [gap:14px] max-[960px]:[grid-template-columns:1fr] max-[960px]:[flex-direction:column]">
+        <div className="stat-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:18px] [position:relative]">
+          <div className="stat-label [font-size:11px] [font-weight:700] [color:#64748b] [text-transform:uppercase] [letter-spacing:0.4px]">Total Candidates</div>
 
-          <div className="stat-num">{totalCandidates}</div>
+          <div className="stat-num [font-size:28px] [font-weight:800] [color:#1e293b] [margin:4px_0]">{totalCandidates}</div>
 
           <div
-            className="stat-icon"
-            style={{
-              background: "var(--brand-light)",
-              color: "var(--brand)",
-            }}
+            className="stat-icon [background:#e8f0fb] [color:#133f7d] [position:absolute] [top:18px] [right:18px] [width:42px] [height:42px] [border-radius:10px] [display:flex] [align-items:center] [justify-content:center] [font-size:18px]"
+
           >
             👥
           </div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-label">New Applications</div>
+        <div className="stat-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:18px] [position:relative]">
+          <div className="stat-label [font-size:11px] [font-weight:700] [color:#64748b] [text-transform:uppercase] [letter-spacing:0.4px]">New Applications</div>
 
-          <div className="stat-num">{newCandidates}</div>
+          <div className="stat-num [font-size:28px] [font-weight:800] [color:#1e293b] [margin:4px_0]">{newCandidates}</div>
 
           <div
-            className="stat-icon"
-            style={{
-              background: "#e0f7fa",
-              color: "var(--teal)",
-            }}
+            className="stat-icon [background:#e0f7fa] [color:#00b4d8] [position:absolute] [top:18px] [right:18px] [width:42px] [height:42px] [border-radius:10px] [display:flex] [align-items:center] [justify-content:center] [font-size:18px]"
+
           >
             📩
           </div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-label">In Progress</div>
+        <div className="stat-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:18px] [position:relative]">
+          <div className="stat-label [font-size:11px] [font-weight:700] [color:#64748b] [text-transform:uppercase] [letter-spacing:0.4px]">In Progress</div>
 
-          <div className="stat-num">{shortlistedCandidates}</div>
+          <div className="stat-num [font-size:28px] [font-weight:800] [color:#1e293b] [margin:4px_0]">{shortlistedCandidates}</div>
 
           <div
-            className="stat-icon"
-            style={{
-              background: "#fef3c7",
-              color: "var(--orange)",
-            }}
+            className="stat-icon [background:#fef3c7] [color:#f59e0b] [position:absolute] [top:18px] [right:18px] [width:42px] [height:42px] [border-radius:10px] [display:flex] [align-items:center] [justify-content:center] [font-size:18px]"
+
           >
             ⏳
           </div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-label">Selected / Offered</div>
+        <div className="stat-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:18px] [position:relative]">
+          <div className="stat-label [font-size:11px] [font-weight:700] [color:#64748b] [text-transform:uppercase] [letter-spacing:0.4px]">Selected / Offered</div>
 
-          <div className="stat-num">{selectedCandidates}</div>
+          <div className="stat-num [font-size:28px] [font-weight:800] [color:#1e293b] [margin:4px_0]">{selectedCandidates}</div>
 
           <div
-            className="stat-icon"
-            style={{
-              background: "#dcfce7",
-              color: "var(--green)",
-            }}
+            className="stat-icon [background:#dcfce7] [color:#22c55e] [position:absolute] [top:18px] [right:18px] [width:42px] [height:42px] [border-radius:10px] [display:flex] [align-items:center] [justify-content:center] [font-size:18px]"
+
           >
             ✓
           </div>
         </div>
       </div>
 
-      <div style={{ height: "20px" }} />
+      <div className="[height:20px]"  />
 
-      <div className="section-header">
+      <div className="section-header [display:flex] [justify-content:space-between] [align-items:center] [margin-bottom:14px]">
         <div>
-          <h3 style={{ margin: 0 }}>Applied Candidates</h3>
+          <h3 className="[margin:0px]" >Applied Candidates</h3>
 
-          <p className="muted" style={{ marginTop: "4px" }}>
+          <p className="muted [margin-top:4px] [font-size:12px] [color:#64748b]" >
             {totalCandidates} candidate
             {totalCandidates !== 1 ? "s" : ""} found
           </p>
         </div>
       </div>
 
-      <div className="card table-card">
+      <div className="card table-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [padding:0] [overflow:hidden]">
         {loading ? (
-          <div
-            style={{
-              padding: "30px",
-              textAlign: "center",
-            }}
+          <div className="[padding:30px] [text-align:center]"
+
           >
             Loading candidates...
           </div>
         ) : error ? (
-          <div className="error-box" style={{ margin: "16px" }}>
+          <div className="error-box [margin:16px] [background:#fee2e2] [color:#991b1b] [padding:10px] [border-radius:8px] [font-size:12px] [margin-bottom:10px]" >
             {error}
           </div>
         ) : candidates.length === 0 ? (
-          <div
-            style={{
-              padding: "40px",
-              textAlign: "center",
-            }}
+          <div className="[padding:40px] [text-align:center]"
+
           >
-            <div
-              style={{
-                fontSize: "32px",
-                marginBottom: "10px",
-              }}
+            <div className="[font-size:32px] [margin-bottom:10px]"
+
             >
               👥
             </div>
 
-            <div className="strong">No candidates yet</div>
+            <div className="font-bold">No candidates yet</div>
 
-            <div className="muted" style={{ marginTop: "5px" }}>
+            <div className="muted [margin-top:5px] [font-size:12px] [color:#64748b]" >
               No candidates have applied to this job yet.
             </div>
           </div>
         ) : (
-          <table>
+          <table className="[width:100%] [border-collapse:collapse]">
             <thead>
               <tr>
-                <th>Candidate</th>
-                <th>Email</th>
-                <th>Status</th>
-                <th>Applied Date</th>
+                <th className="[padding:11px_14px] [border-bottom:1px_solid_#e2e8f0] [font-size:13px] [text-align:left] [font-size:11px] [color:#64748b] [font-weight:700] [text-transform:uppercase] [letter-spacing:0.4px] [background:#f8fafc]">Candidate</th>
+                <th className="[padding:11px_14px] [border-bottom:1px_solid_#e2e8f0] [font-size:13px] [text-align:left] [font-size:11px] [color:#64748b] [font-weight:700] [text-transform:uppercase] [letter-spacing:0.4px] [background:#f8fafc]">Email</th>
+                <th className="[padding:11px_14px] [border-bottom:1px_solid_#e2e8f0] [font-size:13px] [text-align:left] [font-size:11px] [color:#64748b] [font-weight:700] [text-transform:uppercase] [letter-spacing:0.4px] [background:#f8fafc]">Status</th>
+                <th className="[padding:11px_14px] [border-bottom:1px_solid_#e2e8f0] [font-size:13px] [text-align:left] [font-size:11px] [color:#64748b] [font-weight:700] [text-transform:uppercase] [letter-spacing:0.4px] [background:#f8fafc]">Applied Date</th>
               </tr>
             </thead>
 
@@ -244,24 +223,17 @@ function JobCandidatesPage() {
                 return (
                   <tr
                     key={candidate.candidate_id}
+                    className={canAccessSensitive(session) ? "cursor-pointer" : "cursor-default"}
                     onClick={() =>
                       canAccessSensitive(session) &&
                       navigate(`/candidate-detail/${candidate.candidate_id}`)
                     }
-                    style={{
-                      cursor: canAccessSensitive(session)
-                        ? "pointer"
-                        : "default",
-                    }}
                   >
-                    <td>
-                      <div className="flex-row">
+                    <td className="[padding:11px_14px] [border-bottom:1px_solid_#e2e8f0] [font-size:13px] [tr:hover_&]:[background:#f8fafc]">
+                      <div className="flex-row [display:flex] [align-items:center] [gap:10px]">
                         <div
-                          className="avatar"
-                          style={{
-                            background: "var(--brand-light)",
-                            color: "var(--brand)",
-                          }}
+                          className="avatar [background:#e8f0fb] [color:#133f7d] [width:34px] [height:34px] [border-radius:50%] [display:flex] [align-items:center] [justify-content:center] [font-weight:700] [font-size:12px]"
+
                         >
                           {getCandidateInitials(
                             candidate.full_name || candidate.name,
@@ -269,14 +241,14 @@ function JobCandidatesPage() {
                         </div>
 
                         <div>
-                          <div className="strong">
+                          <div className="font-bold">
                             {candidate.full_name ||
                               candidate.name ||
                               "Unknown Candidate"}
                           </div>
 
                           {candidate.current_role && (
-                            <div className="muted">
+                            <div className="muted [font-size:12px] [color:#64748b]">
                               {candidate.current_role}
                             </div>
                           )}
@@ -284,17 +256,17 @@ function JobCandidatesPage() {
                       </div>
                     </td>
 
-                    <td>{candidate.email || "—"}</td>
+                    <td className="[padding:11px_14px] [border-bottom:1px_solid_#e2e8f0] [font-size:13px] [tr:hover_&]:[background:#f8fafc]">{candidate.email || "—"}</td>
 
-                    <td>
+                    <td className="[padding:11px_14px] [border-bottom:1px_solid_#e2e8f0] [font-size:13px] [tr:hover_&]:[background:#f8fafc]">
                       <span
-                        className={`badge ${badgeClass(status.toLowerCase())}`}
+                        className={`${(`badge ${badgeClass(status.toLowerCase())}`)} [font-size:11px] [font-weight:700] [padding:3px_9px] [border-radius:20px] [white-space:nowrap] [display:inline-block]`}
                       >
                         {status}
                       </span>
                     </td>
 
-                    <td>
+                    <td className="[padding:11px_14px] [border-bottom:1px_solid_#e2e8f0] [font-size:13px] [tr:hover_&]:[background:#f8fafc]">
                       {candidate.applied_date
                         ? new Date(candidate.applied_date).toLocaleDateString()
                         : "N/A"}
