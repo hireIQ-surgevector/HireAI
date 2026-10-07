@@ -237,17 +237,36 @@ function CandidateMatcherPage() {
   const matchedCandidates = useMemo(() => {
     if (!selectedJob) return [];
 
+    const primarySkills = getJobPrimarySkills(selectedJob);
+    const secondarySkills = getJobSecondarySkills(selectedJob);
+
     return candidates
-      .map((candidate) => ({
-        ...candidate,
+      .map((candidate) => {
+        const matchedSkills = normalizeSkills(candidate.matched_skills);
 
-        matchScore: candidate.ai_score ?? 0,
+        return {
+          ...candidate,
 
-        matchDetails: {
-          label: candidate.match_category || "Low Match",
-          className: getMatchClassName(candidate.match_category),
-        },
-      }))
+          matchScore: candidate.ai_score ?? 0,
+
+          matchDetails: {
+            label: candidate.match_category || "Low Match",
+            className: getMatchClassName(candidate.match_category),
+          },
+
+          // Primary (mandatory) / secondary (required) job skills the
+          // candidate does NOT have. Uses the backend's matched_skills
+          // so this always agrees with the score / category the
+          // backend calculated.
+          missingPrimarySkills: primarySkills.filter(
+            (skill) => !matchedSkills.includes(skill),
+          ),
+
+          missingSecondarySkills: secondarySkills.filter(
+            (skill) => !matchedSkills.includes(skill),
+          ),
+        };
+      })
       .sort((a, b) => b.matchScore - a.matchScore);
   }, [candidates, selectedJob]);
 
@@ -691,12 +710,6 @@ function CandidateMatcherPage() {
             {filteredCandidates.map((candidate) => {
               const decision = candidateDecisions[candidate.candidate_id] || {};
 
-              /*
-                  Candidate skills
-                */
-
-              const candidateSkills = normalizeSkills(candidate.skills);
-
               return (
                 <div
                   key={candidate.candidate_id}
@@ -706,59 +719,65 @@ function CandidateMatcherPage() {
                         CANDIDATE INFO
                     ===================================== */}
 
-                  <Link
-                    to={`/candidate-detail/${candidate.candidate_id}`}
-                    className="matcher-candidate-info-link"
-                  >
-                    <div className="matcher-candidate-info">
-                      <div className="matcher-avatar">
-                        <UserRound size={22} />
-                      </div>
-
-                      <div>
-                        <h3 className="matcher-candidate-name">
-                          {candidate.name || candidate.full_name || "Candidate"}
-                        </h3>
-                      </div>
+                  <div className="matcher-candidate-info">
+                    <div className="matcher-avatar">
+                      <UserRound size={22} />
                     </div>
-                  </Link>
+
+                    <div className="matcher-candidate-text">
+                      <h3 className="matcher-candidate-name">
+                        {candidate.name || candidate.full_name || "Candidate"}
+                      </h3>
+
+                      {/* Opens the full candidate-detail page */}
+                      <Link
+                        to={`/candidate-detail/${candidate.candidate_id}`}
+                        className="btn btn-secondary btn-sm matcher-more-details"
+                      >
+                        More details
+                      </Link>
+                    </div>
+                  </div>
 
                   {/* =====================================
-                        CANDIDATE SKILLS
+                        MISSING SKILLS
 
-                        Green = skill matches JD
-                        Grey = skill does not match JD
+                        One heading, both primary (red) and
+                        secondary (orange) gaps shown together as
+                        chips - no sub-headings.
                     ===================================== */}
 
-                  <div className="matcher-skills">
-                    {candidateSkills.slice(0, 5).map((skill) => {
-                      /*
-                            Check against selected Job Description
-                          */
+                  <div className="matcher-missing-primary">
+                    <span className="matcher-missing-heading">
+                      Missing Skills
+                    </span>
 
-                      const matchesJD = jobSkills.some((jobSkill) =>
-                        skillsMatch(skill, jobSkill),
-                      );
-
-                      return (
+                    <div className="matcher-skills">
+                      {candidate.missingPrimarySkills.map((skill) => (
                         <span
-                          key={skill}
-                          className={
-                            matchesJD
-                              ? "matcher-skill matcher-skill-matched"
-                              : "matcher-skill matcher-skill-unmatched"
-                          }
+                          key={`primary-${skill}`}
+                          className="matcher-skill matcher-skill-missing"
                         >
                           {skill}
                         </span>
-                      );
-                    })}
+                      ))}
 
-                    {candidateSkills.length === 0 && (
-                      <span className="matcher-no-skills">
-                        No skills available
-                      </span>
-                    )}
+                      {candidate.missingSecondarySkills.map((skill) => (
+                        <span
+                          key={`secondary-${skill}`}
+                          className="matcher-skill matcher-skill-missing-secondary"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+
+                      {candidate.missingPrimarySkills.length === 0 &&
+                        candidate.missingSecondarySkills.length === 0 && (
+                          <span className="matcher-none-missing">
+                            None missing
+                          </span>
+                        )}
+                    </div>
                   </div>
 
                   {/* =====================================

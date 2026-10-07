@@ -1,22 +1,43 @@
 """
 AI-based candidate-to-job matching.
 
-Ported from the standalone `ai_ats_project`, matching its original
-scoring formula exactly:
+SCORE STRUCTURE
+----------------
+The 100-point score is split into two budgets:
 
-    final_score = ai_score * 0.8 + experience_score * 0.2
+    80 points — "matcher" budget (semantic similarity, reduced by
+                 missing mandatory/secondary skill penalties)
+    20 points — experience budget (untouched by skills, binary)
 
-Where:
-  - ai_score is semantic (embedding) similarity between the
-    candidate's profile text and the job's text, 0-1.
-  - experience_score is binary: 1 if the candidate meets the job's
-    minimum experience, else 0.
+The 20-point experience budget is exactly as before: 20 if the
+candidate meets the job's minimum experience, 0 if not. Nothing
+below changes that.
 
-Skills are NOT part of the weighted score, same as the original —
-they only act as a pass/fail gate: missing a mandatory skill caps
-the result at "Low Match" regardless of score (mirrors the original
-project's "Rejected" bucket). Matched/missing skills are still
-returned so the UI can show why a candidate landed where they did.
+The 80-point matcher budget starts as `ai_score * 80`, where
+ai_score is semantic (embedding) similarity between the candidate's
+profile text and the job's text, 0-1. That starting number is then
+reduced by two kinds of penalties, each skill's "weight" being an
+equal share of a 100-point pool for its category:
+
+  MANDATORY (primary) skills — full weight
+    weight per skill = 100 / (number of mandatory skills)
+    penalty per missing mandatory skill = weight * 0.8
+    e.g. 4 mandatory skills -> 25 each -> 25 * 0.8 = 20 points off
+         the matcher budget per missing mandatory skill.
+
+  SECONDARY (required) skills — one third the weight of mandatory
+    weight per skill = 100 / (number of secondary skills)
+    penalty per missing secondary skill = (weight / 3) * 0.8
+    e.g. 6 secondary skills -> 16.67 each -> /3 = 5.56 -> * 0.8
+         = 4.44 points off the matcher budget per missing
+         secondary skill.
+
+final_score = max(0, 80*ai_score - mandatory_penalties - secondary_penalties)
+              + (20 if experience_score else 0)
+
+Missing a mandatory skill still also forces the category down to
+"Low Match", on top of the points penalty above — see
+_category_for_score.
 
 Note: the original project computed ai_score from the full resume
 text vs. the full JD text (both extracted from uploaded files). This
@@ -26,6 +47,7 @@ job title + skills + description.
 """
 
 import re
+
 
 _model = None
 
@@ -119,9 +141,7 @@ def _skill_is_match(candidate_skill, job_skill, threshold=0.6):
     similarity = cosine_similarity(
         [embeddings[0]],
         [embeddings[1]],
-    )[
-        0
-    ][0]
+    )[0][0]
 
     return similarity >= threshold
 
@@ -169,9 +189,7 @@ def _semantic_similarity(candidate_text, job_text):
     similarity = cosine_similarity(
         [embeddings[0]],
         [embeddings[1]],
-    )[
-        0
-    ][0]
+    )[0][0]
 
     # Cosine similarity can dip slightly negative for unrelated
     # text — clamp to 0-1, same as treating it as a plain fraction.
@@ -241,16 +259,41 @@ def _category_for_score(score, has_all_mandatory):
     return "Low Match"
 
 
+def _weighted_skill_penalty(missing_count, total_count, divisor=1):
+    """
+    Each skill in a pool of `total_count` holds an equal share of a
+    100-point pool (100 / total_count). `divisor` lets a category of
+    skill count for less than full weight (secondary skills use
+    divisor=3, i.e. one third the weight of a mandatory skill).
+    The 0.8 converts that weight into points off the 80-point
+    matcher budget specifically (not the full 100-point score).
+
+    Returns 0 if total_count is 0 (job defines no skills in that
+    category, so nothing to penalize).
+    """
+
+    if total_count == 0 or missing_count == 0:
+        return 0.0
+
+    weight_per_skill = (100 / total_count) / divisor
+
+    return missing_count * weight_per_skill * 0.8
+
+
 def calculate_match(candidate, job):
     """
-    Computes a 0-100 match score for one candidate against one job
-    using the original project's formula:
+    Computes a 0-100 match score for one candidate against one job.
+    See the module docstring for the full formula. In short:
 
-        final_score = ai_score * 0.8 + experience_score * 0.2
+      - 80 points max from semantic similarity, reduced by
+        proportional penalties for missing mandatory/secondary
+        skills.
+      - 20 points max from experience (binary — meets min_exp or
+        doesn't, no partial credit).
 
-    plus the matched/missing skill breakdown (skill-gated category,
-    not scored) so the UI can show why a candidate landed where
-    they did.
+    Also returns the matched/missing skill breakdown, and forces
+    the category to "Low Match" whenever a mandatory skill is
+    missing, on top of the points penalty.
 
     `candidate` needs: skills, current_role, applied_role, and
     experience under either "experience_years" (numeric) or
@@ -264,7 +307,7 @@ def calculate_match(candidate, job):
     mandatory_skills = normalize_skills(job.get("mandatory_skills"))
     required_skills = normalize_skills(job.get("required_skills"))
 
-    # ---- Skills: gate only, not part of the weighted score ----
+    # ---- Skills: matched/missing breakdown ----
 
     matched_mandatory, missing_mandatory = _match_skill_lists(
         candidate_skills, mandatory_skills
@@ -278,31 +321,21 @@ def calculate_match(candidate, job):
 
     # ---- ai_score: semantic similarity (0-1) ----
 
-    candidate_text = " ".join(
-        filter(
-            None,
-            [
-                candidate.get("current_role"),
-                candidate.get("applied_role"),
-                ", ".join(candidate_skills),
-            ],
-        )
-    )
+    candidate_text = " ".join(filter(None, [
+        candidate.get("current_role"),
+        candidate.get("applied_role"),
+        ", ".join(candidate_skills),
+    ]))
 
-    job_text = " ".join(
-        filter(
-            None,
-            [
-                job.get("title"),
-                ", ".join(mandatory_skills + required_skills),
-                job.get("description"),
-            ],
-        )
-    )
+    job_text = " ".join(filter(None, [
+        job.get("title"),
+        ", ".join(mandatory_skills + required_skills),
+        job.get("description"),
+    ]))
 
     ai_score = _semantic_similarity(candidate_text, job_text)
 
-    # ---- experience_score: binary (0 or 1) ----
+    # ---- experience_score: binary (0 or 1), 20-point budget ----
 
     candidate_experience = _extract_experience_years(candidate)
 
@@ -315,11 +348,35 @@ def calculate_match(candidate, job):
     else:
         experience_score = 0
 
-    # ---- Final Weighted Score (same formula as the original) ----
+    experience_points = experience_score * 20
 
-    final_score = ai_score * 0.8 + experience_score * 0.2
+    # ---- Matcher budget (80 points), penalized by missing skills ----
 
-    final_score_pct = max(0, min(100, round(final_score * 100)))
+    matcher_points_before_penalty = ai_score * 80
+
+    mandatory_penalty = _weighted_skill_penalty(
+        missing_count=len(missing_mandatory),
+        total_count=len(mandatory_skills),
+        divisor=1,
+    )
+
+    secondary_penalty = _weighted_skill_penalty(
+        missing_count=len(missing_required),
+        total_count=len(required_skills),
+        divisor=3,
+    )
+
+    matcher_points_after_penalty = max(
+        0,
+        matcher_points_before_penalty - mandatory_penalty - secondary_penalty,
+    )
+
+    # ---- Final score: penalized matcher budget + experience budget ----
+
+    final_score_pct = max(
+        0,
+        min(100, round(matcher_points_after_penalty + experience_points)),
+    )
 
     return {
         "score": final_score_pct,
@@ -329,6 +386,7 @@ def calculate_match(candidate, job):
         ),
         "matched_skills": sorted(set(matched_mandatory + matched_required)),
         "missing_skills": sorted(set(missing_mandatory + missing_required)),
+
         # ---- Diagnostics ----
         # Not used by the UI, just returned so you can see in the
         # API response (Network tab) exactly why a candidate scored
@@ -337,4 +395,12 @@ def calculate_match(candidate, job):
         "debug_experience_score": experience_score,
         "debug_candidate_experience_years": candidate_experience,
         "debug_required_experience_years": required_experience,
+        "debug_matcher_points_before_penalty": round(
+            matcher_points_before_penalty, 2
+        ),
+        "debug_mandatory_penalty": round(mandatory_penalty, 2),
+        "debug_secondary_penalty": round(secondary_penalty, 2),
+        "debug_matcher_points_after_penalty": round(
+            matcher_points_after_penalty, 2
+        ),
     }

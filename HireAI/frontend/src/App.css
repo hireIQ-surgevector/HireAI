@@ -599,7 +599,7 @@ tr:hover td { background: var(--gray); }
 .matcher-search input { width: 100%; min-width: 0; height: 100%; border: none; outline: none; font-size: 14px; background: transparent; }
 .matcher-score-filter { width: 100%; min-width: 0; height: 40px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border-color, #d1d5db); background: white; cursor: pointer; }
 .matcher-results { display: flex; flex-direction: column; gap: 14px; }
-.matcher-candidate-card { display: grid; grid-template-columns: minmax(220px, 1.5fr) minmax(200px, 1fr) 120px auto; align-items: center; gap: 20px; padding: 18px; }
+.matcher-candidate-card { display: grid; grid-template-columns: minmax(180px, 1.2fr) minmax(180px, 1fr) minmax(150px, 0.9fr) 120px auto; align-items: center; gap: 20px; padding: 18px; }
 .matcher-candidate-info { display: flex; align-items: center; gap: 12px; }
 .matcher-avatar { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--bg-surface, #f3f4f6); }
 .matcher-candidate-info h3 { margin: 0 0 4px; font-size: 15px; }
@@ -616,6 +616,13 @@ tr:hover td { background: var(--gray); }
 .matcher-skill-secondary { background: #e0f2fe; color: #075985; }
 .matcher-skill-matched { background: #dcfce7; color: #166534; font-weight: 600; box-shadow: inset 0 0 0 1px #86efac; }
 .matcher-no-skills { font-size: 13px; color: var(--muted); }
+.matcher-missing-primary { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.matcher-missing-heading { font-size: 12px; font-weight: 700; color: var(--text, #111827); text-transform: uppercase; letter-spacing: 0.03em; }
+.matcher-missing-group { display: flex; flex-direction: column; gap: 6px; }
+.matcher-missing-primary-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+.matcher-skill-missing { background: #fee2e2; color: #991b1b; font-weight: 600; box-shadow: inset 0 0 0 1px #fca5a5; }
+.matcher-skill-missing-secondary { background: #dbeafe; color: #1e40af; font-weight: 600; box-shadow: inset 0 0 0 1px #93c5fd; }
+.matcher-none-missing { font-size: 12px; font-weight: 600; color: #166534; }
 .matcher-score { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .matcher-score-circle { width: 62px; height: 62px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 15px; font-weight: 700; }
 .matcher-score-label { font-size: 12px; font-weight: 600; text-align: center; }
@@ -630,6 +637,9 @@ tr:hover td { background: var(--gray); }
 .matcher-loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 30px; }
 .matcher-spinner { animation: matcher-spin 1s linear infinite; }
 .matcher-candidate-name { font-size: 18px; font-weight: 700; color: var(--brand); margin: 0 0 4px; }
+.matcher-candidate-text { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.matcher-candidate-text .matcher-candidate-name { margin: 0; }
+.matcher-more-details { width: fit-content; padding: 4px 10px; font-size: 11px; line-height: 1.3; }
 @keyframes matcher-spin { to { transform: rotate(360deg); } }
 @media (max-width: 900px) { .matcher-candidate-card { grid-template-columns: 1fr; align-items: flex-start; } .matcher-score { align-items: flex-start; } }
 @media (max-width: 700px) { .matcher-summary-grid { grid-template-columns: 1fr; } .matcher-job-details { flex-direction: column; align-items: flex-start; } .matcher-job-experience { text-align: left; } .matcher-toolbar { grid-template-columns: 1fr; align-items: stretch; } }
