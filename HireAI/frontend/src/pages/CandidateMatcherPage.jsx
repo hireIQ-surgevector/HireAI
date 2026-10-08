@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Search,
   Users,
@@ -99,6 +100,9 @@ function MissingSkillGroup({ label, skills, variant }) {
 }
 
 function CandidateMatcherPage() {
+  const [searchParams] = useSearchParams();
+  const requestedJobId = searchParams.get("jobId") || "";
+
   const [jobs, setJobs] = useState([]);
 
   const [selectedJobId, setSelectedJobId] = useState("");
@@ -176,7 +180,7 @@ function CandidateMatcherPage() {
      LOAD CANDIDATES + MATCH SCORES
   ========================================= */
 
-  const handleJobChange = async (jobId) => {
+  const handleJobChange = useCallback(async (jobId) => {
     setSelectedJobId(jobId);
 
     setCandidates([]);
@@ -238,7 +242,31 @@ function CandidateMatcherPage() {
     } finally {
       setLoadingCandidates(false);
     }
-  };
+  }, [jobs]);
+
+  useEffect(() => {
+    if (
+      !loadingJobs &&
+      requestedJobId &&
+      jobs.some((job) => String(job.job_id) === requestedJobId) &&
+      selectedJobId !== requestedJobId
+    ) {
+      const taskId = window.setTimeout(
+        () => handleJobChange(requestedJobId),
+        0,
+      );
+
+      return () => window.clearTimeout(taskId);
+    }
+
+    return undefined;
+  }, [
+    handleJobChange,
+    jobs,
+    loadingJobs,
+    requestedJobId,
+    selectedJobId,
+  ]);
 
   /* =========================================
      MAP CANDIDATES TO DISPLAY SHAPE
@@ -448,6 +476,7 @@ function CandidateMatcherPage() {
             type="button"
             className="btn btn-secondary [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#fff] [color:#133f7d] [border:1.5px_solid_#133f7d]"
             onClick={() => handleJobChange(selectedJobId)}
+            disabled={loadingCandidates}
           >
             <RefreshCw size={16} />
             Refresh
@@ -811,6 +840,45 @@ function CandidateMatcherPage() {
           </p>
         </div>
       )}
+      {loadingCandidates &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm"
+            role="presentation"
+          >
+            <section
+              className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl sm:p-8"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="matcher-progress-title"
+              aria-describedby="matcher-progress-description"
+            >
+              <div className="mb-5">
+                <h2
+                  id="matcher-progress-title"
+                  className="m-0 text-lg font-bold text-slate-900"
+                >
+                  Matching candidates
+                </h2>
+                <p
+                  id="matcher-progress-description"
+                  className="mb-0 mt-1 text-sm leading-6 text-slate-600"
+                >
+                  Comparing candidate profiles with the selected job
+                  requirements. This may take a moment.
+                </p>
+              </div>
+              <div
+                className="relative h-2.5 overflow-hidden rounded-full bg-slate-100"
+                role="progressbar"
+                aria-label="Matching candidate profiles"
+              >
+                <span className="matcher-progress-indicator absolute inset-y-0 left-0 w-1/3 rounded-full bg-blue-800" />
+              </div>
+            </section>
+          </div>,
+          document.body,
+        )}
     </PageShell>
   );
 }

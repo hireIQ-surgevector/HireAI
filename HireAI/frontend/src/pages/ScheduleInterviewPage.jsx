@@ -61,7 +61,7 @@ function ScheduleInterviewPage() {
     fetchCandidates();
   }, [loadAttempt]);
 
-  /* Only candidates at the scheduling entry stages should be displayed. */
+  /* Show candidates when their next round is available and not already booked. */
   const eligibleCandidates = useMemo(() => {
     const allowedStages = new Set(["shortlisted", "l1 interview"]);
 
@@ -69,12 +69,27 @@ function ScheduleInterviewPage() {
       const stage = String(candidate.stage || candidate.current_status || "")
         .trim()
         .toLowerCase();
+      const nextRound =
+        stage === "shortlisted"
+          ? "L1 Interview"
+          : stage === "l1 interview"
+            ? "L2 Interview"
+            : stage === "l2 interview"
+              ? "Client Interview"
+              : "";
+      const alreadyScheduled = (candidate.scheduled_interviews || []).some(
+        (interview) =>
+          interview.round === nextRound &&
+          interview.scheduled_at &&
+          new Date(interview.scheduled_at) >= new Date(),
+      );
 
       return (
         candidate.candidate_id &&
         candidate.name &&
-        !candidate.has_interview &&
-        allowedStages.has(stage)
+        nextRound &&
+        !alreadyScheduled &&
+        (allowedStages.has(stage) || stage === "l2 interview")
       );
     });
   }, [candidates]);

@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, X } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  CircleCheck,
+  ClipboardCheck,
+  UserRoundCheck,
+  X,
+} from "lucide-react";
 
 import PageShell from "../components/common/PageShell";
 import PageState from "../components/common/PageState";
@@ -12,15 +21,56 @@ const STAGES = [
   "L2 Interview",
   "Client Interview",
   "Offer Sent",
+  "Onboarded",
 ];
+
+const NEXT_INTERVIEW_ROUND = {
+  Shortlisted: "L1 Interview",
+  "L1 Interview": "L2 Interview",
+  "L2 Interview": "Client Interview",
+};
 
 function getStage(candidate) {
   return candidate.stage || candidate.current_status || candidate.status || "Shortlisted";
 }
 
+function normalizeRound(round) {
+  return String(round || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+interview$/, "");
+}
+
+function getRoundLabel(round) {
+  const labels = { l1: "L1", l2: "L2", client: "Client" };
+  return labels[normalizeRound(round)] || round;
+}
+
+function getScheduledInterview(candidate) {
+  const expectedRound = NEXT_INTERVIEW_ROUND[getStage(candidate)];
+  if (!expectedRound) return null;
+
+  return (candidate.scheduled_interviews || []).find(
+    (interview) =>
+      !interview.is_completed &&
+      normalizeRound(interview.round) === normalizeRound(expectedRound),
+  ) || null;
+}
+
+function formatScheduledAt(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString([], {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
 function EvaluationsPage() {
-  const [candidates, setCandidates] = useState([]);
+  const [allCandidates, setAllCandidates] = useState([]);
   const [selectedCandidateId, setSelectedCandidateId] = useState("");
+  const [evaluationNotes, setEvaluationNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -35,23 +85,22 @@ function EvaluationsPage() {
         headers: { "Content-Type": "application/json", ...getAuthHeader() },
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Unable to load candidates");
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to load candidates");
+      }
 
-      const activeCandidates = (Array.isArray(data) ? data : []).filter((candidate) => {
-        const stage = getStage(candidate);
-        const hasPersistedScore = candidate.ai_score !== null && candidate.ai_score !== undefined;
-
-        return (
-          hasPersistedScore &&
-          stage !== "New" &&
-          !["Rejected", "Offer Sent"].includes(stage)
-        );
-      });
-      setCandidates(activeCandidates);
+      const loadedCandidates = Array.isArray(data) ? data : [];
+      setAllCandidates(loadedCandidates);
+      const eligibleCandidates = loadedCandidates.filter(
+        (candidate) => getScheduledInterview(candidate) !== null,
+      );
       setSelectedCandidateId((current) =>
-        activeCandidates.some((candidate) => String(candidate.candidate_id) === String(current))
+        eligibleCandidates.some(
+          (candidate) =>
+            String(candidate.candidate_id) === String(current),
+        )
           ? current
-          : String(activeCandidates[0]?.candidate_id || ""),
+          : String(eligibleCandidates[0]?.candidate_id || ""),
       );
     } catch (loadError) {
       setError(loadError.message);
@@ -65,29 +114,130 @@ function EvaluationsPage() {
     return () => window.clearTimeout(taskId);
   }, [loadCandidates, reloadCount]);
 
-  const selectedCandidate = useMemo(
-    () => candidates.find((candidate) => String(candidate.candidate_id) === String(selectedCandidateId)),
-    [candidates, selectedCandidateId],
+  const eligibleCandidates = useMemo(
+    () =>
+      allCandidates.filter(
+        (candidate) => getScheduledInterview(candidate) !== null,
+      ),
+    [allCandidates],
   );
-  const currentStage = selectedCandidate ? getStage(selectedCandidate) : "Shortlisted";
-  const currentIndex = STAGES.indexOf(currentStage);
-  const nextStage = currentIndex >= 0 ? STAGES[currentIndex + 1] : null;
 
-  const updateStage = async (stage) => {
+  const scheduledInterviewsNeedingStageReview = useMemo(
+    () =>
+      allCandidates.flatMap((candidate) => {
+        if (getScheduledInterview(candidate)) return [];
+        const upcomingInterviews = (candidate.scheduled_interviews || []).filter(
+          (interview) =>
+            !interview.is_completed &&
+            interview.scheduled_at &&
+            new Date(interview.scheduled_at).getTime() >= Date.now(),
+        );
+        return upcomingInterviews.map((interview) => ({
+          candidate,
+          interview,
+        }));
+      }),
+    [allCandidates],
+  );
+
+  const selectedCandidate = useMemo(
+    () =>
+      eligibleCandidates.find(
+        (candidate) =>
+          String(candidate.candidate_id) === String(selectedCandidateId),
+      ),
+    [eligibleCandidates, selectedCandidateId],
+  );
+
+  const currentStage = selectedCandidate ? getStage(selectedCandidate) : "";
+  const currentIndex = STAGES.indexOf(currentStage);
+  const interviewToReview = selectedCandidate
+    ? getScheduledInterview(selectedCandidate)
+    : null;
+  const nextStage = NEXT_INTERVIEW_ROUND[currentStage] || null;
+
+  const pipelineCandidates = useMemo(
+    () =>
+      allCandidates.filter((candidate) => {
+        const stage = getStage(candidate);
+        if (stage === "L2 Interview") {
+          return (candidate.scheduled_interviews || []).every(
+            (interview) =>
+              normalizeRound(interview.round) !== "client",
+          );
+        }
+        return ["Client Interview", "Offer Sent"].includes(stage);
+      }),
+    [allCandidates],
+  );
+
+  const updateStage = async (stage, includeEvaluation = false) => {
     if (!selectedCandidate) return;
+
+    const note = evaluationNotes.trim();
+    if (includeEvaluation && !note) {
+      setError("Add evaluation notes before submitting this decision.");
+      return;
+    }
+
     try {
       setSaving(true);
       setError("");
       setFeedback("");
-      const response = await fetch(`${API_URL}/api/candidates/${selectedCandidate.candidate_id}/stage`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...getAuthHeader() },
-        body: JSON.stringify({ stage }),
-      });
+      const response = await fetch(
+        `${API_URL}/api/candidates/${selectedCandidate.candidate_id}/stage`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeader(),
+          },
+          body: JSON.stringify({
+            stage,
+            ...(includeEvaluation ? { evaluation_notes: note } : {}),
+          }),
+        },
+      );
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Unable to update candidate stage");
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to update candidate stage");
+      }
 
-      setFeedback(stage === "Rejected" ? "Candidate rejected." : `Candidate moved to ${stage}.`);
+      setEvaluationNotes("");
+      setFeedback(
+        includeEvaluation
+          ? `Evaluation saved. Candidate moved to ${stage}.`
+          : `Candidate moved to ${stage}.`,
+      );
+      await loadCandidates();
+    } catch (updateError) {
+      setError(updateError.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updatePipelineStage = async (candidate, stage) => {
+    try {
+      setSaving(true);
+      setError("");
+      setFeedback("");
+      const response = await fetch(
+        `${API_URL}/api/candidates/${candidate.candidate_id}/stage`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeader(),
+          },
+          body: JSON.stringify({ stage }),
+        },
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to update candidate stage");
+      }
+      setFeedback(`Candidate moved to ${stage}.`);
       await loadCandidates();
     } catch (updateError) {
       setError(updateError.message);
@@ -97,132 +247,370 @@ function EvaluationsPage() {
   };
 
   return (
-    <PageShell title="Candidate Evaluations">
+    <PageShell
+      title="Candidate Evaluations"
+      heading="Review scheduled interviews"
+      eyebrow="CANDIDATE EVALUATION"
+      description="Record interview feedback and advance candidates through the hiring pipeline."
+    >
       <div className="evaluation-page [width:100%] [max-width:1300px] [margin:0_auto]">
-        <div className="evaluation-header [display:flex] [align-items:flex-start] [justify-content:space-between] [gap:24px] [padding:6px_2px_24px] max-[700px]:[flex-direction:column]">
-          <div>
-            <p className="evaluation-eyebrow [font-size:10px] [font-weight:800] [letter-spacing:1.2px] [color:#00b4d8] [margin-bottom:7px] [&:not(.evaluation-eyebrow)]:[.evaluation-header_&]:[font-size:13px] [&:not(.evaluation-eyebrow)]:[.evaluation-header_&]:[color:#64748b] [&:not(.evaluation-eyebrow)]:[.evaluation-header_&]:[max-width:600px] [&:not(.evaluation-eyebrow)]:[.evaluation-header_&]:[line-height:1.6]">CANDIDATE EVALUATION</p>
-            <h2 className="[.evaluation-header_&]:[font-size:24px] [.evaluation-header_&]:[font-weight:750] [.evaluation-header_&]:[color:#1e293b] [.evaluation-header_&]:[margin-bottom:7px] max-[700px]:[.evaluation-header_&]:[font-size:21px]">Review and advance candidates</h2>
-            <p>Select a candidate, review their current stage, and make only the next valid decision.</p>
-          </div>
-        </div>
-
-        {error && candidates.length > 0 && (
+        {error && (
           <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             <span>{error}</span>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => setReloadCount((count) => count + 1)}
-            >
-              Retry
-            </Button>
+            {loading ? null : (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setReloadCount((count) => count + 1)}
+              >
+                Retry
+              </Button>
+            )}
           </div>
         )}
-        {feedback && <div className="info-box success [background:#e0f7fa] [border:1px_solid_#b2ebf2] [border-radius:8px] [padding:12px] [font-size:13px] [color:#006064] [margin-bottom:16px] [background:#dcfce7] [border-color:#86efac] [color:#166534]">{feedback}</div>}
-
-        <div className="evaluation-selector card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [margin-bottom:20px]">
-          <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold] [.evaluation-selector_&]:[margin-bottom:8px]" htmlFor="evaluation-candidate">Select candidate</label>
-          <div className="evaluation-select-wrap [position:relative]">
-            <select className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] [.evaluation-select-wrap_&]:[appearance:none] [.evaluation-select-wrap_&]:[padding-right:42px] [.evaluation-select-wrap_&]:[cursor:pointer]"
-              id="evaluation-candidate"
-              value={selectedCandidateId}
-              onChange={(event) => setSelectedCandidateId(event.target.value)}
-              disabled={loading || candidates.length === 0}
-            >
-              <option value="">{loading ? "Loading candidates..." : "Choose a candidate"}</option>
-              {candidates.map((candidate) => (
-                <option key={candidate.candidate_id} value={candidate.candidate_id}>
-                  {candidate.name || "Unknown candidate"} - {getStage(candidate)}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={17} />
+        {feedback && (
+          <div
+            role="status"
+            className="mb-4 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800"
+          >
+            <CircleCheck size={17} />
+            {feedback}
           </div>
-        </div>
+        )}
 
-        {selectedCandidate ? (
-          <div className="evaluation-layout [display:grid] [grid-template-columns:repeat(2,_minmax(0,_1fr))] [gap:20px] [align-items:stretch] max-[1050px]:[grid-template-columns:1fr]">
-            <div className="evaluation-main-card [background:#ffffff] [border:1px_solid_#e2e8f0] [border-radius:16px] [box-shadow:0_1px_2px_rgba(15,_23,_42,_0.03),_0_8px_24px_rgba(15,_23,_42,_0.04)] [overflow:hidden] [display:flex] [flex-direction:column] [height:100%] [padding:22px] max-[520px]:[padding:18px]">
-              <div className="evaluation-card-header [display:flex] [align-items:flex-start] [justify-content:space-between] [gap:16px] [padding-bottom:16px] [border-bottom:1px_solid_#edf0f3]">
-                <div>
-                  <h3 className="[.evaluation-card-header_&]:[margin:0_0_5px] [.evaluation-card-header_&]:[font-size:17px] [.evaluation-card-header_&]:[font-weight:750] [.evaluation-card-header_&]:[color:#1e293b]">{selectedCandidate.name || "Unknown candidate"}</h3>
-                  <p className="[.evaluation-card-header_&]:[margin:0] [.evaluation-card-header_&]:[font-size:12px] [.evaluation-card-header_&]:[color:#64748b]">{selectedCandidate.role || selectedCandidate.current_role || "Role not specified"}</p>
-                </div>
-                <span className="evaluation-status [display:inline-flex] [align-items:center] [gap:8px] [white-space:nowrap] [padding:8px_13px] [border-radius:999px] [background:#ecfdf5] [border:1px_solid_#bbf7d0] [color:#15803d] [font-size:12px] [font-weight:700] max-[700px]:[align-self:flex-start]">{currentStage}</span>
-              </div>
-
-              <div className="evaluation-summary [display:flex] [align-items:center] [justify-content:space-between] [gap:14px] [padding:15px] [margin-top:4px] [border-radius:13px] [background:linear-gradient(_135deg,_#f7faff,_#eef5ff_)] [border:1px_solid_#dce8f8] max-[700px]:[flex-direction:column] max-[700px]:[align-items:flex-start]">
-                <div className="overall-score [display:flex] [align-items:center] [gap:12px]">
-                  <div className="overall-score-circle [width:68px] [height:68px] [flex-shrink:0] [display:flex] [flex-direction:column] [align-items:center] [justify-content:center] [border-radius:50%] [background:#ffffff] [border:5px_solid_#133f7d] [box-shadow:0_5px_15px_rgba(19,_63,_125,_0.1)]">
-                    <span className="[.overall-score-circle_&]:[font-size:17px] [.overall-score-circle_&]:[font-weight:800] [.overall-score-circle_&]:[line-height:1] [.overall-score-circle_&]:[color:#133f7d]">{selectedCandidate.score || 0}</span>
-                    <small className="[.overall-score-circle_&]:[margin-top:2px] [.overall-score-circle_&]:[font-size:8px] [.overall-score-circle_&]:[color:#64748b]">/100</small>
-                  </div>
-                  <div className="overall-score-info [display:flex] [flex-direction:column] [gap:3px]">
-                    <span className="overall-label [font-size:9px] [font-weight:700] [text-transform:uppercase] [letter-spacing:0.7px] [color:#64748b]">AI match score</span>
-                    <strong className="[font-weight:700] [.overall-score-info_&]:[font-size:14px] [.overall-score-info_&]:[color:#1e293b]">{nextStage ? `Next: ${nextStage}` : "Final stage"}</strong>
-                    <p className="[.overall-score-info_&]:[margin:0] [.overall-score-info_&]:[max-width:230px] [.overall-score-info_&]:[font-size:11px] [.overall-score-info_&]:[line-height:1.4] [.overall-score-info_&]:[color:#64748b]">Only the immediate next stage is available from the current stage.</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="evaluation-stage-track [display:grid] [grid-template-columns:repeat(5,_minmax(0,_1fr))] [gap:8px] [margin:20px_0]">
-                {STAGES.map((stage, index) => (
-                  <span key={stage} className={`${(index <= currentIndex ? "active" : "")} [.evaluation-stage-track_&]:[padding:8px_6px] [.evaluation-stage-track_&]:[border-radius:8px] [.evaluation-stage-track_&]:[background:#f1f5f9] [.evaluation-stage-track_&]:[color:#64748b] [.evaluation-stage-track_&]:[font-size:11px] [.evaluation-stage-track_&]:[font-weight:700] [.evaluation-stage-track_&]:[text-align:center] [&.active]:[.evaluation-stage-track_&]:[background:#e8f0fb] [&.active]:[.evaluation-stage-track_&]:[color:#133f7d]`}>
-                    {stage.replace(" Interview", "")}
-                  </span>
-                ))}
-              </div>
-
-              <div className="evaluation-actions [display:grid] [grid-template-columns:1fr_1fr] [gap:10px] [margin-top:auto] [padding-top:16px] [border-top:1px_solid_#edf0f3] max-[520px]:[grid-template-columns:1fr]">
-                {nextStage ? (
-                  <button type="button" className="evaluation-advance-btn [font:inherit] [min-height:40px] [display:inline-flex] [align-items:center] [justify-content:center] [gap:7px] [border-radius:9px] [font-size:12px] [font-weight:700] [transition:transform_0.18s_ease,_box-shadow_0.18s_ease,_background_0.18s_ease] [background:#133f7d] [color:#ffffff] hover:[background:#0d2d5e] hover:[transform:translateY(-1px)] hover:[box-shadow:0_6px_16px_rgba(19,_63,_125,_0.22)]" onClick={() => updateStage(nextStage)} disabled={saving}>
-                    <Check size={17} />
-                    Advance to {nextStage}
-                  </button>
-                ) : (
-                  <span className="info-box [background:#e0f7fa] [border:1px_solid_#b2ebf2] [border-radius:8px] [padding:12px] [font-size:13px] [color:#006064] [margin-bottom:16px]">This candidate has reached the final stage.</span>
-                )}
-                <button type="button" className="evaluation-reject-btn [font:inherit] [min-height:40px] [display:inline-flex] [align-items:center] [justify-content:center] [gap:7px] [border-radius:9px] [font-size:12px] [font-weight:700] [transition:transform_0.18s_ease,_box-shadow_0.18s_ease,_background_0.18s_ease] [background:#ffffff] [border:1px_solid_#fecaca] [color:#dc2626] hover:[background:#fef2f2] hover:[border-color:#fca5a5]" onClick={() => updateStage("Rejected")} disabled={saving}>
-                  <X size={17} />
-                  Reject candidate
-                </button>
-              </div>
-            </div>
-
-            <div className="evaluation-feedback-card [background:#ffffff] [border:1px_solid_#e2e8f0] [border-radius:16px] [box-shadow:0_1px_2px_rgba(15,_23,_42,_0.03),_0_8px_24px_rgba(15,_23,_42,_0.04)] [overflow:hidden] [display:flex] [flex-direction:column] [height:100%] [padding:22px] max-[520px]:[padding:18px]">
-              <div className="evaluation-card-header [display:flex] [align-items:flex-start] [justify-content:space-between] [gap:16px] [padding-bottom:16px] [border-bottom:1px_solid_#edf0f3]">
-                <div>
-                  <h3 className="[.evaluation-card-header_&]:[margin:0_0_5px] [.evaluation-card-header_&]:[font-size:17px] [.evaluation-card-header_&]:[font-weight:750] [.evaluation-card-header_&]:[color:#1e293b]">Evaluation notes</h3>
-                  <p className="[.evaluation-card-header_&]:[margin:0] [.evaluation-card-header_&]:[font-size:12px] [.evaluation-card-header_&]:[color:#64748b]">Capture the reasoning behind this stage decision.</p>
-                </div>
-              </div>
-              <div className="final-recommendation-section [margin-top:18px]">
-                <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold] [.final-recommendation-section_&]:[margin-bottom:8px] [.final-recommendation-section_&]:[font-size:12px] [.final-recommendation-section_&]:[font-weight:750] [.final-recommendation-section_&]:[color:#1e293b]" htmlFor="evaluation-notes">Notes</label>
-                <textarea className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff] [.final-recommendation-section_&]:[min-height:110px] [.final-recommendation-section_&]:[resize:vertical] [.final-recommendation-section_&]:[line-height:1.6] [.final-recommendation-section_&]:[border-color:#dce2ea] [.final-recommendation-section_&]:[transition:border-color_0.2s_ease,_box-shadow_0.2s_ease] focus:[.final-recommendation-section_&]:[border-color:#133f7d] focus:[.final-recommendation-section_&]:[box-shadow:0_0_0_3px_rgba(19,_63,_125,_0.08)]" id="evaluation-notes" rows="8" value={feedback} onChange={(event) => setFeedback(event.target.value)} placeholder="Add evaluation notes..." />
-              </div>
-            </div>
-          </div>
-        ) : loading ? (
+        {loading ? (
           <PageState
             variant="loading"
-            title="Loading evaluation candidates"
-            rows={3}
-          />
-        ) : error ? (
-          <PageState
-            variant="error"
-            title="Couldn't load evaluation candidates"
-            description={error}
-            onRetry={() => setReloadCount((count) => count + 1)}
+            title="Loading scheduled interviews"
+            rows={4}
           />
         ) : (
-          <PageState
-            variant="empty"
-            title="No active candidates to evaluate"
-            description="Candidates with a saved match score and an active pipeline stage will appear here."
-          />
+          <>
+            {eligibleCandidates.length > 0 ? (
+              <>
+                <div className="evaluation-selector [display:flex] [align-items:flex-end] [justify-content:space-between] [gap:18px] [margin-bottom:18px] [border:1px_solid_#e2e8f0] [border-radius:14px] [background:#fff] [padding:18px_20px] max-[640px]:[align-items:stretch] max-[640px]:[flex-direction:column]">
+                  <div className="[min-width:0] [flex:1]">
+                    <label
+                      className="[margin-bottom:7px] [display:block] [font-size:12px] [font-weight:700] [color:#334155]"
+                      htmlFor="evaluation-candidate"
+                    >
+                      Candidate with a scheduled interview
+                    </label>
+                    <div className="[position:relative]">
+                      <select
+                        className="[width:100%] [appearance:none] [border:1px_solid_#dbe2ea] [border-radius:9px] [background:#fff] [padding:11px_40px_11px_12px] [font:inherit] [font-size:13px] [color:#1e293b] focus:[outline:2px_solid_#00b4d8] focus:[outline-offset:1px]"
+                        id="evaluation-candidate"
+                        value={selectedCandidateId}
+                        onChange={(event) => {
+                          setSelectedCandidateId(event.target.value);
+                          setEvaluationNotes("");
+                          setError("");
+                        }}
+                      >
+                        {eligibleCandidates.map((candidate) => {
+                          const interview = getScheduledInterview(candidate);
+                          return (
+                            <option
+                              key={candidate.candidate_id}
+                              value={candidate.candidate_id}
+                            >
+                              {candidate.name || "Unknown candidate"} — {interview.round}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <ChevronDown
+                        size={17}
+                        className="[position:absolute] [right:12px] [top:50%] [pointer-events:none] [color:#64748b] [transform:translateY(-50%)]"
+                      />
+                    </div>
+                  </div>
+                  <div className="[display:flex] [align-items:center] [gap:8px] [border:1px_solid_#dbeafe] [border-radius:9px] [background:#eff6ff] [padding:10px_12px] [font-size:12px] [font-weight:650] [color:#1d4ed8] max-[640px]:[align-self:flex-start]">
+                    <CalendarDays size={16} />
+                    {eligibleCandidates.length} interview
+                    {eligibleCandidates.length === 1 ? "" : "s"} ready for review
+                  </div>
+                </div>
+
+                {selectedCandidate && (
+                  <div className="evaluation-layout [display:grid] [grid-template-columns:minmax(0,_1.05fr)_minmax(0,_0.95fr)] [gap:18px] [align-items:stretch] max-[1050px]:[grid-template-columns:1fr]">
+                    <section className="[overflow:hidden] [border:1px_solid_#e2e8f0] [border-radius:15px] [background:#fff] [box-shadow:0_8px_24px_rgba(15,23,42,0.04)]">
+                      <div className="[padding:22px] max-[520px]:[padding:18px]">
+                        <div className="[display:flex] [align-items:flex-start] [justify-content:space-between] [gap:16px] [border-bottom:1px_solid_#edf0f3] [padding-bottom:17px]">
+                          <div>
+                            <p className="[margin:0_0_5px] [font-size:10px] [font-weight:800] [letter-spacing:1px] [color:#00a6c7]">
+                              INTERVIEW REVIEW
+                            </p>
+                            <h2 className="[margin:0] [font-size:19px] [font-weight:800] [color:#172033]">
+                              {selectedCandidate.name || "Unknown candidate"}
+                            </h2>
+                            <p className="[margin:5px_0_0] [font-size:12px] [color:#64748b]">
+                              {selectedCandidate.role ||
+                                selectedCandidate.current_role ||
+                                "Role not specified"}
+                            </p>
+                          </div>
+                          <span className="[flex-shrink:0] [border:1px_solid_#dbeafe] [border-radius:999px] [background:#eff6ff] [padding:6px_10px] [font-size:11px] [font-weight:750] [color:#1d4ed8]">
+                            {currentStage}
+                          </span>
+                        </div>
+
+                        <div className="[display:flex] [align-items:center] [justify-content:space-between] [gap:16px] [margin-top:17px] [border-radius:11px] [background:#f8fafc] [padding:13px_15px] max-[560px]:[align-items:flex-start] max-[560px]:[flex-direction:column]">
+                          <div>
+                            <div className="[font-size:10px] [font-weight:800] [letter-spacing:.7px] [color:#64748b]">
+                              SCHEDULED ROUND
+                            </div>
+                            <div className="[margin-top:4px] [font-size:14px] [font-weight:750] [color:#1e293b]">
+                              {interviewToReview?.round}
+                            </div>
+                            {formatScheduledAt(interviewToReview?.scheduled_at) && (
+                              <div className="[margin-top:4px] [font-size:11px] [color:#64748b]">
+                                {formatScheduledAt(interviewToReview.scheduled_at)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="[text-align:right] max-[560px]:[text-align:left]">
+                            <div className="[font-size:10px] [font-weight:800] [letter-spacing:.7px] [color:#64748b]">
+                              AI MATCH SCORE
+                            </div>
+                            <div className="[margin-top:3px] [font-size:24px] [font-weight:800] [line-height:1] [color:#133f7d]">
+                              {selectedCandidate.ai_score ?? "—"}
+                              {selectedCandidate.ai_score !== null &&
+                                selectedCandidate.ai_score !== undefined && (
+                                  <span className="[font-size:11px] [font-weight:650]"> / 100</span>
+                                )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="[margin-top:20px]">
+                          <div className="[margin-bottom:11px] [font-size:11px] [font-weight:800] [letter-spacing:.7px] [color:#64748b]">
+                            PIPELINE
+                          </div>
+                          <div className="[display:grid] [grid-template-columns:repeat(6,_minmax(0,_1fr))] [gap:6px] max-[640px]:[grid-template-columns:repeat(3,_minmax(0,_1fr))]">
+                            {STAGES.map((stage, index) => {
+                              const reached = currentIndex >= index;
+                              const isCurrent = index === currentIndex;
+                              return (
+                                <div
+                                  key={stage}
+                                  className={`${reached ? "[border-color:#c7d9ef] [background:#eff6ff] [color:#133f7d]" : "[border-color:#edf0f3] [background:#f8fafc] [color:#94a3b8]"} ${isCurrent ? "[box-shadow:0_0_0_1px_#133f7d] [font-weight:800]" : "[font-weight:650]"} [min-height:45px] [display:flex] [align-items:center] [justify-content:center] [border:1px_solid] [border-radius:8px] [padding:6px] [font-size:10px] [line-height:1.3] [text-align:center]`}
+                                >
+                                  {stage.replace(" Interview", "")}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="[border-top:1px_solid_#edf0f3] [background:#fbfcfe] [padding:18px_22px] max-[520px]:[padding:16px_18px]">
+                        <div className="[margin-bottom:8px] [display:flex] [align-items:center] [justify-content:space-between] [gap:12px]">
+                          <label
+                            className="[font-size:12px] [font-weight:750] [color:#1e293b]"
+                            htmlFor="evaluation-notes"
+                          >
+                            Interview notes
+                            <span className="[margin-left:4px] [color:#dc2626]">*</span>
+                          </label>
+                          <span className="[font-size:10px] [color:#64748b]">
+                            Saved to candidate profile
+                          </span>
+                        </div>
+                        <textarea
+                          className="[min-height:116px] [width:100%] [resize:vertical] [border:1px_solid_#dbe2ea] [border-radius:9px] [background:#fff] [padding:11px_12px] [font:inherit] [font-size:13px] [line-height:1.6] [color:#1e293b] outline-none focus:[border-color:#133f7d] focus:[box-shadow:0_0_0_3px_rgba(19,63,125,0.08)]"
+                          id="evaluation-notes"
+                          rows="4"
+                          required
+                          value={evaluationNotes}
+                          onChange={(event) =>
+                            setEvaluationNotes(event.target.value)
+                          }
+                          placeholder={`Summarize the ${interviewToReview?.round || "interview"} and your recommendation...`}
+                        />
+                        {selectedCandidate.interview_notes && (
+                          <div className="[margin-top:12px]">
+                            <div className="[margin-bottom:5px] [font-size:10px] [font-weight:800] [letter-spacing:.6px] [color:#64748b]">
+                              PREVIOUS INTERVIEW NOTES
+                            </div>
+                            <div className="[max-height:120px] [overflow-y:auto] [white-space:pre-wrap] [border:1px_solid_#e8eef6] [border-radius:8px] [background:#fff] [padding:10px] [font-size:11px] [line-height:1.6] [color:#475569]">
+                              {selectedCandidate.interview_notes}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="[display:flex] [justify-content:space-between] [gap:10px] [border-top:1px_solid_#edf0f3] [padding:14px_22px] max-[520px]:[padding:14px_18px]">
+                        <Button
+                          type="button"
+                          variant="danger"
+                          size="sm"
+                          disabled={saving || !evaluationNotes.trim()}
+                          onClick={() => updateStage("Rejected", true)}
+                        >
+                          <X size={15} />
+                          Reject candidate
+                        </Button>
+                        <Button
+                          type="button"
+                          disabled={saving || !evaluationNotes.trim() || !nextStage}
+                          onClick={() => updateStage(nextStage, true)}
+                        >
+                          <Check size={15} />
+                          {saving ? "Saving..." : `Submit & advance`}
+                          <ArrowRight size={15} />
+                        </Button>
+                      </div>
+                    </section>
+
+                    <aside className="[display:flex] [flex-direction:column] [gap:14px]">
+                      <div className="[border:1px_solid_#dbeafe] [border-radius:14px] [background:linear-gradient(135deg,_#eff6ff,_#f8fbff)] [padding:20px]">
+                        <div className="[display:flex] [align-items:center] [gap:10px]">
+                          <span className="[width:34px] [height:34px] [display:flex] [align-items:center] [justify-content:center] [border-radius:10px] [background:#fff] [color:#133f7d]">
+                            <ClipboardCheck size={18} />
+                          </span>
+                          <h3 className="[margin:0] [font-size:14px] [font-weight:800] [color:#1e293b]">
+                            Decision guidance
+                          </h3>
+                        </div>
+                        <p className="[margin:12px_0_0] [font-size:12px] [line-height:1.65] [color:#475569]">
+                          Submitting this review saves the notes under{" "}
+                          <strong>
+                            {getRoundLabel(interviewToReview?.round)}:
+                          </strong>{" "}
+                          and advances the candidate to{" "}
+                          <strong>{nextStage || "the next stage"}</strong>.
+                        </p>
+                        <div className="[margin-top:12px] [display:flex] [align-items:center] [gap:7px] [font-size:11px] [font-weight:650] [color:#1d4ed8]">
+                          <Check size={14} />
+                          Evaluation is enabled only for a scheduled interview
+                        </div>
+                      </div>
+
+                      <div className="[flex:1] [border:1px_solid_#e2e8f0] [border-radius:14px] [background:#fff] [padding:20px]">
+                        <h3 className="[margin:0] [font-size:14px] [font-weight:800] [color:#1e293b]">
+                          Next step
+                        </h3>
+                        <p className="[margin:7px_0_0] [font-size:12px] [line-height:1.6] [color:#64748b]">
+                          {currentStage === "L2 Interview"
+                            ? "A client interview is optional. After recording this interview decision, you can either schedule a client round or proceed directly to an offer."
+                            : currentStage === "Client Interview"
+                              ? "The client round is complete. Move the candidate to Offer Sent when the hiring decision is approved."
+                              : `After ${nextStage || "this review"}, schedule the next interview round before evaluating again.`}
+                        </p>
+                        {nextStage && (
+                          <div className="[margin-top:16px] [border-top:1px_solid_#edf0f3] [padding-top:14px] [font-size:11px] [color:#64748b]">
+                            <span className="[font-weight:700] [color:#334155]">Next pipeline stage</span>
+                            <div className="[margin-top:6px] [display:flex] [align-items:center] [gap:8px] [font-size:13px] [font-weight:750] [color:#133f7d]">
+                              {nextStage}
+                              <ArrowRight size={15} />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </aside>
+                  </div>
+                )}
+              </>
+            ) : (
+              <PageState
+                variant="empty"
+                title="No scheduled interviews to evaluate"
+                description="Candidates appear here when they have a scheduled interview for their current pipeline stage. Evaluation notes are required before submitting a decision."
+                icon={CalendarDays}
+              />
+            )}
+
+            {scheduledInterviewsNeedingStageReview.length > 0 && (
+              <section className="[margin-top:18px] [overflow:hidden] [border:1px_solid_#fed7aa] [border-radius:13px] [background:#fff7ed]">
+                <div className="[border-bottom:1px_solid_#fed7aa] [padding:16px_18px]">
+                  <h2 className="[margin:0] [font-size:14px] [font-weight:800] [color:#9a3412]">
+                    Booked interviews need a stage check
+                  </h2>
+                  <p className="[margin:5px_0_0] [font-size:12px] [line-height:1.5] [color:#9a3412]">
+                    These future bookings are present, but their round does not match the candidate&apos;s current pipeline stage. They are shown here rather than silently omitted; update the stage only after confirming the candidate&apos;s evaluation history.
+                  </p>
+                </div>
+                <div className="[divide-y:1px_solid_#fed7aa]">
+                  {scheduledInterviewsNeedingStageReview.map(
+                    ({ candidate, interview }) => (
+                      <div
+                        key={`${candidate.candidate_id}-${interview.round}-${interview.scheduled_at}`}
+                        className="[display:flex] [align-items:center] [justify-content:space-between] [gap:14px] [padding:12px_18px] max-[600px]:[align-items:flex-start] max-[600px]:[flex-direction:column]"
+                      >
+                        <div>
+                          <div className="[font-size:13px] [font-weight:750] [color:#7c2d12]">
+                            {candidate.name || "Unknown candidate"} · {interview.round}
+                          </div>
+                          <div className="[margin-top:3px] [font-size:11px] [color:#9a3412]">
+                            Current stage: {getStage(candidate)}
+                          </div>
+                        </div>
+                        <div className="[font-size:12px] [font-weight:650] [color:#7c2d12]">
+                          {formatScheduledAt(interview.scheduled_at)}
+                        </div>
+                      </div>
+                    ),
+                  )}
+                </div>
+              </section>
+            )}
+
+            {pipelineCandidates.length > 0 && (
+              <section className="[margin-top:22px] [overflow:hidden] [border:1px_solid_#e2e8f0] [border-radius:14px] [background:#fff]">
+                <div className="[border-bottom:1px_solid_#edf0f3] [padding:18px_20px]">
+                  <div className="[display:flex] [align-items:center] [gap:9px]">
+                    <UserRoundCheck size={18} className="[color:#133f7d]" />
+                    <h2 className="[margin:0] [font-size:15px] [font-weight:800] [color:#1e293b]">
+                      Pipeline decisions
+                    </h2>
+                  </div>
+                  <p className="[margin:5px_0_0] [font-size:12px] [color:#64748b]">
+                    Non-interview transitions: skip the optional client round, send an offer, or mark a candidate onboarded.
+                  </p>
+                </div>
+                <div className="[divide-y:1px_solid_#edf0f3]">
+                  {pipelineCandidates.map((candidate) => {
+                    const stage = getStage(candidate);
+                    const targetStage =
+                      stage === "Offer Sent" ? "Onboarded" : "Offer Sent";
+                    return (
+                      <div
+                        key={candidate.candidate_id}
+                        className="[display:flex] [align-items:center] [justify-content:space-between] [gap:14px] [padding:13px_20px] max-[640px]:[align-items:flex-start] max-[640px]:[flex-direction:column]"
+                      >
+                        <div>
+                          <div className="[font-size:13px] [font-weight:750] [color:#1e293b]">
+                            {candidate.name || "Unknown candidate"}
+                          </div>
+                          <div className="[margin-top:3px] [font-size:11px] [color:#64748b]">
+                            {candidate.role || candidate.current_role || "Role not specified"} · {stage}
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          disabled={saving}
+                          onClick={() =>
+                            updatePipelineStage(candidate, targetStage)
+                          }
+                        >
+                          {stage === "L2 Interview"
+                            ? "Skip client & send offer"
+                            : stage === "Client Interview"
+                              ? "Send offer"
+                              : "Mark onboarded"}
+                          <ArrowRight size={14} />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+          </>
         )}
       </div>
     </PageShell>

@@ -1,21 +1,80 @@
 import os
+import shutil
+import tempfile
 import uuid
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required
 
 from config.db import get_connection
 from utils.schema import ensure_schema
 from utils.resume_parser import parse_resume, extract_job_skills_from_resume
+from utils.resume_converter import (
+    SUPPORTED_RESUME_EXTENSIONS,
+    convert_resume_to_pdf,
+)
 
 from utils.auth_helpers import (
     get_candidate_select_clause,
     build_candidate_payload,
     get_candidate_stage_transition,
+    get_required_interview_round,
+    format_interview_evaluation_note,
     normalize_candidate_stage,
 )
 
 candidates = Blueprint("candidates", __name__)
+
+
+@candidates.route("/api/candidates/<int:candidate_id>/resume", methods=["GET"])
+@jwt_required(optional=False)
+def get_candidate_resume(candidate_id):
+    conn = None
+    try:
+        ensure_schema()
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT resume_storage_name, resume_original_name
+            FROM dbo.Candidates
+            WHERE candidate_id = ?
+            """,
+            (candidate_id,),
+        )
+        row = cursor.fetchone()
+        conn.close()
+        conn = None
+
+        if not row:
+            return jsonify({"error": "Candidate not found"}), 404
+
+        storage_name, original_name = row
+        if not storage_name:
+            return jsonify({"error": "No resume is linked to this candidate"}), 404
+
+        safe_storage_name = os.path.basename(storage_name)
+        if safe_storage_name != storage_name:
+            return jsonify({"error": "Invalid resume file reference"}), 500
+
+        upload_dir = os.path.realpath(
+            os.path.join(os.getcwd(), "uploads", "resumes")
+        )
+        file_path = os.path.realpath(os.path.join(upload_dir, safe_storage_name))
+        if os.path.commonpath([upload_dir, file_path]) != upload_dir:
+            return jsonify({"error": "Invalid resume file reference"}), 500
+        if not os.path.isfile(file_path):
+            return jsonify({"error": "The linked resume file is missing"}), 404
+
+        return send_file(
+            file_path,
+            as_attachment=False,
+            download_name=os.path.basename(original_name or safe_storage_name),
+        )
+    except Exception as e:
+        if conn:
+            conn.close()
+        return jsonify({"error": str(e)}), 500
 
 
 @candidates.route("/api/candidates", methods=["GET"])
@@ -46,6 +105,20 @@ def get_candidates():
             for row in cursor.fetchall()
         }
 
+        cursor.execute("""
+            SELECT candidate_id, interview_round, scheduled_at, is_completed
+            FROM dbo.Interviews
+            WHERE scheduled_at IS NOT NULL
+            ORDER BY scheduled_at DESC
+        """)
+        scheduled_interviews = {}
+        for interview in cursor.fetchall():
+            scheduled_interviews.setdefault(interview.candidate_id, []).append({
+                'round': interview.interview_round,
+                'scheduled_at': interview.scheduled_at.isoformat(),
+                'is_completed': bool(interview.is_completed),
+            })
+
         conn.close()
 
         candidates_list = []
@@ -53,6 +126,12 @@ def get_candidates():
         for row in rows:
             candidate = build_candidate_payload(row)
             candidate['has_interview'] = candidate['candidate_id'] in interviewed_candidate_ids
+            candidate_interviews = scheduled_interviews.get(
+                candidate['candidate_id'],
+                [],
+            )
+            candidate['scheduled_interviews'] = candidate_interviews
+            candidate['has_scheduled_interview'] = bool(candidate_interviews)
             candidates_list.append(candidate)
 
         return jsonify(candidates_list), 200
@@ -97,14 +176,20 @@ def get_candidate_detail(candidate_id):
 @candidates.route("/api/candidates/<int:candidate_id>/stage", methods=["PATCH"])
 @jwt_required(optional=False)
 def update_candidate_stage(candidate_id):
+    conn = None
+
     try:
         ensure_schema()
 
         data = request.get_json(silent=True) or {}
 
-        action = (data.get("action") or "").strip().lower()
+        action = data.get("action") or ""
+        requested_stage = data.get("stage") or ""
+        if not isinstance(action, str) or not isinstance(requested_stage, str):
+            return jsonify({"error": "Candidate stage must be text"}), 400
 
-        requested_stage = (data.get("stage") or "").strip()
+        action = action.strip().lower()
+        requested_stage = requested_stage.strip()
 
         if not action and not requested_stage:
             return jsonify({"error": "A stage action is required"}), 400
@@ -113,6 +198,22 @@ def update_candidate_stage(candidate_id):
 
         if action:
             target_stage = get_candidate_stage_transition(requested_stage, action)
+
+        allowed_stages = {
+            "L1 Interview",
+            "L2 Interview",
+            "Client Interview",
+            "Offer Sent",
+            "Onboarded",
+            "Rejected",
+        }
+        if target_stage not in allowed_stages:
+            return jsonify({"error": "Invalid candidate stage"}), 400
+
+        evaluation_note = data.get("evaluation_notes")
+        if evaluation_note is not None and not isinstance(evaluation_note, str):
+            return jsonify({"error": "Evaluation notes must be text"}), 400
+        evaluation_note = (evaluation_note or "").strip()
 
         conn = get_connection()
         cursor = conn.cursor()
@@ -132,41 +233,102 @@ def update_candidate_stage(candidate_id):
             return jsonify({"error": "Candidate not found"}), 404
 
         current_stage = normalize_candidate_stage(current_row[0])
-        ordered_stages = [
-            "Shortlisted",
+        required_round = get_required_interview_round(current_stage)
+        is_evaluation = target_stage in {
             "L1 Interview",
             "L2 Interview",
             "Client Interview",
-            "Offer Sent",
-        ]
+            "Rejected",
+        }
 
-        if target_stage == "Rejected":
-            if current_stage == "Rejected" or current_stage == "Offer Sent":
-                conn.close()
-                return jsonify({
-                    "error": "This candidate cannot be rejected from the current stage"
-                }), 409
-        elif target_stage in ordered_stages:
-            if current_stage not in ordered_stages:
-                current_stage = "Shortlisted"
-
-            current_index = ordered_stages.index(current_stage)
-            target_index = ordered_stages.index(target_stage)
-
-            if target_index != current_index + 1:
-                conn.close()
-                return jsonify({
-                    "error": "Candidates can only move to the next stage"
-                }), 409
-
-        cursor.execute(
-            """
-            UPDATE dbo.Candidates
-            SET current_status = ?
-            WHERE candidate_id = ?
-        """,
-            (target_stage, candidate_id),
+        valid_transition = (
+            (current_stage == "Shortlisted" and target_stage in {"L1 Interview", "Rejected"})
+            or (current_stage == "L1 Interview" and target_stage in {"L2 Interview", "Rejected"})
+            or (current_stage == "L2 Interview" and target_stage in {"Client Interview", "Offer Sent", "Rejected"})
+            or (current_stage == "Client Interview" and target_stage in {"Offer Sent", "Rejected"})
+            or (current_stage == "Offer Sent" and target_stage == "Onboarded")
         )
+        if not valid_transition:
+            conn.close()
+            conn = None
+            return jsonify({"error": "This candidate cannot move to that stage"}), 409
+
+        interview_note = None
+        if is_evaluation:
+            if not evaluation_note:
+                conn.close()
+                conn = None
+                return jsonify({"error": "Evaluation notes are required"}), 400
+            if not required_round:
+                conn.close()
+                conn = None
+                return jsonify({
+                    "error": "An interview must be scheduled before evaluation"
+                }), 409
+
+            cursor.execute(
+                """
+                SELECT TOP 1 interview_id, interview_round
+                FROM dbo.Interviews
+                WHERE candidate_id = ?
+                    AND scheduled_at IS NOT NULL
+                    AND interview_round = ?
+                    AND is_completed = 0
+                ORDER BY scheduled_at DESC
+                """,
+                (candidate_id, required_round),
+            )
+            interview_row = cursor.fetchone()
+            if not interview_row:
+                conn.close()
+                conn = None
+                return jsonify({
+                    "error": f"A scheduled {required_round} is required before evaluation"
+                }), 409
+
+            interview_note = format_interview_evaluation_note(
+                interview_row[1],
+                evaluation_note,
+            )
+            evaluated_interview_id = interview_row[0]
+        else:
+            evaluated_interview_id = None
+
+        if interview_note:
+            cursor.execute(
+                """
+                UPDATE dbo.Candidates
+                SET current_status = ?,
+                    interview_notes = CASE
+                        WHEN NULLIF(LTRIM(RTRIM(interview_notes)), '') IS NULL
+                            THEN ?
+                        ELSE interview_notes + CHAR(13) + CHAR(10) + ?
+                    END
+                WHERE candidate_id = ?
+                """,
+                (target_stage, interview_note, interview_note, candidate_id),
+            )
+        else:
+            cursor.execute(
+                """
+                UPDATE dbo.Candidates
+                SET current_status = ?
+                WHERE candidate_id = ?
+                """,
+                (target_stage, candidate_id),
+            )
+
+        if evaluated_interview_id is not None:
+            cursor.execute(
+                """
+                UPDATE dbo.Interviews
+                SET is_completed = 1,
+                    notes = ?
+                WHERE interview_id = ?
+                    AND is_completed = 0
+                """,
+                (interview_note, evaluated_interview_id),
+            )
 
         conn.commit()
 
@@ -184,6 +346,7 @@ def update_candidate_stage(candidate_id):
         row = cursor.fetchone()
 
         conn.close()
+        conn = None
 
         if not row:
             return jsonify({"error": "Candidate not found"}), 404
@@ -191,6 +354,9 @@ def update_candidate_stage(candidate_id):
         return jsonify(build_candidate_payload(row)), 200
 
     except Exception as e:
+        if conn:
+            conn.rollback()
+            conn.close()
         return jsonify({"error": str(e)}), 500
 
 
@@ -296,8 +462,11 @@ def upload_candidates():
 
         created_candidates = []
         failed_files = []
+        converted_count = 0
+        pdf_ready_count = 0
+        parsed_count = 0
 
-        allowed_extensions = {".pdf", ".docx", ".txt"}
+        allowed_extensions = SUPPORTED_RESUME_EXTENSIONS
 
         for file in files:
 
@@ -317,15 +486,43 @@ def upload_candidates():
 
                 continue
 
-            # ------------------------------------------------
-            # UNIQUE FILE NAME
-            # ------------------------------------------------
-
-            unique_filename = str(uuid.uuid4()) + extension
-
+            safe_original_filename = os.path.basename(
+                original_filename.replace("\\", "/")
+            )
+            converted_filename = (
+                f"{os.path.splitext(safe_original_filename)[0]}.pdf"
+            )
+            unique_filename = f"{uuid.uuid4()}.pdf"
             file_path = os.path.join(upload_dir, unique_filename)
 
-            file.save(file_path)
+            try:
+                with tempfile.TemporaryDirectory(
+                    prefix="resume-upload-", dir=upload_dir
+                ) as staging_dir:
+                    source_path = os.path.join(
+                        staging_dir, f"{uuid.uuid4()}{extension}"
+                    )
+                    file.save(source_path)
+                    pdf_path = convert_resume_to_pdf(source_path, staging_dir)
+                    shutil.copyfile(pdf_path, file_path)
+            except Exception as error:
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+                failed_files.append(
+                    {
+                        "fileName": original_filename,
+                        "error": (
+                            f"Resume conversion failed: {error}"
+                            if extension != ".pdf"
+                            else f"Resume upload failed: {error}"
+                        ),
+                    }
+                )
+                continue
+
+            pdf_ready_count += 1
+            if extension != ".pdf":
+                converted_count += 1
 
             # ------------------------------------------------
             # PARSE RESUME
@@ -333,9 +530,11 @@ def upload_candidates():
 
             try:
 
-                parsed = parse_resume(file_path, original_filename)
+                parsed = parse_resume(file_path, converted_filename)
 
             except Exception as e:
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
 
                 failed_files.append(
                     {
@@ -347,6 +546,8 @@ def upload_candidates():
                 continue
 
             if parsed.get("status") != "success":
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
                 failed_files.append(
                     {
                         "fileName": original_filename,
@@ -354,6 +555,8 @@ def upload_candidates():
                     }
                 )
                 continue
+
+            parsed_count += 1
 
             # ------------------------------------------------
             # VALIDATION
@@ -408,11 +611,15 @@ def upload_candidates():
                     ai_score,
                     job_id,
                     notice_period,
-                    skills
+                    skills,
+                    resume_storage_name,
+                    resume_original_name
                 )
                 OUTPUT INSERTED.candidate_id
                 VALUES
                 (
+                    ?,
+                    ?,
                     ?,
                     ?,
                     ?,
@@ -442,6 +649,8 @@ def upload_candidates():
                     job_id,
                     notice_period,
                     skills_string,
+                    unique_filename,
+                    converted_filename,
                 ),
             )
 
@@ -482,6 +691,9 @@ def upload_candidates():
                     "job_title": job_title,
                     "created_count": len(created_candidates),
                     "failed_count": len(failed_files),
+                    "pdf_ready_count": pdf_ready_count,
+                    "converted_count": converted_count,
+                    "parsed_count": parsed_count,
                     "candidates": created_candidates,
                     "failed": failed_files,
                 }

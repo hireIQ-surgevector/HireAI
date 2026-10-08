@@ -140,7 +140,12 @@ function DashboardPage() {
 
   if (!summary && loading) {
     return (
-      <PageShell title="Dashboard" active="dashboard">
+      <PageShell
+        title="Dashboard"
+        active="dashboard"
+        eyebrow="HIRING OVERVIEW"
+        description="A clear snapshot of your hiring pipeline and next steps."
+      >
         <PageState variant="loading" title="Loading dashboard" rows={4} />
       </PageShell>
     );
@@ -148,7 +153,12 @@ function DashboardPage() {
 
   if (!summary && error) {
     return (
-      <PageShell title="Dashboard" active="dashboard">
+      <PageShell
+        title="Dashboard"
+        active="dashboard"
+        eyebrow="HIRING OVERVIEW"
+        description="A clear snapshot of your hiring pipeline and next steps."
+      >
         <PageState
           variant="error"
           title="Couldn't load dashboard"
@@ -160,7 +170,12 @@ function DashboardPage() {
   }
 
   return (
-    <PageShell title="Dashboard" active="dashboard">
+    <PageShell
+      title="Dashboard"
+      active="dashboard"
+      eyebrow="HIRING OVERVIEW"
+      description="A clear snapshot of your hiring pipeline and next steps."
+    >
       {/* =========================
           DASHBOARD METRICS
       ========================= */}

@@ -81,7 +81,8 @@ def dashboard_summary():
         cursor.execute("""
             SELECT COUNT(*)
             FROM dbo.Interviews
-            WHERE CAST(scheduled_at AS DATE)
+            WHERE is_completed = 0
+                AND CAST(scheduled_at AS DATE)
                 = CAST(GETDATE() AS DATE)
         """)
 
@@ -136,6 +137,7 @@ def dashboard_summary():
             JOIN dbo.Candidates c
                 ON c.candidate_id = i.candidate_id
             WHERE i.scheduled_at IS NOT NULL
+                AND i.is_completed = 0
             ORDER BY i.scheduled_at ASC
         """)
 

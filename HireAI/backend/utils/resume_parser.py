@@ -5,7 +5,6 @@ import pdfplumber
 import pytesseract
 from docx import Document
 from docx.table import Table
-from docx.text.paragraph import Paragraph
 
 # ============================================================
 # SKILL MAPPINGS
@@ -193,7 +192,7 @@ def extract_text_from_docx(docx_path):
 
     for block in doc.element.body.iterchildren():
         if block.tag.endswith("}p"):
-            text = Paragraph(block, doc).text
+            text = "".join(block.xpath(".//w:t/text()"))
             if text.strip():
                 blocks.append(text)
         elif block.tag.endswith("}tbl"):
@@ -207,7 +206,12 @@ def extract_text_from_docx(docx_path):
                         continue
                     seen_cells.add(cell_element)
 
-                    cell_text = clean_text(cell.text)
+                    cell_text = clean_text(
+                        "\n".join(
+                            "".join(paragraph.xpath(".//w:t/text()"))
+                            for paragraph in cell_element.xpath(".//w:p")
+                        )
+                    )
                     if cell_text:
                         cells.append(cell_text)
 
@@ -269,45 +273,45 @@ def normalize_person_name(name):
     return normalized.title()
 
 
+def extract_name_from_filename(file_name):
+    name = os.path.splitext(os.path.basename(file_name))[0]
+
+    name = re.sub(
+        r"[_\-\s]+(?:resume|cv|data engineer|developer|software engineer|"
+        r"\d+\s*years?.*)$",
+        "",
+        name,
+        flags=re.IGNORECASE,
+    )
+    name = re.sub(r"\s*\(\d+\)$", "", name)
+    name = re.sub(r"[_-]+", " ", name).strip()
+
+    # A filename containing one concatenated token is not reliable enough
+    # to use as a person's full name; let extracted resume text decide.
+    if not re.fullmatch(
+        r"[A-Za-z][A-Za-z.'-]*(?:\s+[A-Za-z][A-Za-z.'-]*){1,3}",
+        name,
+    ):
+        return ""
+
+    return normalize_person_name(name)
+
+
 def extract_name(text, file_name=None):
 
     # --------------------------------------------------------
     # Try explicit labels first
     # --------------------------------------------------------
 
-    patterns = [
-        r"(?:name)\s*[:\-]\s*([A-Za-z][A-Za-z .'-]{2,60})",
-        r"(?:full name)\s*[:\-]\s*([A-Za-z][A-Za-z .'-]{2,60})",
-    ]
-
-    for pattern in patterns:
-
-        match = re.search(pattern, text, re.IGNORECASE)
-
+    explicit_name = re.compile(
+        r"^\s*(?:candidate\s+)?(?:full\s+)?name\s*[:\-]\s*"
+        r"([A-Za-z][A-Za-z .'-]{2,60}?)(?:\s*[|,;].*)?\s*$",
+        re.IGNORECASE,
+    )
+    for line in text.splitlines():
+        match = explicit_name.match(line)
         if match:
             return normalize_person_name(match.group(1))
-
-    # --------------------------------------------------------
-    # Try filename
-    # --------------------------------------------------------
-
-    if file_name:
-
-        name = os.path.splitext(os.path.basename(file_name))[0]
-
-        # Remove common resume/job suffixes
-        name = re.sub(
-            r"[_\-\s]+(?:resume|cv|data engineer|developer|software engineer|\d+\s*years?.*)$",
-            "",
-            name,
-            flags=re.IGNORECASE,
-        )
-
-        name = re.sub(r"\s*\(\d+\)$", "", name)
-
-        # Only use filename if it looks like a person's name
-        if re.match(r"^[A-Za-z][A-Za-z .'-]{2,60}$", name):
-            return normalize_person_name(name.replace("_", " "))
 
     # --------------------------------------------------------
     # Fallback: first few words
@@ -316,12 +320,21 @@ def extract_name(text, file_name=None):
     blocked = {
         "resume", "curriculum", "vitae", "profile", "summary", "objective",
         "data", "software", "cloud", "senior", "junior", "lead", "engineer",
-        "developer", "specialist", "professional", "bengaluru", "bangalore",
+        "developer", "specialist", "professional", "specialized", "experienced",
+        "bengaluru", "bangalore",
         "pune", "india", "hyderabad", "mumbai", "delhi", "email", "phone",
         "contact", "linkedin", "skills", "experience", "education", "location",
+        "python", "sql", "gcp", "aws", "azure", "google", "bigquery", "airflow",
+        "etl", "spark", "java", "years", "year", "month", "months",
+        "client", "project",
     }
 
-    for line in text.splitlines()[:8]:
+    def name_words_from_line(line):
+        line = line.strip()
+        if not line:
+            return []
+        line = re.split(r"\b(?:email|e-mail|phone|contact|mobile)\s*:", line, maxsplit=1, flags=re.IGNORECASE)[0]
+        line = line.replace("|", " ")
         name_words = []
 
         for word in line.split()[:3]:
@@ -333,7 +346,34 @@ def extract_name(text, file_name=None):
             name_words.append(cleaned)
             if len(name_words) == 3:
                 break
+        return name_words
 
+    lines = text.splitlines()
+    first_line_words = name_words_from_line(lines[0]) if lines else []
+    if len(first_line_words) >= 2:
+        return normalize_person_name(" ".join(first_line_words))
+
+    if file_name:
+        filename_name = extract_name_from_filename(file_name)
+        if filename_name:
+            return filename_name
+
+    if file_name and len(first_line_words) == 1:
+        # Accept a one-word name only when it agrees with the filename prefix.
+        filename_prefix = os.path.splitext(os.path.basename(file_name))[0]
+        filename_prefix = re.sub(
+            r"[_\-\s]+(?:resume|cv|data engineer|developer|software engineer|"
+            r"\d+\s*years?.*)$",
+            "",
+            filename_prefix,
+            flags=re.IGNORECASE,
+        )
+        first_filename_token = re.split(r"[_\-\s]+", filename_prefix)[0]
+        if first_line_words[0].casefold() == first_filename_token.casefold():
+            return normalize_person_name(first_line_words[0])
+
+    for line in lines[1:8]:
+        name_words = name_words_from_line(line)
         if len(name_words) >= 2:
             return normalize_person_name(" ".join(name_words))
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import PageShell from "../components/common/PageShell";
 import Button from "../components/common/Button";
@@ -10,6 +10,7 @@ import {
   BriefcaseBusiness,
   X,
   Plus,
+  SlidersHorizontal,
 } from "lucide-react";
 
 import { API_URL } from "../utils/auth";
@@ -21,6 +22,10 @@ function JobsPage() {
 
   const [selectedDept, setSelectedDept] = useState("All");
   const [selectedStatus, setSelectedStatus] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState("status_active_first");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersRef = useRef(null);
 
   /* =========================
      FETCH JOBS
@@ -66,6 +71,26 @@ function JobsPage() {
 
     return () => window.clearTimeout(taskId);
   }, [fetchJobs]);
+
+  useEffect(() => {
+    if (!filtersOpen) return undefined;
+
+    const closeOnOutsideClick = (event) => {
+      if (!filtersRef.current?.contains(event.target)) {
+        setFiltersOpen(false);
+      }
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setFiltersOpen(false);
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [filtersOpen]);
 
   /* =========================
      DATE FORMATTING
@@ -141,7 +166,9 @@ function JobsPage() {
   ========================= */
 
   const filteredJobs = useMemo(() => {
-    return jobs.filter((job) => {
+    const query = searchQuery.trim().toLowerCase();
+
+    const matchingJobs = jobs.filter((job) => {
       const departmentMatches =
         selectedDept === "All" ||
         (job.department || "").toLowerCase().trim() ===
@@ -152,9 +179,42 @@ function JobsPage() {
       const statusMatches =
         selectedStatus === "All" || status === selectedStatus;
 
-      return departmentMatches && statusMatches;
+      const searchMatches =
+        !query ||
+        [job.title, job.department, job.location]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(query));
+
+      return departmentMatches && statusMatches && searchMatches;
     });
-  }, [jobs, selectedDept, selectedStatus]);
+
+    const statusPriority = {
+      Active: 0,
+      "Closing Soon": 1,
+      Overdue: 2,
+    };
+
+    return matchingJobs.sort((first, second) => {
+      if (sortOrder === "created_newest" || sortOrder === "created_oldest") {
+        const firstTimestamp = new Date(first.created_at || 0).getTime();
+        const secondTimestamp = new Date(second.created_at || 0).getTime();
+        const firstDate = Number.isFinite(firstTimestamp) ? firstTimestamp : 0;
+        const secondDate = Number.isFinite(secondTimestamp)
+          ? secondTimestamp
+          : 0;
+        const direction = sortOrder === "created_newest" ? -1 : 1;
+        return (firstDate - secondDate) * direction;
+      }
+
+      const direction = sortOrder === "status_active_first" ? 1 : -1;
+      const firstPriority =
+        statusPriority[getJobStatusDetails(first.due_date).label] ?? 3;
+      const secondPriority =
+        statusPriority[getJobStatusDetails(second.due_date).label] ?? 3;
+
+      return (firstPriority - secondPriority) * direction;
+    });
+  }, [jobs, searchQuery, selectedDept, selectedStatus, sortOrder]);
 
   /* =========================
      ACTIVE JOB COUNT
@@ -162,17 +222,24 @@ function JobsPage() {
 
   const activeJobsCount = useMemo(() => { return jobs.filter((job) => { const status = getJobStatusDetails(job.due_date).label; return status !== "Overdue"; }).length; }, [jobs]);
 
-  const hasActiveFilters = selectedDept !== "All" || selectedStatus !== "All";
+  const hasActiveFilters =
+    selectedDept !== "All" ||
+    selectedStatus !== "All" ||
+    sortOrder !== "status_active_first";
 
   const clearFilters = () => {
     setSelectedDept("All");
     setSelectedStatus("All");
+    setSortOrder("status_active_first");
   };
 
   return (
     <PageShell
       title="Job Openings"
       active="jobs"
+      eyebrow="RECRUITMENT WORKSPACE"
+      description="Build the team you need. Track open roles, candidate flow, and hiring deadlines from one place."
+      headerIcon={BriefcaseBusiness}
       actions={
         <Button as={Link} to="/post-job">
           + Post New Job
@@ -180,14 +247,6 @@ function JobsPage() {
       }
     >
       <div className="jobs-page [max-width:1180px] [margin:0_auto]">
-      <div className="jobs-intro [display:flex] [justify-content:space-between] [align-items:center] [gap:24px] [margin-bottom:18px] [padding:24px_26px] [border:1px_solid_#d8e5f5] [border-radius:14px] [background:linear-gradient(115deg,_#eef5ff_0%,_#f8fbff_58%,_#e8f7f5_100%)] max-[768px]:[align-items:flex-start] max-[768px]:[padding:20px]">
-        <div>
-          <p className="jobs-eyebrow [margin-bottom:7px] [color:#00b4d8] [font-size:10px] [font-weight:800] [letter-spacing:1.2px] last:[.jobs-intro_&]:[margin:0] last:[.jobs-intro_&]:[color:#64748b] last:[.jobs-intro_&]:[font-size:13px]">RECRUITMENT WORKSPACE</p>
-          <h2 className="[.jobs-intro_&]:[margin:0_0_5px] [.jobs-intro_&]:[color:#1e293b] [.jobs-intro_&]:[font-size:23px] [.jobs-intro_&]:[font-weight:800]">Build the team you need</h2>
-          <p className="last:[.jobs-intro_&]:[margin:0] last:[.jobs-intro_&]:[color:#64748b] last:[.jobs-intro_&]:[font-size:13px]">Track open roles, candidate flow, and hiring deadlines from one place.</p>
-        </div>
-        <div className="jobs-intro-mark [width:64px] [height:64px] [display:flex] [align-items:center] [justify-content:center] [flex-shrink:0] [border-radius:16px] [background:#133f7d] [color:#fff] [box-shadow:0_8px_18px_rgba(19,_63,_125,_0.18)] max-[520px]:[width:48px] max-[520px]:[height:48px] max-[520px]:[border-radius:12px]"><BriefcaseBusiness size={28} /></div>
-      </div>
 
       {!loading && jobs.length > 0 && (
         <div className="jobs-stat-strip [display:grid] [grid-template-columns:repeat(4,_1fr)] [gap:12px] [margin-bottom:18px] max-[768px]:[grid-template-columns:repeat(2,_1fr)] max-[520px]:[grid-template-columns:1fr_1fr]">
@@ -203,72 +262,125 @@ function JobsPage() {
       ========================= */}
 
       {!loading && jobs.length > 0 && (
-        <div className="jobs-toolbar [display:flex] [align-items:center] [justify-content:space-between] [gap:20px] [flex-wrap:wrap] [margin-bottom:20px] [padding:16px] [background:initial] [border:1px_solid_initial] [border-radius:10px] max-[768px]:[align-items:stretch]">
-          <div className="jobs-summary [display:flex] [align-items:center] [gap:12px]">
-            <div className="jobs-summary-icon [display:flex] [align-items:center] [justify-content:center] [width:38px] [height:38px] [border-radius:8px] [background:#e8f0fb] [color:#133f7d]">
-              <BriefcaseBusiness size={18} />
-            </div>
+        <div className="jobs-toolbar [display:flex] [align-items:center] [gap:12px] [margin-bottom:20px]">
+          <label className="[position:relative] [display:flex] [min-width:0] [height:44px] [flex:1] [align-items:center] [gap:10px] [border:1px_solid_#dbe2ea] [border-radius:10px] [background:#fff] [padding:0_14px] [color:#64748b] focus-within:[border-color:#00b4d8] focus-within:[box-shadow:0_0_0_3px_rgba(0,180,216,0.12)]">
+            <Search size={18} aria-hidden="true" />
+            <span className="[position:absolute] [width:1px] [height:1px] [padding:0] [margin:-1px] [overflow:hidden] [clip:rect(0,0,0,0)] [white-space:nowrap] [border:0]">
+              Search job openings
+            </span>
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search jobs by title, department, or location"
+              className="[width:100%] [min-width:0] [border:none] [outline:none] [background:transparent] [font:inherit] [font-size:14px] [color:#1e293b]"
+            />
+          </label>
 
-            <div>
-              <strong className="[font-weight:700]">{filteredJobs.length}</strong>
+          <div ref={filtersRef} className="[position:relative] [flex-shrink:0]">
+            <Button
+              type="button"
+              variant={filtersOpen || hasActiveFilters ? "primary" : "secondary"}
+              aria-expanded={filtersOpen}
+              aria-controls="jobs-filter-panel"
+              onClick={() => setFiltersOpen((open) => !open)}
+            >
+              <SlidersHorizontal size={16} />
+              Filters
+              {hasActiveFilters && (
+                <span className="[display:inline-flex] [min-width:19px] [height:19px] [align-items:center] [justify-content:center] [border-radius:999px] [background:#00b4d8] [padding:0_5px] [font-size:11px] [color:#fff]">
+                  {Number(selectedDept !== "All") +
+                    Number(selectedStatus !== "All") +
+                    Number(sortOrder !== "status_active_first")}
+                </span>
+              )}
+            </Button>
 
-              <span> of {jobs.length} jobs</span>
-            </div>
-          </div>
-
-          <div className="jobs-filters [display:flex] [align-items:flex-end] [gap:12px] [flex-wrap:wrap] max-[768px]:[width:100%]">
-            {/* DEPARTMENT FILTER */}
-
-            <div className="jobs-filter-group [display:flex] [flex-direction:column] [gap:5px]">
-              <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold] [.jobs-filter-group_&]:[font-size:12px] [.jobs-filter-group_&]:[font-weight:600] [.jobs-filter-group_&]:[color:#64748b]" htmlFor="dept-filter">Department</label>
-
-              <Select
-                className="min-w-40"
-                id="dept-filter"
-                value={selectedDept}
-                onChange={(e) => setSelectedDept(e.target.value)}
+            {filtersOpen && (
+              <div
+                id="jobs-filter-panel"
+                role="dialog"
+                aria-label="Filter and sort job openings"
+                className="[position:absolute] [z-index:30] [top:calc(100%_+_8px)] [right:0] [width:min(340px,calc(100vw-32px))] [border:1px_solid_#e2e8f0] [border-radius:12px] [background:#fff] [padding:18px] [box-shadow:0_16px_40px_rgba(15,23,42,0.16)]"
               >
-                {departments.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </Select>
-            </div>
+                <div className="[margin-bottom:16px] [display:flex] [align-items:center] [justify-content:space-between]">
+                  <h3 className="[margin:0] [font-size:15px] [font-weight:700] [color:#1e293b]">
+                    Filters & sorting
+                  </h3>
+                  <button
+                    type="button"
+                    aria-label="Close filters"
+                    onClick={() => setFiltersOpen(false)}
+                    className="[display:inline-flex] [width:32px] [height:32px] [align-items:center] [justify-content:center] [border:0] [border-radius:8px] [background:transparent] [color:#64748b] hover:[background:#f1f5f9]"
+                  >
+                    <X size={17} />
+                  </button>
+                </div>
 
-            {/* STATUS FILTER */}
+                <div className="[display:grid] [gap:14px]">
+                  <Select
+                    label="Department"
+                    optional
+                    id="dept-filter"
+                    value={selectedDept}
+                    onChange={(event) => setSelectedDept(event.target.value)}
+                  >
+                    {departments.map((department) => (
+                      <option key={department} value={department}>
+                        {department}
+                      </option>
+                    ))}
+                  </Select>
 
-            <div className="jobs-filter-group [display:flex] [flex-direction:column] [gap:5px]">
-              <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold] [.jobs-filter-group_&]:[font-size:12px] [.jobs-filter-group_&]:[font-weight:600] [.jobs-filter-group_&]:[color:#64748b]" htmlFor="status-filter">Status</label>
+                  <Select
+                    label="Status"
+                    optional
+                    id="status-filter"
+                    value={selectedStatus}
+                    onChange={(event) => setSelectedStatus(event.target.value)}
+                  >
+                    <option value="All">All statuses</option>
+                    <option value="Active">Active</option>
+                    <option value="Closing Soon">Closing soon</option>
+                    <option value="Overdue">Overdue</option>
+                  </Select>
 
-              <Select
-                className="min-w-40"
-                id="status-filter"
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-              >
-                <option value="All">All Statuses</option>
+                  <Select
+                    label="Sort jobs by"
+                    optional
+                    id="job-sort"
+                    value={sortOrder}
+                    onChange={(event) => setSortOrder(event.target.value)}
+                  >
+                    <option value="status_active_first">
+                      Status: Active → Closing soon → Overdue
+                    </option>
+                    <option value="status_overdue_first">
+                      Status: Overdue → Closing soon → Active
+                    </option>
+                    <option value="created_newest">Created date: newest first</option>
+                    <option value="created_oldest">Created date: oldest first</option>
+                  </Select>
+                </div>
 
-                <option value="Active">Active</option>
-
-                <option value="Closing Soon">Closing Soon</option>
-
-                <option value="Overdue">Overdue</option>
-              </Select>
-            </div>
-
-            {/* CLEAR FILTERS */}
-
-            {hasActiveFilters && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={clearFilters}
-              >
-                <X size={14} />
-                Clear
-              </Button>
+                <div className="[margin-top:18px] [display:flex] [justify-content:space-between] [gap:10px]">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                  >
+                    Clear filters
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setFiltersOpen(false)}
+                  >
+                    Done
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -320,7 +432,7 @@ function JobsPage() {
         <PageState
           variant="empty"
           title="No jobs match these filters"
-          description="Adjust your department or status filters and try again."
+          description="Try another search, adjust the filters, or reset the sort order."
           icon={Search}
           action={
             <Button type="button" variant="secondary" onClick={clearFilters}>

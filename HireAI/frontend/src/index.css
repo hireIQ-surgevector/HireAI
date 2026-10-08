@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+@keyframes matcher-progress {
+  from {
+    transform: translateX(-110%);
+  }
+
+  to {
+    transform: translateX(330%);
+  }
+}
+
+.matcher-progress-indicator {
+  animation: matcher-progress 1.35s ease-in-out infinite;
+}

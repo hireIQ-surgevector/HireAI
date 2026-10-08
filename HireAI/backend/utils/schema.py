@@ -107,6 +107,18 @@ def ensure_schema():
         ADD interview_notes NVARCHAR(MAX) NULL
     """)
 
+    cursor.execute("""
+        IF COL_LENGTH('dbo.Candidates', 'resume_storage_name') IS NULL
+        ALTER TABLE dbo.Candidates
+        ADD resume_storage_name NVARCHAR(260) NULL
+    """)
+
+    cursor.execute("""
+        IF COL_LENGTH('dbo.Candidates', 'resume_original_name') IS NULL
+        ALTER TABLE dbo.Candidates
+        ADD resume_original_name NVARCHAR(260) NULL
+    """)
+
     # ==========================================
     # INTERVIEWS
     # ==========================================
@@ -120,8 +132,45 @@ def ensure_schema():
             interview_round NVARCHAR(100) NULL,
             scheduled_at DATETIME2 NULL,
             notes NVARCHAR(MAX) NULL,
+            is_completed BIT NOT NULL CONSTRAINT DF_Interviews_is_completed DEFAULT 0,
             created_at DATETIME2 DEFAULT GETDATE()
         )
+    """)
+
+    cursor.execute("""
+        IF COL_LENGTH('dbo.Interviews', 'is_completed') IS NULL
+        ALTER TABLE dbo.Interviews
+        ADD is_completed BIT NOT NULL
+            CONSTRAINT DF_Interviews_is_completed DEFAULT 0 WITH VALUES
+    """)
+
+    cursor.execute("""
+        UPDATE i
+        SET is_completed = 1
+        FROM dbo.Interviews i
+        INNER JOIN dbo.Candidates c
+            ON c.candidate_id = i.candidate_id
+        WHERE i.is_completed = 0
+            AND (
+                (i.interview_round = 'L1 Interview'
+                    AND c.current_status IN (
+                        'L2 Interview', 'Client Interview', 'Offer Sent', 'Onboarded'
+                    ))
+                OR (i.interview_round = 'L2 Interview'
+                    AND c.current_status IN (
+                        'Client Interview', 'Offer Sent', 'Onboarded'
+                    ))
+                OR (
+                    c.current_status = 'Rejected'
+                    AND i.interview_id = (
+                        SELECT TOP 1 latest.interview_id
+                        FROM dbo.Interviews latest
+                        WHERE latest.candidate_id = c.candidate_id
+                            AND latest.scheduled_at IS NOT NULL
+                        ORDER BY latest.scheduled_at DESC
+                    )
+                )
+            )
     """)
 
     conn.commit()
