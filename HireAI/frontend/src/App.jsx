@@ -45,6 +45,7 @@ import CandidateOfferPage from "./pages/CandidateOfferPage";
 import OfferAcceptedPage from "./pages/OfferAcceptedPage";
 import OfferDeclinedPage from "./pages/OfferDeclinedPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import UserGuideTour from "./components/common/UserGuideTour";
 
 /* =========================
    AUTH POLLING
@@ -167,6 +168,7 @@ function App() {
             />
           ))}
         </Routes>
+        <UserGuideTour />
       </BrowserRouter>
     </div>
   );

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import PageShell from "../components/common/PageShell";
 import PageState from "../components/common/PageState";
+import { apiUrl } from "../config/api";
 
 function EditJobPage() {
   const { jobId } = useParams();
@@ -40,7 +41,7 @@ function EditJobPage() {
       setLoadError("");
       const token = localStorage.getItem("token");
 
-      const response = await fetch(`http://localhost:5001/api/jobs/${jobId}`, {
+      const response = await fetch(apiUrl(`/api/jobs/${jobId}`), {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -127,7 +128,7 @@ function EditJobPage() {
         interview_mode: formData.interview_mode,
       };
 
-      const response = await fetch(`http://localhost:5001/api/jobs/${jobId}`, {
+      const response = await fetch(apiUrl(`/api/jobs/${jobId}`), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

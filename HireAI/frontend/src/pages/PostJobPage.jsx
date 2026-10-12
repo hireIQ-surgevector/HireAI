@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PageShell from "../components/common/PageShell";
 import toast from "react-hot-toast";
+import { apiUrl } from "../config/api";
 
 function PostJobPage() {
   const navigate = useNavigate();
@@ -70,7 +71,7 @@ function PostJobPage() {
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch("http://localhost:5001/api/scrape-job", {
+      const response = await fetch(apiUrl("/api/scrape-job"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -257,7 +258,7 @@ function PostJobPage() {
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch("http://localhost:5001/api/jobs", {
+      const response = await fetch(apiUrl("/api/jobs"), {
         method: "POST",
 
         headers: {

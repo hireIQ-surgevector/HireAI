@@ -97,6 +97,18 @@ def get_candidates():
         rows = cursor.fetchall()
 
         cursor.execute("""
+            SELECT job_id, min_salary, max_salary
+            FROM dbo.Jobs
+        """)
+        job_salary_ranges = {
+            row.job_id: {
+                "job_min_salary": float(row.min_salary) if row.min_salary is not None else None,
+                "job_max_salary": float(row.max_salary) if row.max_salary is not None else None,
+            }
+            for row in cursor.fetchall()
+        }
+
+        cursor.execute("""
             SELECT DISTINCT candidate_id
             FROM dbo.Interviews
         """)
@@ -125,6 +137,7 @@ def get_candidates():
 
         for row in rows:
             candidate = build_candidate_payload(row)
+            candidate.update(job_salary_ranges.get(candidate.get("job_id"), {}))
             candidate['has_interview'] = candidate['candidate_id'] in interviewed_candidate_ids
             candidate_interviews = scheduled_interviews.get(
                 candidate['candidate_id'],

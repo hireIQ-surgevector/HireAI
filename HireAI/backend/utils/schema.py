@@ -144,6 +144,50 @@ def ensure_schema():
             CONSTRAINT DF_Interviews_is_completed DEFAULT 0 WITH VALUES
     """)
 
+    # ==========================================
+    # OFFERS
+    # ==========================================
+
+    cursor.execute("""
+        IF OBJECT_ID('dbo.Offers', 'U') IS NULL
+        CREATE TABLE dbo.Offers (
+            offer_id INT IDENTITY(1,1) PRIMARY KEY,
+            candidate_id INT NOT NULL,
+            job_id INT NULL,
+            ctc DECIMAL(12,2) NOT NULL,
+            currency NVARCHAR(3) NOT NULL
+                CONSTRAINT DF_Offers_currency DEFAULT 'INR',
+            expiry_date DATE NOT NULL,
+            status NVARCHAR(20) NOT NULL
+                CONSTRAINT DF_Offers_status DEFAULT 'Pending',
+            sent_at DATETIME2 NOT NULL
+                CONSTRAINT DF_Offers_sent_at DEFAULT GETDATE(),
+            updated_at DATETIME2 NOT NULL
+                CONSTRAINT DF_Offers_updated_at DEFAULT GETDATE(),
+            CONSTRAINT FK_Offers_Candidates
+                FOREIGN KEY (candidate_id)
+                REFERENCES dbo.Candidates(candidate_id),
+            CONSTRAINT FK_Offers_Jobs
+                FOREIGN KEY (job_id)
+                REFERENCES dbo.Jobs(job_id),
+            CONSTRAINT CK_Offers_ctc CHECK (ctc > 0),
+            CONSTRAINT CK_Offers_status CHECK (
+                status IN ('Pending', 'Accepted', 'Declined', 'Expired')
+            )
+        )
+    """)
+
+    cursor.execute("""
+        IF NOT EXISTS (
+            SELECT 1
+            FROM sys.indexes
+            WHERE name = 'IX_Offers_candidate_id_sent_at'
+                AND object_id = OBJECT_ID('dbo.Offers')
+        )
+        CREATE INDEX IX_Offers_candidate_id_sent_at
+        ON dbo.Offers(candidate_id, sent_at DESC)
+    """)
+
     cursor.execute("""
         UPDATE i
         SET is_completed = 1

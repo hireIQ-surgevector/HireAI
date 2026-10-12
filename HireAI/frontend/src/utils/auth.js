@@ -1,8 +1,8 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5001';
+import { API_URL } from "../config/api";
 
 export const AUTH_STORAGE_KEY = 'talentsync_user';
 export const TOKEN_STORAGE_KEY = 'token';
-export const API_URL = API_BASE_URL;
+export { API_URL };
 export const AUTH_CHANGED_EVENT = 'hireai-auth-changed';
 
 function notifyAuthChanged() {

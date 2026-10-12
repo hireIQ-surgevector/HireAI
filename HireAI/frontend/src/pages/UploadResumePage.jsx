@@ -5,6 +5,7 @@ import PageShell from "../components/common/PageShell";
 import PageState from "../components/common/PageState";
 import { Upload, FileText, X, Briefcase, LoaderCircle } from "lucide-react";
 import toast from "react-hot-toast";
+import { apiUrl } from "../config/api";
 
 function UploadResumePage() {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ function UploadResumePage() {
         setLoadingJobs(true);
         setJobsError("");
 
-        const response = await fetch("http://localhost:5001/api/jobs");
+        const response = await fetch(apiUrl("/api/jobs"));
 
         if (!response.ok) {
           throw new Error("Failed to load jobs");
@@ -185,7 +186,7 @@ function UploadResumePage() {
           formData.append("resumes", file);
 
           const response = await fetch(
-            "http://localhost:5001/api/candidates/upload",
+            apiUrl("/api/candidates/upload"),
             {
               method: "POST",
               body: formData,

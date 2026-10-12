@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { apiUrl } from "../config/api";
 
 /* =========================
    FETCH DASHBOARD DATA
@@ -11,7 +12,7 @@ export const fetchDashboardSummary = createAsyncThunk(
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        `http://localhost:5001/api/dashboard-summary`,
+        apiUrl("/api/dashboard-summary"),
         {
           method: "GET",
           headers: {

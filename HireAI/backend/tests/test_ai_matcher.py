@@ -74,6 +74,122 @@ class ExperienceParsingTests(unittest.TestCase):
 
 
 class CalculateMatchTests(unittest.TestCase):
+    def test_skill_penalties_share_a_three_to_one_weight_pool(self):
+        model = FakeEmbeddingModel()
+        candidate = {
+            "current_role": "Engineer",
+            "skills": [
+                "Mandatory 1",
+                "Mandatory 2",
+                "Mandatory 3",
+                "Secondary 1",
+                "Secondary 2",
+                "Secondary 3",
+                "Secondary 4",
+                "Secondary 5",
+            ],
+            "experience_years": 5,
+        }
+        job = {
+            "title": "Engineer",
+            "mandatory_skills": [
+                "Mandatory 1",
+                "Mandatory 2",
+                "Mandatory 3",
+                "Mandatory 4",
+            ],
+            "required_skills": [
+                "Secondary 1",
+                "Secondary 2",
+                "Secondary 3",
+                "Secondary 4",
+                "Secondary 5",
+                "Secondary 6",
+            ],
+            "min_exp": 5,
+        }
+
+        with (
+            patch("services.ai_matcher._get_model", return_value=model),
+            patch(
+                "services.ai_matcher._match_skill_lists",
+                side_effect=[
+                    (["mandatory 1", "mandatory 2", "mandatory 3"], ["mandatory 4"]),
+                    (
+                        [
+                            "secondary 1",
+                            "secondary 2",
+                            "secondary 3",
+                            "secondary 4",
+                            "secondary 5",
+                        ],
+                        ["secondary 6"],
+                    ),
+                ],
+            ),
+        ):
+            result = calculate_match(candidate, job)
+
+        self.assertAlmostEqual(
+            result["debug_mandatory_penalty"],
+            100 / 18 * 3,
+            delta=0.01,
+        )
+        self.assertAlmostEqual(
+            result["debug_secondary_penalty"],
+            100 / 18,
+            delta=0.01,
+        )
+        self.assertEqual(result["score"], 78)
+        self.assertEqual(result["category"], "Low Match")
+
+    def test_skill_penalty_is_zero_when_job_has_no_skills(self):
+        model = FakeEmbeddingModel()
+        candidate = {
+            "current_role": "Engineer",
+            "skills": [],
+            "experience_years": 5,
+        }
+        job = {
+            "title": "Engineer",
+            "mandatory_skills": [],
+            "required_skills": [],
+            "min_exp": 5,
+        }
+
+        with patch("services.ai_matcher._get_model", return_value=model):
+            result = calculate_match(candidate, job)
+
+        self.assertEqual(result["debug_mandatory_penalty"], 0)
+        self.assertEqual(result["debug_secondary_penalty"], 0)
+        self.assertEqual(result["score"], 100)
+
+    def test_all_missing_skills_cannot_exceed_the_100_point_pool(self):
+        model = FakeEmbeddingModel()
+        candidate = {
+            "current_role": "Engineer",
+            "skills": [],
+            "experience_years": 5,
+        }
+        job = {
+            "title": "Engineer",
+            "mandatory_skills": ["M1", "M2", "M3", "M4"],
+            "required_skills": ["S1", "S2", "S3", "S4", "S5", "S6"],
+            "min_exp": 5,
+        }
+
+        with patch("services.ai_matcher._get_model", return_value=model):
+            result = calculate_match(candidate, job)
+
+        self.assertAlmostEqual(
+            result["debug_mandatory_penalty"]
+            + result["debug_secondary_penalty"],
+            100,
+        )
+        self.assertEqual(result["debug_matcher_points_after_penalty"], 0)
+        self.assertEqual(result["score"], 20)
+        self.assertEqual(result["category"], "Low Match")
+
     def test_target_job_title_is_not_added_to_candidate_text_and_encoding_is_batched(
         self,
     ):

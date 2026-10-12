@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText } from "lucide-react";
+import { apiUrl } from "../config/api";
 
 const DocumentIcon = (props) => <FileText {...props} />;
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:5001";
 
 function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -20,7 +18,7 @@ function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/forgot-password`, {
+      const response = await fetch(apiUrl("/api/forgot-password"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

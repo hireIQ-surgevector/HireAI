@@ -121,6 +121,7 @@ def get_candidate_select_clause(cursor):
         'current_ctc',
         'current_status',
         'ai_score',
+        'job_id',
         'created_at'
     ]
 
@@ -206,6 +207,7 @@ def build_candidate_payload(row):
         ),
         'stage': normalized_stage,
         'status': status_value,
+        'job_id': getattr(row, 'job_id', None),
         'ai_score': row.ai_score,
         'score': row.ai_score or 0,
         'applied': (

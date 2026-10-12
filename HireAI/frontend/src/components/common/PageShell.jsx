@@ -10,6 +10,7 @@ import {
   LogOut,
   ArrowLeft,
   ScanSearch,
+  BookOpen,
 } from "lucide-react";
 
 import {
@@ -18,6 +19,7 @@ import {
   getSession,
   isManager,
 } from "../../utils/auth";
+import { openUserGuide } from "../../utils/userGuide";
 
 /* =========================
    NAVIGATION CONFIGURATION
@@ -28,42 +30,49 @@ const NAV_ITEMS = [
     to: "/dashboard",
     label: "Dashboard",
     icon: LayoutGrid,
+    guideTarget: "dashboard",
     managerOnly: false,
   },
   {
     to: "/jobs",
     label: "Job Openings",
     icon: BriefcaseBusiness,
+    guideTarget: "jobs",
     managerOnly: true,
   },
   {
     to: "/candidates",
     label: "Candidates",
     icon: Users,
+    guideTarget: "candidates",
     managerOnly: false,
   },
   {
     to: "/candidate-matcher",
     label: "Candidate Matcher",
     icon: ScanSearch,
+    guideTarget: "matcher",
     managerOnly: true,
   },
   {
     to: "/interviews",
     label: "Interviews",
     icon: CalendarDays,
+    guideTarget: "interviews",
     managerOnly: false,
   },
   {
     to: "/evaluations",
     label: "Evaluations",
     icon: BarChart3,
+    guideTarget: "evaluations",
     managerOnly: true,
   },
   {
     to: "/offers",
     label: "Offer Letters",
     icon: FileText,
+    guideTarget: "offers",
     managerOnly: true,
   },
 ];
@@ -205,6 +214,7 @@ function PageShell({
                   key={item.to}
                   to={item.to}
                   aria-label={item.label}
+                  data-guide-target={item.guideTarget}
                   title={item.label}
                   className={({ isActive }) =>
                     `${(`app-nav-item ${isActive ? "app-nav-item-active" : ""}`)} [&.app-nav-item]:[min-height:44px] [&.app-nav-item]:[display:flex] [&.app-nav-item]:[align-items:center] [&.app-nav-item]:[gap:13px] [&.app-nav-item]:[padding:0_12px] [&.app-nav-item]:[border:1px_solid_transparent] [&.app-nav-item]:[border-radius:9px] [&.app-nav-item]:[text-decoration:none] [&.app-nav-item]:[color:#6b7280] [&.app-nav-item]:[font-size:14px] [&.app-nav-item]:[font-weight:500] [&.app-nav-item]:[transition:background_0.2s_ease,_color_0.2s_ease,_transform_0.2s_ease] hover:[&.app-nav-item]:[background:#f3f4f6] hover:[&.app-nav-item]:[color:#111827] hover:[&.app-nav-item]:[transform:translateX(2px)] [&.app-nav-item-active]:[background:#e8f5f3] [&.app-nav-item-active]:[border-color:#c9eee7] [&.app-nav-item-active]:[color:#087f8c] [&.app-nav-item-active]:[font-weight:600] hover:[&.app-nav-item-active]:[background:#e8f5f3] hover:[&.app-nav-item-active]:[color:#087f8c] focus-visible:[&.app-nav-item]:[outline:2px_solid_#00b4d8] focus-visible:[&.app-nav-item]:[outline-offset:2px] max-[768px]:[&.app-nav-item]:[justify-content:center] max-[768px]:[&.app-nav-item]:[padding:0] max-[640px]:[&.app-nav-item]:[min-width:40px] max-[640px]:[&.app-nav-item]:[min-height:40px] max-[640px]:[&.app-nav-item]:[padding:0]`}
@@ -215,6 +225,16 @@ function PageShell({
                 </NavLink>
               );
             })}
+            <button
+              aria-label="Take a tour of HireIQ"
+              className="app-nav-item [&.app-nav-item]:[min-height:44px] [&.app-nav-item]:[display:flex] [&.app-nav-item]:[align-items:center] [&.app-nav-item]:[gap:13px] [&.app-nav-item]:[padding:0_12px] [&.app-nav-item]:[border:1px_solid_transparent] [&.app-nav-item]:[border-radius:9px] [&.app-nav-item]:[background:transparent] [&.app-nav-item]:[color:#6b7280] [&.app-nav-item]:[font:inherit] [&.app-nav-item]:[font-size:14px] [&.app-nav-item]:[font-weight:500] [&.app-nav-item]:[text-align:left] [&.app-nav-item]:[cursor:pointer] hover:[&.app-nav-item]:[background:#f3f4f6] hover:[&.app-nav-item]:[color:#111827] focus-visible:[&.app-nav-item]:[outline:2px_solid_#00b4d8] focus-visible:[&.app-nav-item]:[outline-offset:2px] max-[768px]:[&.app-nav-item]:[justify-content:center] max-[768px]:[&.app-nav-item]:[padding:0] max-[640px]:[&.app-nav-item]:[min-width:40px] max-[640px]:[&.app-nav-item]:[min-height:40px] max-[640px]:[&.app-nav-item]:[padding:0]"
+              onClick={openUserGuide}
+              title="Take a tour of HireIQ"
+              type="button"
+            >
+              <BookOpen size={19} strokeWidth={1.8} />
+              <span className="max-[768px]:[display:none]">How to use HireIQ</span>
+            </button>
           </div>
         </nav>
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   ArrowRight,
   CalendarDays,
@@ -76,6 +77,9 @@ function EvaluationsPage() {
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
   const [reloadCount, setReloadCount] = useState(0);
+  const [offerCandidate, setOfferCandidate] = useState(null);
+  const [offerCtc, setOfferCtc] = useState("");
+  const [offerExpiryDate, setOfferExpiryDate] = useState("");
 
   const loadCandidates = useCallback(async () => {
     try {
@@ -218,6 +222,14 @@ function EvaluationsPage() {
   };
 
   const updatePipelineStage = async (candidate, stage) => {
+    if (stage === "Offer Sent") {
+      setOfferCandidate(candidate);
+      setOfferCtc("");
+      setOfferExpiryDate("");
+      setError("");
+      return;
+    }
+
     try {
       setSaving(true);
       setError("");
@@ -241,6 +253,57 @@ function EvaluationsPage() {
       await loadCandidates();
     } catch (updateError) {
       setError(updateError.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const submitOffer = async (event) => {
+    event.preventDefault();
+    if (!offerCandidate) return;
+    const ctc = Number(offerCtc);
+    const minimumCtc =
+      offerCandidate.job_min_salary != null
+        ? Number(offerCandidate.job_min_salary)
+        : null;
+    const maximumCtc =
+      offerCandidate.job_max_salary != null
+        ? Number(offerCandidate.job_max_salary)
+        : null;
+    if (
+      (minimumCtc !== null && ctc < minimumCtc) ||
+      (maximumCtc !== null && ctc > maximumCtc)
+    ) {
+      setError("Offer CTC must be within the selected job's salary range.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+      setFeedback("");
+      const response = await fetch(`${API_URL}/api/offers`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({
+          candidate_id: offerCandidate.candidate_id,
+          ctc: offerCtc,
+          expiry_date: offerExpiryDate,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to send offer");
+      }
+
+      setOfferCandidate(null);
+      setFeedback(`Offer recorded for ${offerCandidate.name || "candidate"}.`);
+      await loadCandidates();
+    } catch (submitError) {
+      setError(submitError.message);
     } finally {
       setSaving(false);
     }
@@ -612,6 +675,148 @@ function EvaluationsPage() {
             )}
           </>
         )}
+        {offerCandidate &&
+          createPortal(
+            <div
+              className="[position:fixed] [inset:0] [z-index:2000] [display:flex] [align-items:center] [justify-content:center] [background:rgba(15,23,42,0.58)] [padding:16px] [backdrop-filter:blur(3px)]"
+              role="presentation"
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget && !saving) {
+                  setOfferCandidate(null);
+                }
+              }}
+            >
+              <form
+                className="[width:100%] [max-width:480px] [border-radius:16px] [background:#fff] [box-shadow:0_24px_70px_rgba(15,23,42,0.3)]"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="create-offer-title"
+                onSubmit={submitOffer}
+              >
+                <div className="[display:flex] [align-items:flex-start] [justify-content:space-between] [gap:12px] [border-bottom:1px_solid_#e2e8f0] [padding:20px_22px]">
+                  <div>
+                    <h2
+                      id="create-offer-title"
+                      className="[margin:0] [font-size:18px] [font-weight:800] [color:#1e293b]"
+                    >
+                      Send offer
+                    </h2>
+                    <p className="[margin:5px_0_0] [font-size:12px] [color:#64748b]">
+                      Enter offer details for{" "}
+                      {offerCandidate.name || "this candidate"}.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Close offer form"
+                    disabled={saving}
+                    onClick={() => setOfferCandidate(null)}
+                    className="[display:flex] [height:32px] [width:32px] [align-items:center] [justify-content:center] [border:0] [border-radius:8px] [background:#f1f5f9] [color:#475569] [cursor:pointer]"
+                  >
+                    <X size={17} />
+                  </button>
+                </div>
+                {offerCandidate.job_min_salary == null &&
+                  offerCandidate.job_max_salary == null && (
+                    <p className="[margin:16px_22px_0] [border-radius:8px] [background:#fff7ed] [padding:10px_12px] [font-size:12px] [line-height:1.5] [color:#9a3412]">
+                      This job has no salary range. Add a minimum or maximum
+                      salary in the job details before creating an offer.
+                    </p>
+                  )}
+                <div className="[display:grid] [gap:16px] [padding:22px]">
+                  <label className="[display:grid] [gap:6px] [font-size:12px] [font-weight:700] [color:#334155]">
+                    Annual CTC (₹ LPA)
+                    {(offerCandidate.job_min_salary != null ||
+                      offerCandidate.job_max_salary != null) && (
+                      <span className="[font-size:11px] [font-weight:500] [color:#64748b]">
+                        Job range:{" "}
+                        {offerCandidate.job_min_salary != null
+                          ? `₹${Number(offerCandidate.job_min_salary).toLocaleString("en-IN")} LPA`
+                          : "No minimum"}
+                        {" – "}
+                        {offerCandidate.job_max_salary != null
+                          ? `₹${Number(offerCandidate.job_max_salary).toLocaleString("en-IN")} LPA`
+                          : "No maximum"}
+                      </span>
+                    )}
+                    <input
+                      autoFocus
+                      required
+                      type="number"
+                      min={
+                        offerCandidate.job_min_salary != null
+                          ? offerCandidate.job_min_salary
+                          : "0.01"
+                      }
+                      max={
+                        offerCandidate.job_max_salary != null
+                          ? offerCandidate.job_max_salary
+                          : undefined
+                      }
+                      step="0.01"
+                      value={offerCtc}
+                      onChange={(event) => setOfferCtc(event.target.value)}
+                      className="[width:100%] [border:1px_solid_#cbd5e1] [border-radius:9px] [background:#fff] [padding:10px_12px] [font:inherit] [font-size:14px] [color:#1e293b] focus:[outline:2px_solid_#bfdbfe]"
+                      placeholder={
+                        offerCandidate.job_min_salary != null &&
+                        offerCandidate.job_max_salary != null
+                          ? `${offerCandidate.job_min_salary} – ${offerCandidate.job_max_salary}`
+                          : "Enter annual CTC in LPA"
+                      }
+                      onInvalid={(event) => {
+                        if (event.currentTarget.validity.rangeUnderflow) {
+                          event.currentTarget.setCustomValidity(
+                            `Offer CTC must be at least ₹${event.currentTarget.min} LPA.`,
+                          );
+                        } else if (event.currentTarget.validity.rangeOverflow) {
+                          event.currentTarget.setCustomValidity(
+                            `Offer CTC must not exceed ₹${event.currentTarget.max} LPA.`,
+                          );
+                        }
+                      }}
+                      onInput={(event) =>
+                        event.currentTarget.setCustomValidity("")
+                      }
+                    />
+                  </label>
+                  <label className="[display:grid] [gap:6px] [font-size:12px] [font-weight:700] [color:#334155]">
+                    Offer expiry date
+                    <input
+                      required
+                      type="date"
+                      min={new Date().toISOString().slice(0, 10)}
+                      value={offerExpiryDate}
+                      onChange={(event) =>
+                        setOfferExpiryDate(event.target.value)
+                      }
+                      className="[width:100%] [border:1px_solid_#cbd5e1] [border-radius:9px] [background:#fff] [padding:10px_12px] [font:inherit] [font-size:14px] [color:#1e293b] focus:[outline:2px_solid_#bfdbfe]"
+                    />
+                  </label>
+                </div>
+                <div className="[display:flex] [justify-content:flex-end] [gap:9px] [border-top:1px_solid_#e2e8f0] [padding:15px_22px]">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={saving}
+                    onClick={() => setOfferCandidate(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={
+                      saving ||
+                      (offerCandidate.job_min_salary == null &&
+                        offerCandidate.job_max_salary == null)
+                    }
+                  >
+                    {saving ? "Saving offer..." : "Confirm offer"}
+                  </Button>
+                </div>
+              </form>
+            </div>,
+            document.body,
+          )}
       </div>
     </PageShell>
   );

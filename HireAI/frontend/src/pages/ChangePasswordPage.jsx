@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { ShieldCheck } from "lucide-react";
+import { apiUrl } from "../config/api";
 
 const ShieldIcon = (props) => <ShieldCheck {...props} />;
 
@@ -36,7 +37,7 @@ function ChangePasswordPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/change-password`, {
+      const response = await fetch(apiUrl("/api/change-password"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
