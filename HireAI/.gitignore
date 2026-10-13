@@ -1,0 +1,3 @@
+
+database/*.bak
+database/sqlserver.env

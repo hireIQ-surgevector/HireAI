@@ -6,7 +6,9 @@ The goal is to help recruiting teams move from an open role to an informed hirin
 
 ## Who it's for
 
-- Recruiters and talent acquisition teams managing open roles and candidate pipelines.
+- Recruiters and talent acquisition teams mana
+- 
+- ging open roles and candidate pipelines.
 - Hiring teams reviewing candidate fit, interview feedback, and next steps.
 - Developers contributing to the recruiting platform.
 
@@ -31,15 +33,15 @@ The parser supports PDF, DOCX, and TXT uploads. It preserves layout clues from P
 
 ## Technology
 
-| Area | Technologies |
-|---|---|
-| Frontend | React, JavaScript, Vite, Tailwind CSS |
-| Frontend state and navigation | Redux Toolkit, React Redux, React Router |
-| Backend/API | Python, Flask, Flask-JWT-Extended, Flask-Bcrypt, Flask-CORS |
-| Database | Microsoft SQL Server, accessed through `pyodbc` |
-| Matching | Sentence Transformers (`all-MiniLM-L6-v2`), scikit-learn |
-| Resume extraction | `pdfplumber`, `python-docx`, `pytesseract`, Pillow |
-| Job-page extraction | Requests, BeautifulSoup, Playwright |
+| Area                          | Technologies                                                |
+| ----------------------------- | ----------------------------------------------------------- |
+| Frontend                      | React, JavaScript, Vite, Tailwind CSS                       |
+| Frontend state and navigation | Redux Toolkit, React Redux, React Router                    |
+| Backend/API                   | Python, Flask, Flask-JWT-Extended, Flask-Bcrypt, Flask-CORS |
+| Database                      | Microsoft SQL Server, accessed through`pyodbc`            |
+| Matching                      | Sentence Transformers (`all-MiniLM-L6-v2`), scikit-learn  |
+| Resume extraction             | `pdfplumber`, `python-docx`, `pytesseract`, Pillow    |
+| Job-page extraction           | Requests, BeautifulSoup, Playwright                         |
 
 ## Repository layout
 
@@ -199,3 +201,5 @@ These are the names recorded in commits; they do not define project roles or rep
 ## Security and candidate data
 
 Candidate resumes and contact information are sensitive personal data. Use only authorized development data, protect database credentials and signing keys, and follow your organization's retention, access-control, and privacy requirements.
+
+docker run --rm -p 5001:5001 hireai-backend
