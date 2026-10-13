@@ -201,5 +201,3 @@ These are the names recorded in commits; they do not define project roles or rep
 ## Security and candidate data
 
 Candidate resumes and contact information are sensitive personal data. Use only authorized development data, protect database credentials and signing keys, and follow your organization's retention, access-control, and privacy requirements.
-
-docker run --rm -p 5001:5001 hireai-backend
