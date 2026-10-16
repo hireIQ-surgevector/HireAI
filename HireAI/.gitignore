@@ -1,3 +1,4 @@
 
 database/*.bak
-database/sqlserver.env
+
+hireai-images.tar

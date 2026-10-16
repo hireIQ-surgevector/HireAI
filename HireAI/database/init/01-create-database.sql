@@ -1,0 +1,6 @@
+
+IF DB_ID(N'TalentSyncDB') IS NULL
+BEGIN
+    CREATE DATABASE [TalentSyncDB];
+END;
+GO

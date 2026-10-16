@@ -12,7 +12,20 @@ services:
       - ./database:/var/opt/mssql/backup:ro
     restart: unless-stopped
 
+  db-init:
+    image: hireai-backend:1.0
+    container_name: hireai-db-init
+    env_file:
+      - ./database/sqlserver.env
+    volumes:
+      - ./database/init:/database-init:ro
+    command: ["python", "/database-init/init_db.py"]
+    depends_on:
+      - sqlserver
+    restart: "no"
+
   backend:
+    image: hireai-backend:1.0
     build:
       context: ./backend
     container_name: hireai-backend
@@ -21,10 +34,15 @@ services:
     ports:
       - "5001:5001"
     depends_on:
-      - sqlserver
+      sqlserver:
+        condition: service_started
+      db-init:
+        condition: service_completed_successfully
     restart: unless-stopped
 
+  
   frontend:
+    image: hireai-frontend:1.0
     build:
       context: ./frontend
       args:
@@ -35,5 +53,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
 volumes:
   sqlserver_data:
