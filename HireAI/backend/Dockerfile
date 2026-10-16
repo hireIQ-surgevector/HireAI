@@ -3,15 +3,17 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install system dependencies for OCR, PDF processing,
+# Install system dependencies for OCR, PDF/DOCX conversion,
 # Playwright, and ODBC-based database connectivity.
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     unixodbc-dev \
     tesseract-ocr \
     curl \
     ca-certificates \
+    libreoffice-writer \
+    libreoffice-calc \
+    fonts-liberation \
     && . /etc/os-release \
     && curl -fsSL "https://packages.microsoft.com/config/debian/${VERSION_ID%%.*}/packages-microsoft-prod.deb" \
        -o /tmp/packages-microsoft-prod.deb \
@@ -20,6 +22,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get update \
     && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql17 \
     && rm -rf /var/lib/apt/lists/*
+
+# Configure LibreOffice for DOC/DOCX to PDF conversion.
+ENV LIBREOFFICE_PATH=/usr/bin/soffice
 
 # Install Python dependencies first for better build caching.
 COPY requirements.txt .
