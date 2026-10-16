@@ -92,6 +92,22 @@ def get_candidate_stage_transition(current_stage, action):
     return normalized_stage
 
 
+def get_required_interview_round(stage):
+    normalized_stage = normalize_candidate_stage(stage).lower()
+
+    return {
+        'shortlisted': 'L1 Interview',
+        'l1 interview': 'L2 Interview',
+        'l2 interview': 'Client Interview',
+    }.get(normalized_stage)
+
+
+def format_interview_evaluation_note(interview_round, note):
+    round_label = (interview_round or '').strip()
+    round_label = round_label.replace(' Interview', '').strip()
+    return f'{round_label}: {note.strip()}'
+
+
 def get_candidate_select_clause(cursor):
     columns = [
         'candidate_id',
@@ -105,6 +121,7 @@ def get_candidate_select_clause(cursor):
         'current_ctc',
         'current_status',
         'ai_score',
+        'job_id',
         'created_at'
     ]
 
@@ -116,6 +133,12 @@ def get_candidate_select_clause(cursor):
 
     if has_column(cursor, 'Candidates', 'interview_notes'):
         columns.append('interview_notes')
+
+    if has_column(cursor, 'Candidates', 'resume_storage_name'):
+        columns.append('resume_storage_name')
+
+    if has_column(cursor, 'Candidates', 'resume_original_name'):
+        columns.append('resume_original_name')
 
     return ', '.join(columns)
 
@@ -184,6 +207,7 @@ def build_candidate_payload(row):
         ),
         'stage': normalized_stage,
         'status': status_value,
+        'job_id': getattr(row, 'job_id', None),
         'ai_score': row.ai_score,
         'score': row.ai_score or 0,
         'applied': (
@@ -198,5 +222,11 @@ def build_candidate_payload(row):
         'skills': skills,
         'interview_notes': (
             getattr(row, 'interview_notes', None) or ''
+        ),
+        'resume_available': bool(
+            getattr(row, 'resume_storage_name', None)
+        ),
+        'resume_file_name': (
+            getattr(row, 'resume_original_name', None) or ''
         ),
     }

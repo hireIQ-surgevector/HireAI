@@ -8,7 +8,6 @@ import {
 import { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 
-import "./App.css";
 import LoginPage from "./pages/LoginPage";
 import {
   AUTH_CHANGED_EVENT,
@@ -46,6 +45,7 @@ import CandidateOfferPage from "./pages/CandidateOfferPage";
 import OfferAcceptedPage from "./pages/OfferAcceptedPage";
 import OfferDeclinedPage from "./pages/OfferDeclinedPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import UserGuideTour from "./components/common/UserGuideTour";
 
 /* =========================
    AUTH POLLING
@@ -146,7 +146,7 @@ function App() {
   const hasSession = useAuthSession();
 
   return (
-    <>
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
       <Toaster position="top-center" />
       <BrowserRouter>
         <Routes>
@@ -168,8 +168,9 @@ function App() {
             />
           ))}
         </Routes>
+        <UserGuideTour />
       </BrowserRouter>
-    </>
+    </div>
   );
 }
 

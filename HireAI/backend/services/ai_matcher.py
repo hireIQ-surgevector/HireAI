@@ -16,6 +16,7 @@ below changes that.
 The 80-point matcher budget starts as `ai_score * 80`, where
 ai_score is semantic (embedding) similarity between the candidate's
 profile text and the job's text, 0-1. That starting number is then
+<<<<<<< HEAD
 reduced by two kinds of penalties, each skill's "weight" being an
 equal share of a 100-point pool for its category:
 
@@ -31,6 +32,18 @@ equal share of a 100-point pool for its category:
     e.g. 6 secondary skills -> 16.67 each -> /3 = 5.56 -> * 0.8
          = 4.44 points off the matcher budget per missing
          secondary skill.
+=======
+reduced by penalties from one shared skill-weight pool. Each
+mandatory (primary) skill has weight 3; each secondary (required)
+skill has weight 1. For 4 mandatory and 6 secondary skills:
+
+  total skill weight = (4 * 3) + (6 * 1) = 18
+  points per weight = 100 / 18 = 5.56
+  missing mandatory skill penalty = 3 * 5.56 = 16.67
+  missing secondary skill penalty = 1 * 5.56 = 5.56
+
+If a skill category is empty, it contributes no weight to the pool.
+>>>>>>> 4aec53425961a728af20ed9ba5e6d790e2d95dcf
 
 final_score = max(0, 80*ai_score - mandatory_penalties - secondary_penalties)
               + (20 if experience_score else 0)
@@ -259,6 +272,7 @@ def _category_for_score(score, has_all_mandatory):
     return "Low Match"
 
 
+<<<<<<< HEAD
 def _weighted_skill_penalty(missing_count, total_count, divisor=1):
     """
     Each skill in a pool of `total_count` holds an equal share of a
@@ -278,6 +292,23 @@ def _weighted_skill_penalty(missing_count, total_count, divisor=1):
     weight_per_skill = (100 / total_count) / divisor
 
     return missing_count * weight_per_skill * 0.8
+=======
+def _skill_penalties(
+    missing_mandatory_count,
+    total_mandatory_count,
+    missing_secondary_count,
+    total_secondary_count,
+):
+    """Calculate both missing-skill penalties from one weighted skill pool."""
+    total_skill_weight = (3 * total_mandatory_count) + total_secondary_count
+    if total_skill_weight == 0:
+        return 0.0, 0.0
+
+    points_per_weight = 100 / total_skill_weight
+    mandatory_penalty = missing_mandatory_count * 3 * points_per_weight
+    secondary_penalty = missing_secondary_count * points_per_weight
+    return mandatory_penalty, secondary_penalty
+>>>>>>> 4aec53425961a728af20ed9ba5e6d790e2d95dcf
 
 
 def calculate_match(candidate, job):
@@ -354,6 +385,7 @@ def calculate_match(candidate, job):
 
     matcher_points_before_penalty = ai_score * 80
 
+<<<<<<< HEAD
     mandatory_penalty = _weighted_skill_penalty(
         missing_count=len(missing_mandatory),
         total_count=len(mandatory_skills),
@@ -364,6 +396,13 @@ def calculate_match(candidate, job):
         missing_count=len(missing_required),
         total_count=len(required_skills),
         divisor=3,
+=======
+    mandatory_penalty, secondary_penalty = _skill_penalties(
+        missing_mandatory_count=len(missing_mandatory),
+        total_mandatory_count=len(mandatory_skills),
+        missing_secondary_count=len(missing_required),
+        total_secondary_count=len(required_skills),
+>>>>>>> 4aec53425961a728af20ed9ba5e6d790e2d95dcf
     )
 
     matcher_points_after_penalty = max(

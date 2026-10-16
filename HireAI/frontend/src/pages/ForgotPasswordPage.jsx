@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText } from "lucide-react";
+import { apiUrl } from "../config/api";
 
 const DocumentIcon = (props) => <FileText {...props} />;
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:5001";
 
 function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -20,7 +18,7 @@ function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/forgot-password`, {
+      const response = await fetch(apiUrl("/api/forgot-password"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -41,29 +39,29 @@ function ForgotPasswordPage() {
   };
 
   return (
-    <div className="screen fullpage active">
-      <div className="auth-card compact">
-        <div className="auth-header">
-          <div className="emoji">
+    <div className="screen fullpage active [min-height:100vh] [display:flex] [flex-direction:column] [align-items:center] [justify-content:center] [background:linear-gradient(135deg,_#0d2d5e,_#133f7d)]">
+      <div className="auth-card compact [width:min(400px,calc(100vw-2rem))] [background:#fff] [border:1px_solid_rgba(255,255,255,0.65)] [border-radius:20px] [padding:36px] [box-shadow:0_24px_70px_rgba(7,24,54,0.28)] max-[480px]:[padding:24px]">
+        <div className="auth-header [text-align:center] [margin-bottom:24px]">
+          <div className="emoji [font-size:44px] [margin-bottom:12px]">
             <DocumentIcon size={44} />
           </div>
-          <h2>Reset Password</h2>
-          <p>Enter your registered email to receive a reset link</p>
+          <h2 className="[.auth-header_&]:[font-size:20px] [.auth-header_&]:[font-weight:800] [.auth-header_&]:[color:#1e293b] [.auth-header_&]:[margin-bottom:6px]">Reset Password</h2>
+          <p className="[.auth-header_&]:[color:#64748b] [.auth-header_&]:[font-size:13px]">Enter your registered email to receive a reset link</p>
         </div>
-        <div className="field">
-          <label>Registered Email</label>
-          <input
+        <div className="field [margin-bottom:14px]">
+          <label className="[font-size:13px] [font-weight:600] [color:#1e293b] [display:block] [margin-bottom:5px] [&:has(+_:required)]:[&::after]:[content:'_*'] [&:has(+_:required)]:[&::after]:[color:red] [&:has(+_:required)]:[&::after]:[font-weight:bold]">Registered Email</label>
+          <input className="[font:inherit] [width:100%] [padding:10px_12px] [border:1.5px_solid_#e2e8f0] [border-radius:8px] [font-size:14px] [color:#1e293b] [outline:none] [background:#fff]"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@company.com"
           />
         </div>
-        {error && <div className="error-box">{error}</div>}
-        {message && <div className="success-box">{message}</div>}
+        {error && <div className="error-box [background:#fee2e2] [color:#991b1b] [padding:10px] [border-radius:8px] [font-size:12px] [margin-bottom:10px]">{error}</div>}
+        {message && <div className="mb-3 rounded-lg bg-green-100 p-2.5 text-xs text-green-800">{message}</div>}
         <button
           type="button"
-          className="btn btn-primary btn-lg full-width"
+          className="btn btn-primary btn-lg full-width [font:inherit] [border:none] [border-radius:8px] [cursor:pointer] [font-weight:600] [transition:all_0.15s] [display:inline-flex] [align-items:center] [justify-content:center] [gap:6px] [font-size:13px] [padding:9px_18px] [background:#133f7d] [color:#fff] [padding:13px_28px] [font-size:15px] [width:100%]"
           onClick={handleSubmit}
           disabled={loading}
         >
@@ -71,7 +69,7 @@ function ForgotPasswordPage() {
         </button>
         <button
           type="button"
-          className="btn-link"
+          className="btn-link [font:inherit] [color:#133f7d] [font-size:12px] [font-weight:600] [background:none] [border:none] [cursor:pointer]"
           onClick={() => navigate("/login")}
         >
           ← Back to Login

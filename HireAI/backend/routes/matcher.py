@@ -354,8 +354,10 @@ def finalize_match_decision(job_id, candidate_id):
         if decision not in {'accept', 'override'}:
             return jsonify({'error': 'A valid AI decision is required'}), 400
 
-        if stage not in {'L1 Interview', 'Rejected'}:
-            return jsonify({'error': 'Stage must be L1 Interview or Rejected'}), 400
+        if stage not in {'Shortlisted', 'L1 Interview', 'Rejected'}:
+            return jsonify({
+                'error': 'Stage must be Shortlisted, L1 Interview, or Rejected'
+            }), 400
 
         ensure_schema()
         conn = get_connection()
