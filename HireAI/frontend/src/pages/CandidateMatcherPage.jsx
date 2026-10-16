@@ -282,12 +282,8 @@ function CandidateMatcherPage() {
       .map((candidate) => {
         const matchedSkills = normalizeSkills(candidate.matched_skills);
 
-<<<<<<< HEAD
         return {
           ...candidate,
-=======
-        matchScore: Number(candidate.ai_score) || 0,
->>>>>>> 4aec53425961a728af20ed9ba5e6d790e2d95dcf
 
           matchScore: candidate.ai_score ?? 0,
 
@@ -614,27 +610,6 @@ function CandidateMatcherPage() {
             {filteredCandidates.map((candidate) => {
               const decision = candidateDecisions[candidate.candidate_id] || {};
 
-<<<<<<< HEAD
-=======
-              /*
-                  Candidate skills
-                */
-
-              const candidateSkills = normalizeSkills(candidate.skills);
-              const primaryMissing = getJobPrimarySkills(selectedJob).filter(
-                (skill) =>
-                  !candidateSkills.some((candidateSkill) =>
-                    skillsMatch(candidateSkill, skill),
-                  ),
-              );
-              const secondaryMissing = getJobSecondarySkills(selectedJob).filter(
-                (skill) =>
-                  !candidateSkills.some((candidateSkill) =>
-                    skillsMatch(candidateSkill, skill),
-                  ),
-              );
-
->>>>>>> 4aec53425961a728af20ed9ba5e6d790e2d95dcf
               return (
                 <div
                   key={candidate.candidate_id}
@@ -644,7 +619,6 @@ function CandidateMatcherPage() {
                         CANDIDATE INFO
                     ===================================== */}
 
-<<<<<<< HEAD
                   <div className="matcher-candidate-info">
                     <div className="matcher-avatar">
                       <UserRound size={22} />
@@ -661,26 +635,10 @@ function CandidateMatcherPage() {
                         className="btn btn-secondary btn-sm matcher-more-details"
                       >
                         More details
-=======
-                  <div className="matcher-candidate-info [display:flex] [align-items:flex-start] [gap:11px]">
-                    <div className="matcher-avatar [width:40px] [height:40px] [display:flex] [align-items:center] [justify-content:center] [border-radius:50%] [background:#f3f4f6] [color:#475569]">
-                      <UserRound size={19} />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="matcher-candidate-name [.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px] [.matcher-candidate-info_&]:[margin:0] [.matcher-candidate-info_&]:[font-size:15px] [.matcher-candidate-info_&]:[font-weight:700] [.matcher-candidate-info_&]:[color:#1e293b] [overflow-wrap:anywhere]">
-                        {candidate.name || candidate.full_name || "Candidate"}
-                      </h3>
-                      <Link
-                        to={`/candidate-detail/${candidate.candidate_id}`}
-                        className="mt-1 inline-flex min-h-7 items-center rounded-md border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-[#133f7d] no-underline transition hover:border-[#133f7d] hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
-                      >
-                        Show details
->>>>>>> 4aec53425961a728af20ed9ba5e6d790e2d95dcf
                       </Link>
                     </div>
                   </div>
 
-<<<<<<< HEAD
                   {/* =====================================
                         MISSING SKILLS
 
@@ -717,32 +675,6 @@ function CandidateMatcherPage() {
                         candidate.missingSecondarySkills.length === 0 && (
                           <span className="matcher-none-missing">
                             None missing
-=======
-                  <div className="min-w-0">
-                    <span className="mb-2 block text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                      Missing required skills
-                    </span>
-                    <div className="flex flex-wrap gap-x-4 gap-y-2">
-                      {primaryMissing.length > 0 && (
-                        <MissingSkillGroup
-                          label="Primary"
-                          skills={primaryMissing}
-                          variant="primary"
-                        />
-                      )}
-                      {secondaryMissing.length > 0 && (
-                        <MissingSkillGroup
-                          label="Secondary"
-                          skills={secondaryMissing}
-                          variant="secondary"
-                        />
-                      )}
-                      {primaryMissing.length === 0 &&
-                        secondaryMissing.length === 0 && (
-                          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
-                            <CheckCircle2 size={14} />
-                            No required skills missing
->>>>>>> 4aec53425961a728af20ed9ba5e6d790e2d95dcf
                           </span>
                         )}
                     </div>
