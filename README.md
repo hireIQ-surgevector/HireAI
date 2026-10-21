@@ -180,6 +180,20 @@ npm run lint
 npm run build
 ```
 
+## Docker build and distribution
+
+From the repository root, build the application images and pull SQL Server:
+
+```bash
+docker compose -f HireAI/compose.yaml build
+docker compose -f HireAI/compose.yaml pull sqlserver
+docker save -o HireAI/hireai-images-optimized.tar hireai-backend:1.0 hireai-frontend:1.0 mcr.microsoft.com/mssql/server:2022-latest
+```
+
+Distribute `HireAI/hireai-images-optimized.tar` with the `HireAI` application files. The receiving device needs Docker Desktop and configured `HireAI/backend/.env.docker` and `HireAI/database/sqlserver.env` files; run `HireAI/Run_HireAI.bat` on Windows to load the images and start the services. Rebuild the archive whenever the Docker images change.
+
+The backend image installs CPU-only PyTorch and runtime dependencies, and excludes tests, local environments, and uploaded files. Compose keeps resume uploads in `HireAI/backend/uploads` on the host and mounts that folder into the backend container. Preserve and securely transfer that folder when moving an existing database to another device; database records contain resume filenames but not the resume contents. Treat the folder as sensitive candidate data and back it up separately. Candidate matching still downloads its model on the first matching request, so that first use needs internet access.
+
 ## Contributors
 
 The Git history records contributions under these author names:

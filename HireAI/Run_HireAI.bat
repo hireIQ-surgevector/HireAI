@@ -21,14 +21,14 @@ if errorlevel 1 (
     exit /b 1
 )
 
-if not exist "hireai-images.tar" (
-    echo ERROR: Docker image archive is missing.
+if not exist "hireai-images-optimized.tar" (
+    echo ERROR: Optimized Docker image archive is missing.
     pause
     exit /b 1
 )
 
 echo Loading HireAI Docker images...
-docker load -i "hireai-images.tar"
+docker load -i "hireai-images-optimized.tar"
 if errorlevel 1 goto error
 
 echo Starting HireAI...

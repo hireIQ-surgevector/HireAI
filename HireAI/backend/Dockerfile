@@ -1,18 +1,15 @@
 
-FROM python:3.12-slim
+FROM python:3.12-slim-bookworm
 
 WORKDIR /app
 
-# Install system dependencies for OCR, PDF/DOCX conversion,
-# Playwright, and ODBC-based database connectivity.
+# Install runtime dependencies for OCR, document conversion,
+# Chromium-based scraping, and SQL Server connectivity.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    unixodbc-dev \
     tesseract-ocr \
     curl \
     ca-certificates \
     libreoffice-writer \
-    libreoffice-calc \
     fonts-liberation \
     && . /etc/os-release \
     && curl -fsSL "https://packages.microsoft.com/config/debian/${VERSION_ID%%.*}/packages-microsoft-prod.deb" \
@@ -23,23 +20,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql17 \
     && rm -rf /var/lib/apt/lists/*
 
-# Configure LibreOffice for DOC/DOCX to PDF conversion.
-ENV LIBREOFFICE_PATH=/usr/bin/soffice
+ENV LIBREOFFICE_PATH=/usr/bin/soffice \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-# Install Python dependencies first for better build caching.
-COPY requirements.txt .
+COPY requirements-runtime.txt .
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --timeout 300 --retries 10 \
+    --extra-index-url https://download.pytorch.org/whl/cpu \
+    -r requirements-runtime.txt
 
-# Install Chromium and its Linux dependencies for Playwright.
+# Install Chromium and its Linux dependencies for Playwright
 RUN python -m playwright install --with-deps chromium
 
-# Copy backend source code.
 COPY . .
 
-# Create a directory for uploaded files.
 RUN mkdir -p /app/uploads
 
 EXPOSE 5001
 
-CMD ["python", "app.py"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5001", "app:app"]
