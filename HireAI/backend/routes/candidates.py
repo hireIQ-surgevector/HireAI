@@ -575,7 +575,22 @@ def upload_candidates():
             # VALIDATION
             # ------------------------------------------------
 
-            full_name = parsed.get("full_name") or None
+            full_name = str(parsed.get("full_name") or "").strip()
+            if not full_name:
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+                failed_files.append(
+                    {
+                        "fileName": original_filename,
+                        "error": (
+                            "Could not identify a candidate name. Make sure the "
+                            "resume contains a readable name near the top, or "
+                            "upload it with a name-based filename such as "
+                            "'Jane_Doe.pdf'."
+                        ),
+                    }
+                )
+                continue
 
             email = parsed.get("email") or None
 

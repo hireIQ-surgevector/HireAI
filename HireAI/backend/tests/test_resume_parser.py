@@ -103,6 +103,24 @@ class ResumeTextExtractionTests(unittest.TestCase):
             "Ankesh",
         )
 
+    def test_single_word_resume_name_is_used_with_uuid_filename(self):
+        self.assertEqual(
+            extract_name(
+                "Ankesh\nData Engineer\n10 Years Experience",
+                "2f9e56fe-fd30-4afe-99ed-ca317f5c06eb.pdf",
+            ),
+            "Ankesh",
+        )
+
+    def test_single_word_heading_is_not_used_as_a_candidate_name(self):
+        self.assertEqual(
+            extract_name(
+                "SUMMARY\nData Engineer\nPython SQL",
+                "2f9e56fe-fd30-4afe-99ed-ca317f5c06eb.pdf",
+            ),
+            "",
+        )
+
     def test_names_in_formatted_resume_headers_are_extracted(self):
         cases = [
             ("ASHISH | PATIL\nDATA ENGINEERING | SPECIALIST", "Ashish Patil"),
@@ -304,6 +322,48 @@ class ResumeConversionTests(unittest.TestCase):
                 for query in connection.fake_cursor.executed
             )
         )
+
+    @patch("routes.candidates.parse_resume")
+    @patch("routes.candidates.get_connection")
+    @patch("routes.candidates.ensure_schema")
+    def test_resume_without_an_identified_name_is_not_inserted(
+        self, ensure_schema, get_connection, parse_resume
+    ):
+        connection = FakeConnection()
+        get_connection.return_value = connection
+        parse_resume.return_value = {
+            "status": "success",
+            "full_name": "  ",
+        }
+        app = Flask(__name__)
+        app.register_blueprint(candidates)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch("routes.candidates.os.getcwd", return_value=temp_dir):
+                response = app.test_client().post(
+                    "/api/candidates/upload",
+                    data={
+                        "job_id": "1",
+                        "resumes": (io.BytesIO(b"resume"), "2f9e56fe-resume.pdf"),
+                    },
+                    content_type="multipart/form-data",
+                )
+
+            self.assertEqual(response.status_code, 201)
+            result = response.get_json()
+            self.assertEqual(result["created_count"], 0)
+            self.assertEqual(result["failed_count"], 1)
+            self.assertIn("Could not identify a candidate name", result["failed"][0]["error"])
+            self.assertFalse(
+                any(
+                    "INSERT INTO dbo.Candidates" in query
+                    for query in connection.fake_cursor.executed
+                )
+            )
+            resume_dir = Path(temp_dir) / "uploads" / "resumes"
+            self.assertEqual(list(resume_dir.iterdir()), [])
+
+        ensure_schema.assert_called_once()
 
     @patch("routes.candidates.parse_resume")
     @patch("routes.candidates.get_connection")
