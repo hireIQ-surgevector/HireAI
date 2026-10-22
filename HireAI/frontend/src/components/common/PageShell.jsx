@@ -180,10 +180,10 @@ function PageShell({
           SIDEBAR
       ========================= */}
 
-      <aside className="app-sidebar [width:250px] [min-height:100vh] [display:flex] [flex-direction:column] [background:#ffffff] [border-right:1px_solid_#e8eaed] [box-shadow:4px_0_24px_rgba(15,23,42,0.025)] [position:fixed] [top:0] [left:0] [bottom:0] [z-index:100] [overflow:hidden] max-[1024px]:[width:220px] max-[768px]:[width:72px] max-[640px]:[position:sticky] max-[640px]:[top:0] max-[640px]:[bottom:auto] max-[640px]:[left:auto] max-[640px]:[width:100%] max-[640px]:[min-height:auto] max-[640px]:[height:62px] max-[640px]:[flex-direction:row] max-[640px]:[align-items:center] max-[640px]:[padding:0_10px] max-[640px]:[overflow:visible]">
+      <aside className="app-sidebar [width:232px] [min-height:100vh] [display:flex] [flex-direction:column] [background:#ffffff] [border-right:1px_solid_#e8eaed] [box-shadow:4px_0_24px_rgba(15,23,42,0.025)] [position:fixed] [top:0] [left:0] [bottom:0] [z-index:100] [overflow:hidden] max-[1024px]:[width:220px] max-[768px]:[width:72px] max-[640px]:[position:sticky] max-[640px]:[top:0] max-[640px]:[bottom:auto] max-[640px]:[left:auto] max-[640px]:[width:100%] max-[640px]:[min-height:auto] max-[640px]:[height:62px] max-[640px]:[flex-direction:row] max-[640px]:[align-items:center] max-[640px]:[padding:0_10px] max-[640px]:[overflow:visible]">
         {/* LOGO */}
 
-        <div className="app-sidebar-header [height:76px] [display:flex] [align-items:center] [padding:0_24px] [border-bottom:1px_solid_#eef0f2] max-[768px]:[justify-content:center] max-[768px]:[padding:0] max-[640px]:[height:62px] max-[640px]:[padding:0_8px] max-[640px]:[border-bottom:none] max-[640px]:[justify-content:space-between]">
+        <div className="app-sidebar-header [height:76px] [display:flex] [align-items:center] [padding:0_20px] [border-bottom:1px_solid_#eef0f2] max-[768px]:[justify-content:center] max-[768px]:[padding:0] max-[640px]:[height:62px] max-[640px]:[padding:0_8px] max-[640px]:[border-bottom:none] max-[640px]:[justify-content:space-between]">
           <Link to="/dashboard" className="app-logo [display:flex] [align-items:center] [gap:11px] [text-decoration:none] [color:inherit]">
             <div className="app-logo-mark [width:38px] [height:38px] [display:flex] [align-items:center] [justify-content:center] [border-radius:10px] [background:#00b4d8] [color:white] [font-size:13px] [font-weight:700] [letter-spacing:0.5px] max-[768px]:[width:36px] max-[768px]:[height:36px]">HI</div>
 
@@ -266,12 +266,12 @@ function PageShell({
           MAIN APPLICATION AREA
       ========================= */}
 
-      <main className="app-main [width:calc(100%_-_250px)] [min-width:0] [min-height:100vh] [margin-left:250px] [display:flex] [flex-direction:column] max-[1024px]:[width:calc(100%_-_220px)] max-[1024px]:[margin-left:220px] max-[768px]:[width:calc(100%_-_72px)] max-[768px]:[margin-left:72px] max-[640px]:[width:100%] max-[640px]:[min-height:calc(100vh-62px)] max-[640px]:[margin-left:0]">
+      <main className="app-main [width:calc(100%_-_232px)] [min-width:0] [min-height:100vh] [margin-left:232px] [display:flex] [flex-direction:column] max-[1024px]:[width:calc(100%_-_220px)] max-[1024px]:[margin-left:220px] max-[768px]:[width:calc(100%_-_72px)] max-[768px]:[margin-left:72px] max-[640px]:[width:100%] max-[640px]:[min-height:calc(100vh-62px)] max-[640px]:[margin-left:0]">
         {/* PAGE CONTENT */}
 
-        <section className="app-content [flex:1] [padding:32px] [overflow-x:clip] [background:linear-gradient(180deg,_#f8fafc_0%,_#f3f6fa_100%)] max-[1024px]:[padding:24px] max-[768px]:[padding:18px] max-[480px]:[padding:14px] max-[640px]:[padding:14px]">
+        <section className="app-content [flex:1] [padding:20px] [overflow-x:clip] [background:linear-gradient(180deg,_#f8fafc_0%,_#f3f6fa_100%)] max-[1024px]:[padding:16px] max-[768px]:[padding:12px] max-[480px]:[padding:10px]">
           <div className="app-content-inner [width:100%] [max-width:1480px] [margin:0_auto]">
-            <header className="app-page-banner [display:flex] [align-items:center] [justify-content:space-between] [gap:24px] [margin-bottom:22px] [padding:23px_26px] [border:1px_solid_#d8e5f5] [border-radius:14px] [background:linear-gradient(115deg,_#eef5ff_0%,_#f8fbff_58%,_#e8f7f5_100%)] max-[640px]:[align-items:flex-start] max-[640px]:[flex-direction:column] max-[640px]:[gap:16px] max-[640px]:[padding:20px]">
+            <header className="app-page-banner [display:flex] [align-items:center] [justify-content:space-between] [gap:16px] [margin-bottom:14px] [padding:16px_20px] [border:1px_solid_#d8e5f5] [border-radius:14px] [background:linear-gradient(115deg,_#eef5ff_0%,_#f8fbff_58%,_#e8f7f5_100%)] max-[640px]:[align-items:flex-start] max-[640px]:[flex-direction:column] max-[640px]:[gap:12px] max-[640px]:[padding:14px]">
               <div className="app-page-heading [min-width:0] [display:flex] [align-items:center] [gap:16px]">
                 {backTo && (
                   <Link to={backTo} className="app-back-button [display:inline-flex] [align-items:center] [gap:7px] [flex-shrink:0] [padding:8px_10px] [border-radius:8px] [text-decoration:none] [color:#475569] [font-size:13px] [font-weight:600] [transition:background_0.2s_ease,_color_0.2s_ease] hover:[background:rgba(255,255,255,0.75)] hover:[color:#111827]">
@@ -280,9 +280,9 @@ function PageShell({
                   </Link>
                 )}
                 <div className="[min-width:0]">
-                  <p className="[margin:0_0_6px] [color:#00a6c7] [font-size:10px] [font-weight:800] [letter-spacing:1.2px]">{eyebrow}</p>
-                  <h1 className="[margin:0] [color:#1e293b] [font-size:24px] [font-weight:800] [letter-spacing:-0.025em] max-[640px]:[font-size:21px]">{heading}</h1>
-                  {description && <p className="[margin:6px_0_0] [color:#64748b] [font-size:13px] [line-height:1.6]">{description}</p>}
+                  <p className="[margin:0_0_4px] [color:#00a6c7] [font-size:10px] [font-weight:800] [letter-spacing:1.2px]">{eyebrow}</p>
+                  <h1 className="[margin:0] [color:#1e293b] [font-size:22px] [font-weight:800] [letter-spacing:-0.025em] max-[640px]:[font-size:20px]">{heading}</h1>
+                  {description && <p className="[margin:4px_0_0] [color:#64748b] [font-size:12px] [line-height:1.5]">{description}</p>}
                 </div>
               </div>
               {(actions || HeaderIcon) && (

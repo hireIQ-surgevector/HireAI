@@ -146,7 +146,7 @@ function App() {
   const hasSession = useAuthSession();
 
   return (
-    <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-800 [&_.card:not(.overflow-x-auto)]:!p-4 max-[640px]:[&_.card:not(.overflow-x-auto)]:!p-3.5 [&_.section-header]:!mb-3">
       <Toaster position="top-center" />
       <BrowserRouter>
         <Routes>

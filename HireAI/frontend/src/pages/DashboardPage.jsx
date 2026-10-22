@@ -180,7 +180,7 @@ function DashboardPage() {
           DASHBOARD METRICS
       ========================= */}
 
-      <div className="grid4 dashboard-kpi-grid [display:grid] [grid-template-columns:repeat(4,_1fr)] [gap:14px] [margin-bottom:28px] max-[960px]:[grid-template-columns:1fr] max-[960px]:[flex-direction:column]">
+      <div className="grid4 dashboard-kpi-grid [display:grid] [grid-template-columns:repeat(4,_1fr)] [gap:12px] [margin-bottom:20px] max-[960px]:[grid-template-columns:repeat(2,_minmax(0,_1fr))] max-[600px]:[grid-template-columns:1fr]">
         <StatCard
           label="Active Jobs"
           value={loading ? "—" : String(counts.open_jobs || 0)}
@@ -214,7 +214,7 @@ function DashboardPage() {
           QUICK ACTIONS + INTERVIEWS
       ========================= */}
 
-      <div className="grid2 dashboard-middle-grid [display:grid] [grid-template-columns:1fr_1fr] [gap:14px] [margin-bottom:28px] max-[960px]:[grid-template-columns:1fr] max-[960px]:[flex-direction:column]">
+      <div className="grid2 dashboard-middle-grid [display:grid] [grid-template-columns:1fr_1fr] [gap:12px] [margin-bottom:20px] max-[700px]:[grid-template-columns:1fr]">
         {/* =========================
             QUICK ACTIONS
         ========================= */}
@@ -225,10 +225,10 @@ function DashboardPage() {
             UPCOMING INTERVIEWS
         ========================= */}
 
-        <div className="card upcoming-interviews-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [display:flex] [flex-direction:column]">
-          <div className="section-header [display:flex] [justify-content:space-between] [align-items:center] [margin-bottom:14px]">
+        <div className="card upcoming-interviews-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:16px] [display:flex] [flex-direction:column]">
+          <div className="section-header [display:flex] [justify-content:space-between] [align-items:center] [margin-bottom:10px]">
             <div>
-              <h3 className="[.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px]">Upcoming Interviews</h3>
+              <h3 className="[.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:6px]">Upcoming Interviews</h3>
 
               <p
                 className="muted [margin-top:4px] [font-size:12px] [color:#64748b]"
@@ -246,7 +246,7 @@ function DashboardPage() {
           </div>
 
           {upcomingInterviews.length === 0 ? (
-            <div className="dashboard-empty [min-height:200px] [padding:36px_20px] [display:flex] [flex-direction:column] [align-items:center] [justify-content:center] [text-align:center] [color:#64748b]">
+            <div className="dashboard-empty [min-height:120px] [padding:18px_16px] [display:flex] [flex-direction:column] [align-items:center] [justify-content:center] [text-align:center] [color:#64748b]">
               <div className="[font-size:30px] [margin-bottom:8px]"
 
               >
@@ -332,10 +332,10 @@ function DashboardPage() {
           RECENT CANDIDATES
       ========================= */}
 
-      <div className="card dashboard-recent-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:22px] [margin-top:0]">
-        <div className="section-header [display:flex] [justify-content:space-between] [align-items:center] [margin-bottom:14px]">
+      <div className="card dashboard-recent-card [background:#fff] [border:1px_solid_#e2e8f0] [border-radius:12px] [padding:16px] [margin-top:0]">
+        <div className="section-header [display:flex] [justify-content:space-between] [align-items:center] [margin-bottom:10px]">
           <div>
-            <h3 className="[.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px]">Recent Candidates</h3>
+            <h3 className="[.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:6px]">Recent Candidates</h3>
 
             <p
               className="muted [margin-top:4px] [font-size:12px] [color:#64748b]"
@@ -351,7 +351,7 @@ function DashboardPage() {
         </div>
 
         {recentCandidates.length === 0 ? (
-          <div className="dashboard-empty [min-height:200px] [padding:36px_20px] [display:flex] [flex-direction:column] [align-items:center] [justify-content:center] [text-align:center] [color:#64748b]">
+          <div className="dashboard-empty [min-height:120px] [padding:18px_16px] [display:flex] [flex-direction:column] [align-items:center] [justify-content:center] [text-align:center] [color:#64748b]">
             <div className="[font-size:32px] [margin-bottom:10px]"
 
             >

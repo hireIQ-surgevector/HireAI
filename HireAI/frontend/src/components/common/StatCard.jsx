@@ -15,14 +15,14 @@ function StatCard({ label, value, icon, color }) {
     teal: "[color:#00b4d8]",
   };
   return (
-    <Card className="stat-card relative p-[18px]">
+    <Card className="stat-card relative p-[14px]">
       <div className="stat-label [font-size:11px] [font-weight:700] [color:#64748b] [text-transform:uppercase] [letter-spacing:0.4px]">{label}</div>
       <div
-        className={`stat-num [font-size:28px] [font-weight:800] [color:#1e293b] [margin:4px_0] ${valueColorMap[color] || "[color:#7c3aed]"}`}
+        className={`stat-num [font-size:24px] [font-weight:800] [color:#1e293b] [margin:2px_0] ${valueColorMap[color] || "[color:#7c3aed]"}`}
       >
         {value}
       </div>
-      <div className={`stat-icon [position:absolute] [top:18px] [right:18px] [width:42px] [height:42px] [border-radius:10px] [display:flex] [align-items:center] [justify-content:center] [font-size:18px] ${colorMap[color] || colorMap.brand}`}>
+      <div className={`stat-icon [position:absolute] [top:14px] [right:14px] [width:36px] [height:36px] [border-radius:10px] [display:flex] [align-items:center] [justify-content:center] [font-size:18px] ${colorMap[color] || colorMap.brand}`}>
         {icon}
       </div>
     </Card>
