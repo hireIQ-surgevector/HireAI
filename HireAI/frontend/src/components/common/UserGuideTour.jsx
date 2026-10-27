@@ -22,7 +22,7 @@ const MANAGER_STEPS = [
     path: "/dashboard",
     title: "Your hiring overview",
     description:
-      "Start here for a snapshot of open roles, candidates, upcoming interviews, and pending offers. Quick actions help you jump into common tasks.",
+      "Start here for a snapshot of open roles, candidates, upcoming interviews, and pending offers. Use the sidebar to open a workspace, or use dashboard quick actions to start a common task.",
     icon: BookOpen,
   },
   {
@@ -30,7 +30,7 @@ const MANAGER_STEPS = [
     path: "/jobs",
     title: "Create a job opening",
     description:
-      "Add a role with its description, experience range, salary range, and required skills. These details guide candidate matching and keep offers within the approved range.",
+      "Add a role with a clear description, experience and salary ranges, and mandatory and required skills. Matching uses these details, and the salary range helps guide offers.",
     icon: BriefcaseBusiness,
   },
   {
@@ -38,7 +38,7 @@ const MANAGER_STEPS = [
     path: "/candidates",
     title: "Build your candidate pipeline",
     description:
-      "Upload resumes to add candidates, review their profiles, and track each person as they move through your hiring process.",
+      "Select a job before uploading PDF, DOC, DOCX, or TXT resumes. Review the per-file results and candidate details; names should be readable near the top of the resume. Open a profile to view its stored resume.",
     icon: Users,
   },
   {
@@ -46,7 +46,7 @@ const MANAGER_STEPS = [
     path: "/candidate-matcher",
     title: "Find suitable candidates",
     description:
-      "Choose a job and calculate match scores. Review matched and missing skills alongside the score before deciding who should move forward.",
+      "Choose a job and calculate match scores. Review experience and matched or missing skills rather than relying on the score alone. The first match may take longer while the model downloads and requires internet access.",
     icon: ScanSearch,
   },
   {
@@ -54,7 +54,7 @@ const MANAGER_STEPS = [
     path: "/interviews",
     title: "Schedule and manage interviews",
     description:
-      "Schedule interview rounds, review upcoming interviews, and open completed interviews to view their details.",
+      "Schedule the appropriate interview round, then use this page to review upcoming interviews and open completed ones. Confirm the candidate, interviewer, time, and round before saving.",
     icon: CalendarDays,
   },
   {
@@ -62,7 +62,7 @@ const MANAGER_STEPS = [
     path: "/evaluations",
     title: "Record an evaluation",
     description:
-      "Evaluate candidates after their interviews. Your decision moves them forward, rejects them, or starts the offer process.",
+      "Record feedback after an interview is complete. Choose the appropriate outcome and add clear, job-related notes; the decision updates the candidate's next step.",
     icon: Check,
   },
   {
@@ -70,7 +70,7 @@ const MANAGER_STEPS = [
     path: "/offers",
     title: "Manage offers and onboarding",
     description:
-      "Track offer status, update it as the candidate responds, and move accepted candidates into onboarding.",
+      "Review sent offers and update their status when candidates respond. Check the role's approved salary range, and move accepted candidates into onboarding.",
     icon: FileText,
   },
 ];

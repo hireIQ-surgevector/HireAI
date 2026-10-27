@@ -372,6 +372,9 @@ def extract_name(text, file_name=None):
         if first_line_words[0].casefold() == first_filename_token.casefold():
             return normalize_person_name(first_line_words[0])
 
+    if len(first_line_words) == 1 and len(first_line_words[0]) >= 2:
+        return normalize_person_name(first_line_words[0])
+
     for line in lines[1:8]:
         name_words = name_words_from_line(line)
         if len(name_words) >= 2:

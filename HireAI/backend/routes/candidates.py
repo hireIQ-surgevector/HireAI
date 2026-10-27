@@ -1,7 +1,9 @@
 import os
+import re
 import shutil
 import tempfile
 import uuid
+from datetime import date
 
 from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required
@@ -24,6 +26,44 @@ from utils.auth_helpers import (
 )
 
 candidates = Blueprint("candidates", __name__)
+
+
+def _store_resume_file(source_path, upload_dir, full_name, job_id):
+    safe_name = "".join(
+        character if character.isalnum() else "_"
+        for character in full_name
+    )
+    safe_name = re.sub(r"_+", "_", safe_name) or "Candidate"
+    safe_name = safe_name.strip("_") or "Candidate"
+    date_added = date.today().isoformat()
+    base_name = f"{safe_name}_{date_added}_Job-{job_id}"
+    suffix = 1
+
+    while True:
+        collision_suffix = "" if suffix == 1 else f"_{suffix}"
+        storage_name = f"{base_name}{collision_suffix}.pdf"
+        storage_path = os.path.join(upload_dir, storage_name)
+
+        try:
+            file_descriptor = os.open(
+                storage_path,
+                os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+                0o600,
+            )
+        except FileExistsError:
+            suffix += 1
+            continue
+
+        try:
+            with os.fdopen(file_descriptor, "wb") as destination:
+                with open(source_path, "rb") as source:
+                    shutil.copyfileobj(source, destination)
+        except Exception:
+            if os.path.isfile(storage_path):
+                os.remove(storage_path)
+            raise
+
+        return storage_name
 
 
 @candidates.route("/api/candidates/<int:candidate_id>/resume", methods=["GET"])
@@ -575,7 +615,22 @@ def upload_candidates():
             # VALIDATION
             # ------------------------------------------------
 
-            full_name = parsed.get("full_name") or None
+            full_name = str(parsed.get("full_name") or "").strip()
+            if not full_name:
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+                failed_files.append(
+                    {
+                        "fileName": original_filename,
+                        "error": (
+                            "Could not identify a candidate name. Make sure the "
+                            "resume contains a readable name near the top, or "
+                            "upload it with a name-based filename such as "
+                            "'Jane_Doe.pdf'."
+                        ),
+                    }
+                )
+                continue
 
             email = parsed.get("email") or None
 
@@ -608,66 +663,84 @@ def upload_candidates():
             # INSERT CANDIDATE
             # ------------------------------------------------
 
-            cursor.execute(
-                """
-                INSERT INTO dbo.Candidates
-                (
+            storage_filename = None
+            storage_path = None
+            try:
+                storage_filename = _store_resume_file(
+                    file_path,
+                    upload_dir,
                     full_name,
-                    email,
-                    phone,
-                    current_role,
-                    applied_role,
-                    location,
-                    experience_years,
-                    current_ctc,
-                    current_status,
-                    ai_score,
                     job_id,
-                    notice_period,
-                    skills,
-                    resume_storage_name,
-                    resume_original_name
                 )
-                OUTPUT INSERTED.candidate_id
-                VALUES
-                (
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?
-                )
-                """,
-                (
-                    full_name,
-                    email,
-                    phone,
-                    current_role,
-                    job_title,
-                    location,
-                    experience_years,
-                    current_ctc,
-                    "New",
-                    None,
-                    job_id,
-                    notice_period,
-                    skills_string,
-                    unique_filename,
-                    converted_filename,
-                ),
-            )
+                storage_path = os.path.join(upload_dir, storage_filename)
 
-            result = cursor.fetchone()
+                cursor.execute(
+                    """
+                    INSERT INTO dbo.Candidates
+                    (
+                        full_name,
+                        email,
+                        phone,
+                        current_role,
+                        applied_role,
+                        location,
+                        experience_years,
+                        current_ctc,
+                        current_status,
+                        ai_score,
+                        job_id,
+                        notice_period,
+                        skills,
+                        resume_storage_name,
+                        resume_original_name
+                    )
+                    OUTPUT INSERTED.candidate_id
+                    VALUES
+                    (
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?
+                    )
+                    """,
+                    (
+                        full_name,
+                        email,
+                        phone,
+                        current_role,
+                        job_title,
+                        location,
+                        experience_years,
+                        current_ctc,
+                        "New",
+                        None,
+                        job_id,
+                        notice_period,
+                        skills_string,
+                        storage_filename,
+                        converted_filename,
+                    ),
+                )
+
+                result = cursor.fetchone()
+            except Exception:
+                if storage_path and os.path.isfile(storage_path):
+                    os.remove(storage_path)
+                raise
+            finally:
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
 
             candidate_id = result[0] if result else None
 

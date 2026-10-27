@@ -1,61 +1,230 @@
 # HireAI
 
-HireAI is a recruiter-first applicant tracking and hiring workflow application. It brings job openings, candidate profiles, resume screening, candidate-to-job matching, interview coordination, evaluations, and offer tracking into one place.
+HireAI is a recruiter-first applicant tracking system for managing job openings, candidates, resume screening, interviews, evaluations, and offers. It includes a candidate-facing interview and offer workflow.
 
-The goal is to help recruiting teams move from an open role to an informed hiring decision with less manual resume review and a clearer view of each candidate's progress.
+## Choose how to run HireAI
 
-## Who it's for
+| Goal | Start here |
+| --- | --- |
+| Use the ready-to-run Windows distribution | [Run the application](#run-the-windows-distribution) |
+| Develop the application | [Development setup](#development-setup) |
+| Build a distributable Docker bundle | [Build an offline distribution](#build-an-offline-distribution) |
 
-- Recruiters and talent acquisition teams mana
-- 
-- ging open roles and candidate pipelines.
-- Hiring teams reviewing candidate fit, interview feedback, and next steps.
-- Developers contributing to the recruiting platform.
+## What HireAI does
 
-The frontend also contains candidate-facing interview, feedback, and offer pages; the product and this guide are organized around the recruiter workflow.
+- Manage job openings, role descriptions, salary and experience ranges, and required skills.
+- Upload PDF, DOC, DOCX, or TXT resumes and extract candidate details.
+- Review candidate profiles and resumes, and track hiring stages.
+- Compare candidates with jobs using semantic similarity, experience, and skill information.
+- Schedule interviews, record evaluations, and manage offer status.
+- Provide candidate-facing interview, feedback, and offer pages.
 
-## What the application does
+Match scores are decision-support information, not automatic hiring decisions. Review the underlying experience and matched or missing skills before making decisions.
 
-- **Manage jobs:** create, edit, and browse job openings with role requirements and skills.
-- **Import job details:** retrieve structured details from a supported job-posting URL.
-- **Screen resumes:** upload PDF, DOCX, or TXT resumes and extract candidate contact information, skills, experience, and other available details.
-- **Review matches:** compare candidates with a job, see match scores and skill gaps, and record shortlist or other decisions.
-- **Track candidates:** review candidate profiles, update hiring stages, and manage the pipeline.
-- **Coordinate interviews:** schedule interviews and maintain interview notes and evaluations.
-- **Manage offers:** follow offer status and related candidate actions.
-- **Secure recruiter workflows:** authenticate users and protect recruiter pages and APIs.
+## Run the Windows distribution
 
-Matching uses sentence-transformer semantic similarity together with experience scoring. Mandatory skills affect the match category, and the application exposes matched and missing skills to help explain the result. Treat AI scores as decision support—not as an automatic hiring decision.
+### Requirements
 
-### Resume format support
+- Windows with Docker Desktop installed and running, using Linux containers.
+- The `HireAI` application folder and the matching `hireai-images-optimized.tar` archive.
+- Docker needs enough free disk space for the SQL Server image, database, and application.
 
-The parser supports PDF, DOCX, and TXT uploads. It preserves layout clues from PDFs and reads text in DOCX tables, which helps with multi-column resumes. Scanned/image-only PDFs require the external Tesseract OCR executable; install it separately as described below.
+### Start
 
-## Technology
+1. Open `HireAI/backend/.env.docker` and `HireAI/database/sqlserver.env`. Create them if absent, using the templates below. Set private values for your installation; never reuse the example password.
+2. From the `HireAI` folder, run `Run_HireAI.bat`.
+3. Open [http://localhost:3000](http://localhost:3000).
 
-| Area                          | Technologies                                                |
-| ----------------------------- | ----------------------------------------------------------- |
-| Frontend                      | React, JavaScript, Vite, Tailwind CSS                       |
-| Frontend state and navigation | Redux Toolkit, React Redux, React Router                    |
-| Backend/API                   | Python, Flask, Flask-JWT-Extended, Flask-Bcrypt, Flask-CORS |
-| Database                      | Microsoft SQL Server, accessed through`pyodbc`            |
-| Matching                      | Sentence Transformers (`all-MiniLM-L6-v2`), scikit-learn  |
-| Resume extraction             | `pdfplumber`, `python-docx`, `pytesseract`, Pillow    |
-| Job-page extraction           | Requests, BeautifulSoup, Playwright                         |
+The API is available at [http://localhost:5001](http://localhost:5001). The first start initializes SQL Server and the application schema; allow it time to finish. Candidate matching downloads its language model the first time it is used and needs internet access unless the model is already cached.
 
-## Repository layout
+### Required environment files
+
+`backend/.env.docker` configures the API’s SQL Server connection and token signing key:
+
+```dotenv
+DB_SERVER=sqlserver,1433
+DB_NAME=TalentSyncDB
+DB_USER=sa
+DB_PASSWORD=REPLACE_WITH_THE_SAME_SQL_SERVER_PASSWORD
+JWT_SECRET=REPLACE_WITH_A_LONG_RANDOM_SECRET
+```
+
+`database/sqlserver.env` configures the SQL Server container and database initializer:
+
+```dotenv
+ACCEPT_EULA=Y
+MSSQL_PID=Developer
+MSSQL_SA_PASSWORD=REPLACE_WITH_A_STRONG_SQL_SERVER_PASSWORD
+```
+
+The password values in the two files must match. SQL Server requires a strong password that meets its complexity rules. These files contain secrets, are excluded from source control, and must be configured separately on every machine.
+
+### Resume and database storage
+
+- SQL Server data is stored in the Docker named volume `sqlserver_data`.
+- Uploaded resumes are stored in `HireAI/backend/uploads` on the host and mounted into the API container. Stored PDF names use the candidate name, upload date, and job ID (for example, `Jane_Doe_2026-10-21_Job-12.pdf`); a numeric suffix is added if that name already exists.
+- Database backups and resume files are separate. When moving an existing installation, securely transfer both the SQL Server database and the corresponding upload folder. The database stores resume filenames, not the resume contents.
+- Resumes and candidate contact details are sensitive personal data. Limit access, store backups securely, and follow your organization’s retention policy.
+
+### Useful Docker commands
+
+Run these from the repository root:
+
+```powershell
+docker compose -f HireAI/compose.yaml ps
+docker compose -f HireAI/compose.yaml logs -f backend
+docker compose -f HireAI/compose.yaml logs -f sqlserver
+docker compose -f HireAI/compose.yaml down
+```
+
+`down` stops and removes the containers but keeps the SQL Server named volume and uploaded resumes. Do not remove volumes unless you intend to delete the local database.
+
+## Development setup
+
+### Prerequisites
+
+- Git
+- Python 3.12
+- Node.js and npm (use the version supported by the installed Vite release)
+- Microsoft SQL Server and the matching Microsoft ODBC Driver. For Docker SQL Server, also install Docker Desktop.
+- LibreOffice for converting DOC/DOCX resumes to PDF when running the API outside Docker.
+- Tesseract OCR for scanned/image-only PDF resumes when running the API outside Docker.
+
+Docker is the simplest way to start the complete stack. The commands below are for developing the frontend and API with hot reload; they require a reachable SQL Server.
+
+### 1. Get the project
+
+```powershell
+git clone https://github.com/hireIQ-surgevector/HireAI.git
+cd HireAI
+```
+
+The application lives in the nested `HireAI` folder.
+
+### 2. Configure the API
+
+Create and activate a Python virtual environment from the repository root:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+Install the backend runtime packages and the CPU-only PyTorch build:
+
+```powershell
+python -m pip install --extra-index-url https://download.pytorch.org/whl/cpu -r HireAI/backend/requirements-runtime.txt
+python -m playwright install chromium
+```
+
+Create `HireAI/backend/.env` with settings for your own SQL Server and a private signing key:
+
+```dotenv
+DB_CONNECTION_STRING=DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=TalentSyncDB;UID=YOUR_DATABASE_USER;PWD=YOUR_DATABASE_PASSWORD;TrustServerCertificate=yes;
+JWT_SECRET=REPLACE_WITH_A_LONG_RANDOM_SECRET
+TESSERACT_CMD=
+```
+
+For SQL Server Express, replace `SERVER=localhost` with your authorized server and instance name. The ODBC driver name in the connection string must match the driver installed on your machine. If Tesseract is not on `PATH`, set `TESSERACT_CMD` to its full executable path. DOC/DOCX conversion requires LibreOffice to be installed and available as `soffice`.
+
+Run the API from its directory:
+
+```powershell
+cd HireAI/backend
+python app.py
+```
+
+The development API listens on [http://localhost:5001](http://localhost:5001). Keep this terminal open.
+
+### 3. Start the frontend
+
+In a second terminal, from the repository root:
+
+```powershell
+cd HireAI/frontend
+npm ci
+npm run dev
+```
+
+Open the local Vite URL shown in the terminal (usually [http://localhost:5173](http://localhost:5173)). The development frontend calls the API at `http://localhost:5001`.
+
+### 4. Sign in
+
+Use an account configured for your environment. Never add real production credentials, database passwords, JWT signing keys, resumes, or other candidate data to source control. If you do not have a development account, ask the project maintainer to provision one.
+
+## Typical recruiter workflow
+
+1. **Create a job** with a clear description, experience and salary ranges, and mandatory/required skills.
+2. **Upload resumes** from the Candidates area. Select a job first. Supported formats are PDF, DOC, DOCX, and TXT. Check the per-file results after upload. A candidate name must be readable near the top of the resume; if extraction misses it, correct the resume or use a descriptive filename such as `Jane_Doe.pdf`.
+3. **Review candidate profiles** and open resumes from candidate details. Keep the `backend/uploads` folder intact so stored resume links continue to work.
+4. **Compare candidates** to a job in Candidate Matcher. Review the score and skill details; matching loads its model on first use and may need internet access.
+5. **Schedule interviews** and record evaluations after the interview.
+6. **Manage offers** after the hiring decision, and update status as the candidate responds.
+
+The sidebar’s **How to use HireIQ** tour is available after signing in. The tour is tailored to the user's role; it can be opened again at any time.
+
+## Resume processing notes
+
+- Text-based PDFs do not require OCR. Scanned PDFs need Tesseract.
+- DOC and DOCX files are converted to PDF using LibreOffice before parsing.
+- Name extraction may not recognize every resume layout. Review upload failures and correct the source file rather than creating records with missing names.
+- The Docker backend includes Tesseract, LibreOffice, Chromium, and the Microsoft SQL Server ODBC driver.
+
+## Development checks
+
+Run the backend tests from the repository root:
+
+```powershell
+cd HireAI/backend
+python -m unittest discover -s tests -v
+```
+
+Run frontend lint and a production build:
+
+```powershell
+cd HireAI/frontend
+npm run lint
+npm run build
+```
+
+Run the Docker configuration check from the repository root:
+
+```powershell
+docker compose -f HireAI/compose.yaml config --quiet
+```
+
+## Build an offline distribution
+
+Run these commands from the repository root on a machine with Docker Desktop and internet access:
+
+```powershell
+docker compose -f HireAI/compose.yaml build
+docker compose -f HireAI/compose.yaml pull sqlserver
+docker save -o HireAI/hireai-images-optimized.tar hireai-backend:1.0 hireai-frontend:1.0 mcr.microsoft.com/mssql/server:2022-latest
+```
+
+Distribute the `HireAI` application folder and `HireAI/hireai-images-optimized.tar` together. Provide the receiving machine with its own configured environment files. On Windows, `Run_HireAI.bat` loads the archive and starts the services without rebuilding.
+
+The archive contains the backend, frontend, and SQL Server images. It does not contain the SQL Server data volume, uploaded resumes, environment files, or downloaded matching model. Transfer and protect data separately when needed. Rebuild the archive after changing application code or Docker configuration; ensure the archive contains all image tags referenced by Compose.
+
+## Project layout
 
 ```text
 HireAI/
 ├── README.md
 └── HireAI/
+    ├── compose.yaml
+    ├── Run_HireAI.bat
     ├── backend/
-    │   ├── config/       # Database connection
-    │   ├── routes/       # Flask API endpoints
-    │   ├── scraper/      # Job-posting extraction
-    │   ├── services/     # Matching and application services
-    │   ├── tests/        # Backend tests
-    │   └── utils/        # Resume parsing, schema, and helpers
+    │   ├── app.py
+    │   ├── routes/          # API endpoints
+    │   ├── services/        # Matching and application services
+    │   ├── scraper/         # Job-page extraction
+    │   ├── utils/           # Resume parsing, schema, and helpers
+    │   ├── tests/           # Backend tests
+    │   └── uploads/resumes/ # Local resume storage (sensitive; not source controlled)
+    ├── database/
+    │   └── init/            # Database and schema initialization
     └── frontend/
         └── src/
             ├── components/
@@ -64,140 +233,14 @@ HireAI/
             └── utils/
 ```
 
-## Getting started
-
-### Prerequisites
-
-- Git
-- Python 3
-- Node.js and npm
-- Microsoft SQL Server and a compatible Microsoft ODBC Driver for SQL Server
-- Tesseract OCR, if scanned/image-only PDF resumes need to be processed
-
-The matching model is loaded on the first match request. That first run may need internet access to download the model, unless it is already cached.
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/hireIQ-surgevector/HireAI.git
-cd HireAI
-```
-
-### 2. Configure the backend
-
-Create and activate a virtual environment from the repository root:
-
-```bash
-python -m venv .venv
-```
-
-Windows PowerShell:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
-
-macOS/Linux:
-
-```bash
-source .venv/bin/activate
-```
-
-Install backend packages:
-
-```bash
-python -m pip install -r HireAI/backend/requirements.txt
-python -m pip install requests beautifulsoup4 playwright sentence-transformers scikit-learn numpy torch
-python -m playwright install chromium
-```
-
-Create `HireAI/backend/.env` with values for your own development database and a private JWT signing key. Do not commit this file:
-
-```dotenv
-DB_CONNECTION_STRING=DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=HireAI;UID=YOUR_DATABASE_USER;PWD=YOUR_DATABASE_PASSWORD;TrustServerCertificate=yes;
-JWT_SECRET=REPLACE_WITH_A_LONG_RANDOM_SECRET
-
-# Optional: use this when Tesseract is not available on PATH.
-# Windows example: TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe
-TESSERACT_CMD=
-```
-
-Use a database and credentials authorized for your environment. The application creates or updates its required tables through its schema helper when API routes initialize; a working SQL Server connection and ODBC driver are still required.
-
-If your SQL Server uses Windows/integrated authentication, configure `DB_CONNECTION_STRING` with the authentication options appropriate for your local driver and setup instead of the SQL-authentication example above.
-
-### 3. Configure the frontend
-
-```bash
-cd HireAI/frontend
-npm install
-```
-
-### 4. Run the application
-
-Open two terminals from the repository root.
-
-Terminal 1 — backend:
-
-```bash
-cd HireAI/backend
-python app.py
-```
-
-The Flask development server listens at `http://localhost:5001`.
-
-Terminal 2 — frontend:
-
-```bash
-cd HireAI/frontend
-npm run dev
-```
-
-Open the local URL printed by Vite (typically `http://localhost:5173`). The frontend currently calls the backend at `http://localhost:5001`.
-
-### OCR setup for scanned PDFs
-
-The Python `pytesseract` package is only a wrapper; the Tesseract executable must also be installed. Install Tesseract for your operating system and either:
-
-1. Add the Tesseract executable to `PATH`, or
-2. Set `TESSERACT_CMD` in `HireAI/backend/.env` to the full path to the executable.
-
-Text-based PDFs do not need OCR. If an image-only PDF is uploaded without Tesseract configured, the upload response reports the file-specific error instead of creating an empty candidate.
-
-## Development checks
-
-Run backend tests from the backend directory:
-
-```bash
-cd HireAI/backend
-python -m unittest discover -s tests -v
-```
-
-Run frontend lint and build from the frontend directory:
-
-```bash
-npm run lint
-npm run build
-```
-
-## Contributors
-
-The Git history records contributions under these author names:
-
-- Govardhan
-- Harishwar Reddy Jara
-- Krishna
-- `hireIQ-surgevector`
-
-These are the names recorded in commits; they do not define project roles or represent a complete team roster. Please add or correct contributor details as the team confirms preferred names, profile links, and areas of contribution.
-
 ## Contributing
 
-1. Create a feature branch from the current development branch.
-2. Keep changes focused and avoid committing credentials, `.env` files, uploaded resumes, or other private data.
-3. Run the relevant backend tests, frontend lint, and/or production build.
-4. Open a pull request describing the user-facing change and how it was verified.
+1. Create a feature branch.
+2. Keep changes focused and do not commit environment files, credentials, image archives, database backups, or candidate data.
+3. Add or update tests for behavior changes.
+4. Run the relevant backend tests, frontend lint/build, and Docker configuration check.
+5. Open a pull request describing the change, tests run, and any setup or migration impact.
 
-## Security and candidate data
+## Candidate data and security
 
-Candidate resumes and contact information are sensitive personal data. Use only authorized development data, protect database credentials and signing keys, and follow your organization's retention, access-control, and privacy requirements.
+Candidate resumes and contact information are sensitive personal data. Use authorized development data, restrict access to the database and upload folder, protect secrets, and follow applicable privacy and retention requirements. Treat match scores only as decision support.

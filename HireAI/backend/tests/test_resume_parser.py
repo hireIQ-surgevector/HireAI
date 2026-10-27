@@ -11,7 +11,7 @@ from flask import Flask
 from docx import Document
 from docx.oxml import OxmlElement
 
-from routes.candidates import candidates
+from routes.candidates import candidates, _store_resume_file
 from utils.resume_parser import (
     extract_email,
     extract_name,
@@ -77,6 +77,48 @@ class ResumeTextExtractionTests(unittest.TestCase):
     def test_single_token_filename_does_not_become_full_name(self):
         self.assertEqual(extract_name("", "sreenivas.pdf"), "")
 
+    def test_resume_storage_name_includes_candidate_date_and_job(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source_path = Path(temp_dir) / "source.pdf"
+            source_path.write_bytes(b"%PDF-resume")
+
+            storage_name = _store_resume_file(
+                str(source_path),
+                temp_dir,
+                "Morgan Lee",
+                12,
+            )
+
+            self.assertRegex(
+                storage_name,
+                rf"^Morgan_Lee_\d{{4}}-\d{{2}}-\d{{2}}_Job-12\.pdf$",
+            )
+            self.assertEqual(
+                (Path(temp_dir) / storage_name).read_bytes(),
+                b"%PDF-resume",
+            )
+
+    def test_duplicate_resume_storage_names_get_a_numeric_suffix(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source_path = Path(temp_dir) / "source.pdf"
+            source_path.write_bytes(b"%PDF-resume")
+
+            first_name = _store_resume_file(
+                str(source_path),
+                temp_dir,
+                "Morgan Lee",
+                12,
+            )
+            second_name = _store_resume_file(
+                str(source_path),
+                temp_dir,
+                "Morgan Lee",
+                12,
+            )
+
+            self.assertNotEqual(first_name, second_name)
+            self.assertTrue(second_name.endswith("_2.pdf"))
+
     def test_name_labels_inside_client_and_project_headings_are_ignored(self):
         text = (
             "Client Name: Altice USA\n"
@@ -101,6 +143,24 @@ class ResumeTextExtractionTests(unittest.TestCase):
                 "Ankesh_Data Engineer.pdf",
             ),
             "Ankesh",
+        )
+
+    def test_single_word_resume_name_is_used_with_uuid_filename(self):
+        self.assertEqual(
+            extract_name(
+                "Ankesh\nData Engineer\n10 Years Experience",
+                "2f9e56fe-fd30-4afe-99ed-ca317f5c06eb.pdf",
+            ),
+            "Ankesh",
+        )
+
+    def test_single_word_heading_is_not_used_as_a_candidate_name(self):
+        self.assertEqual(
+            extract_name(
+                "SUMMARY\nData Engineer\nPython SQL",
+                "2f9e56fe-fd30-4afe-99ed-ca317f5c06eb.pdf",
+            ),
+            "",
         )
 
     def test_names_in_formatted_resume_headers_are_extracted(self):
@@ -308,6 +368,48 @@ class ResumeConversionTests(unittest.TestCase):
     @patch("routes.candidates.parse_resume")
     @patch("routes.candidates.get_connection")
     @patch("routes.candidates.ensure_schema")
+    def test_resume_without_an_identified_name_is_not_inserted(
+        self, ensure_schema, get_connection, parse_resume
+    ):
+        connection = FakeConnection()
+        get_connection.return_value = connection
+        parse_resume.return_value = {
+            "status": "success",
+            "full_name": "  ",
+        }
+        app = Flask(__name__)
+        app.register_blueprint(candidates)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch("routes.candidates.os.getcwd", return_value=temp_dir):
+                response = app.test_client().post(
+                    "/api/candidates/upload",
+                    data={
+                        "job_id": "1",
+                        "resumes": (io.BytesIO(b"resume"), "2f9e56fe-resume.pdf"),
+                    },
+                    content_type="multipart/form-data",
+                )
+
+            self.assertEqual(response.status_code, 201)
+            result = response.get_json()
+            self.assertEqual(result["created_count"], 0)
+            self.assertEqual(result["failed_count"], 1)
+            self.assertIn("Could not identify a candidate name", result["failed"][0]["error"])
+            self.assertFalse(
+                any(
+                    "INSERT INTO dbo.Candidates" in query
+                    for query in connection.fake_cursor.executed
+                )
+            )
+            resume_dir = Path(temp_dir) / "uploads" / "resumes"
+            self.assertEqual(list(resume_dir.iterdir()), [])
+
+        ensure_schema.assert_called_once()
+
+    @patch("routes.candidates.parse_resume")
+    @patch("routes.candidates.get_connection")
+    @patch("routes.candidates.ensure_schema")
     def test_uploaded_resume_is_linked_to_created_candidate(
         self, ensure_schema, get_connection, parse_resume
     ):
@@ -355,6 +457,10 @@ class ResumeConversionTests(unittest.TestCase):
             self.assertIn("resume_storage_name", insert_query)
             self.assertIn("resume_original_name", insert_query)
             self.assertEqual(insert_parameters[-1], "morgan_lee.pdf")
+            self.assertRegex(
+                insert_parameters[-2],
+                rf"^Morgan_Lee_\d{{4}}-\d{{2}}-\d{{2}}_Job-1\.pdf$",
+            )
             self.assertTrue(
                 os.path.isfile(
                     os.path.join(
@@ -423,7 +529,6 @@ class ResumeConversionTests(unittest.TestCase):
             parsed_pdf_path, parsed_file_name = parse_resume.call_args.args
             self.assertTrue(parsed_pdf_path.endswith(".pdf"))
             self.assertEqual(parsed_file_name, "morgan_lee.pdf")
-            self.assertEqual(Path(parsed_pdf_path).read_bytes(), b"%PDF-converted")
 
             insert_query, insert_parameters = list(
                 zip(
@@ -432,7 +537,10 @@ class ResumeConversionTests(unittest.TestCase):
                 )
             )[-1]
             self.assertIn("resume_storage_name", insert_query)
-            self.assertTrue(insert_parameters[-2].endswith(".pdf"))
+            self.assertRegex(
+                insert_parameters[-2],
+                rf"^Morgan_Lee_\d{{4}}-\d{{2}}-\d{{2}}_Job-1\.pdf$",
+            )
             self.assertEqual(insert_parameters[-1], "morgan_lee.pdf")
             self.assertTrue(
                 os.path.isfile(
@@ -444,6 +552,13 @@ class ResumeConversionTests(unittest.TestCase):
                     )
                 )
             )
+            stored_pdf_path = (
+                Path(temp_dir)
+                / "uploads"
+                / "resumes"
+                / insert_parameters[-2]
+            )
+            self.assertEqual(stored_pdf_path.read_bytes(), b"%PDF-converted")
             ensure_schema.assert_called_once()
 
 
