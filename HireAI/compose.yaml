@@ -42,18 +42,47 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
+  backend-supabase:
+    image: hireai-backend-supabase:1.0
+    build:
+      context: ./backend_supabase
+    container_name: hireai-backend-supabase
+    env_file:
+      - ./backend_supabase/.env
+    environment:
+      DB_BACKEND: supabase
+      SUPABASE_URL: ${SUPABASE_URL:-https://uiyhoiutvagzyukwziat.supabase.co}
+    volumes:
+      - ./backend_supabase/uploads:/app/uploads
+    ports:
+      - "5002:5001"
+    restart: unless-stopped
+
   
   frontend:
     image: hireai-frontend:1.0
     build:
       context: ./frontend
       args:
-        VITE_API_BASE_URL: http://localhost:5001
+        VITE_API_BASE_URL: ${FRONTEND_API_BASE_URL:-http://localhost:5001}
     container_name: hireai-frontend
     ports:
       - "3000:80"
     depends_on:
       - backend
+    restart: unless-stopped
+
+  frontend-supabase:
+    image: hireai-frontend-supabase:1.0
+    build:
+      context: ./frontend_supabase
+      args:
+        VITE_API_BASE_URL: http://localhost:5002
+    container_name: hireai-frontend-supabase
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend-supabase
     restart: unless-stopped
 
 volumes:

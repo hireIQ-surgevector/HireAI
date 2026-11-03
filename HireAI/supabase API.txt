@@ -1,0 +1,487 @@
+API URL : https://uiyhoiutvagzyukwziat.supabase.co/rest/v1/
+
+Read all rows
+let { data: candidates, error } = await supabase
+  .from('candidates')
+  .select('*')
+Read specific columns
+let { data: candidates, error } = await supabase
+  .from('candidates')
+  .select('some_column,other_column')
+Read referenced tables
+let { data: candidates, error } = await supabase
+  .from('candidates')
+  .select(`
+    some_column,
+    other_table (
+      foreign_key
+    )
+  `)
+With pagination
+let { data: candidates, error } = await supabase
+  .from('candidates')
+  .select('*')
+  .range(0, 9)
+With filtering
+let { data: candidates, error } = await supabase
+  .from('candidates')
+  .select("*")
+
+  // Filters
+  .eq('column', 'Equal to')
+  .gt('column', 'Greater than')
+  .lt('column', 'Less than')
+  .gte('column', 'Greater than or equal to')
+  .lte('column', 'Less than or equal to')
+  .like('column', '%CaseSensitive%')
+  .ilike('column', '%CaseInsensitive%')
+  .is('column', null)
+  .in('column', ['Array', 'Values'])
+  .neq('column', 'Not equal to')
+
+  // Arrays
+  .contains('array_column', ['array', 'contains'])
+  .containedBy('array_column', ['contained', 'by'])
+
+  // Logical operators
+  .not('column', 'like', 'Negate filter')
+  .or('some_column.eq.Some value, other_column.eq.Other value')
+
+Insert a row
+const { data, error } = await supabase
+  .from('candidates')
+  .insert([
+    { some_column: 'someValue', other_column: 'otherValue' },
+  ])
+  .select()
+Insert many rows
+const { data, error } = await supabase
+  .from('candidates')
+  .insert([
+    { some_column: 'someValue' },
+    { some_column: 'otherValue' },
+  ])
+  .select()
+Upsert matching rows
+const { data, error } = await supabase
+  .from('candidates')
+  .upsert({ some_column: 'someValue' })
+  .select()
+
+Update matching rows
+const { data, error } = await supabase
+  .from('candidates')
+  .update({ other_column: 'otherValue' })
+  .eq('some_column', 'someValue')
+  .select()
+
+Delete matching rows
+const { error } = await supabase
+  .from('candidates')
+  .delete()
+  .eq('some_column', 'someValue')
+
+Read all rows
+let { data: interviews, error } = await supabase
+  .from('interviews')
+  .select('*')
+Read specific columns
+let { data: interviews, error } = await supabase
+  .from('interviews')
+  .select('some_column,other_column')
+Read referenced tables
+let { data: interviews, error } = await supabase
+  .from('interviews')
+  .select(`
+    some_column,
+    other_table (
+      foreign_key
+    )
+  `)
+With pagination
+let { data: interviews, error } = await supabase
+  .from('interviews')
+  .select('*')
+  .range(0, 9)
+With filtering
+let { data: interviews, error } = await supabase
+  .from('interviews')
+  .select("*")
+
+  // Filters
+  .eq('column', 'Equal to')
+  .gt('column', 'Greater than')
+  .lt('column', 'Less than')
+  .gte('column', 'Greater than or equal to')
+  .lte('column', 'Less than or equal to')
+  .like('column', '%CaseSensitive%')
+  .ilike('column', '%CaseInsensitive%')
+  .is('column', null)
+  .in('column', ['Array', 'Values'])
+  .neq('column', 'Not equal to')
+
+  // Arrays
+  .contains('array_column', ['array', 'contains'])
+  .containedBy('array_column', ['contained', 'by'])
+
+  // Logical operators
+  .not('column', 'like', 'Negate filter')
+  .or('some_column.eq.Some value, other_column.eq.Other value')
+
+Insert a row
+const { data, error } = await supabase
+  .from('interviews')
+  .insert([
+    { some_column: 'someValue', other_column: 'otherValue' },
+  ])
+  .select()
+Insert many rows
+const { data, error } = await supabase
+  .from('interviews')
+  .insert([
+    { some_column: 'someValue' },
+    { some_column: 'otherValue' },
+  ])
+  .select()
+Upsert matching rows
+const { data, error } = await supabase
+  .from('interviews')
+  .upsert({ some_column: 'someValue' })
+  .select()
+
+Update matching rows
+const { data, error } = await supabase
+  .from('interviews')
+  .update({ other_column: 'otherValue' })
+  .eq('some_column', 'someValue')
+  .select()
+
+Delete matching rows
+const { error } = await supabase
+  .from('interviews')
+  .delete()
+  .eq('some_column', 'someValue')
+
+Read all rows
+let { data: jobs, error } = await supabase
+  .from('jobs')
+  .select('*')
+Read specific columns
+let { data: jobs, error } = await supabase
+  .from('jobs')
+  .select('some_column,other_column')
+Read referenced tables
+let { data: jobs, error } = await supabase
+  .from('jobs')
+  .select(`
+    some_column,
+    other_table (
+      foreign_key
+    )
+  `)
+With pagination
+let { data: jobs, error } = await supabase
+  .from('jobs')
+  .select('*')
+  .range(0, 9)
+With filtering
+let { data: jobs, error } = await supabase
+  .from('jobs')
+  .select("*")
+
+  // Filters
+  .eq('column', 'Equal to')
+  .gt('column', 'Greater than')
+  .lt('column', 'Less than')
+  .gte('column', 'Greater than or equal to')
+  .lte('column', 'Less than or equal to')
+  .like('column', '%CaseSensitive%')
+  .ilike('column', '%CaseInsensitive%')
+  .is('column', null)
+  .in('column', ['Array', 'Values'])
+  .neq('column', 'Not equal to')
+
+  // Arrays
+  .contains('array_column', ['array', 'contains'])
+  .containedBy('array_column', ['contained', 'by'])
+
+  // Logical operators
+  .not('column', 'like', 'Negate filter')
+  .or('some_column.eq.Some value, other_column.eq.Other value')
+
+Insert a row
+const { data, error } = await supabase
+  .from('jobs')
+  .insert([
+    { some_column: 'someValue', other_column: 'otherValue' },
+  ])
+  .select()
+Insert many rows
+const { data, error } = await supabase
+  .from('jobs')
+  .insert([
+    { some_column: 'someValue' },
+    { some_column: 'otherValue' },
+  ])
+  .select()
+Upsert matching rows
+const { data, error } = await supabase
+  .from('jobs')
+  .upsert({ some_column: 'someValue' })
+  .select()
+
+Update matching rows
+const { data, error } = await supabase
+  .from('jobs')
+  .update({ other_column: 'otherValue' })
+  .eq('some_column', 'someValue')
+  .select()
+
+Delete matching rows
+const { error } = await supabase
+  .from('jobs')
+  .delete()
+  .eq('some_column', 'someValue')
+
+Read all rows
+let { data: offers, error } = await supabase
+  .from('offers')
+  .select('*')
+Read specific columns
+let { data: offers, error } = await supabase
+  .from('offers')
+  .select('some_column,other_column')
+Read referenced tables
+let { data: offers, error } = await supabase
+  .from('offers')
+  .select(`
+    some_column,
+    other_table (
+      foreign_key
+    )
+  `)
+With pagination
+let { data: offers, error } = await supabase
+  .from('offers')
+  .select('*')
+  .range(0, 9)
+With filtering
+let { data: offers, error } = await supabase
+  .from('offers')
+  .select("*")
+
+  // Filters
+  .eq('column', 'Equal to')
+  .gt('column', 'Greater than')
+  .lt('column', 'Less than')
+  .gte('column', 'Greater than or equal to')
+  .lte('column', 'Less than or equal to')
+  .like('column', '%CaseSensitive%')
+  .ilike('column', '%CaseInsensitive%')
+  .is('column', null)
+  .in('column', ['Array', 'Values'])
+  .neq('column', 'Not equal to')
+
+  // Arrays
+  .contains('array_column', ['array', 'contains'])
+  .containedBy('array_column', ['contained', 'by'])
+
+  // Logical operators
+  .not('column', 'like', 'Negate filter')
+  .or('some_column.eq.Some value, other_column.eq.Other value')
+
+Insert a row
+const { data, error } = await supabase
+  .from('offers')
+  .insert([
+    { some_column: 'someValue', other_column: 'otherValue' },
+  ])
+  .select()
+Insert many rows
+const { data, error } = await supabase
+  .from('offers')
+  .insert([
+    { some_column: 'someValue' },
+    { some_column: 'otherValue' },
+  ])
+  .select()
+Upsert matching rows
+const { data, error } = await supabase
+  .from('offers')
+  .upsert({ some_column: 'someValue' })
+  .select()
+
+Update matching rows
+const { data, error } = await supabase
+  .from('offers')
+  .update({ other_column: 'otherValue' })
+  .eq('some_column', 'someValue')
+  .select()
+
+Delete matching rows
+const { error } = await supabase
+  .from('offers')
+  .delete()
+  .eq('some_column', 'someValue')
+
+Read all rows
+let { data: roles, error } = await supabase
+  .from('roles')
+  .select('*')
+Read specific columns
+let { data: roles, error } = await supabase
+  .from('roles')
+  .select('some_column,other_column')
+Read referenced tables
+let { data: roles, error } = await supabase
+  .from('roles')
+  .select(`
+    some_column,
+    other_table (
+      foreign_key
+    )
+  `)
+With pagination
+let { data: roles, error } = await supabase
+  .from('roles')
+  .select('*')
+  .range(0, 9)
+With filtering
+let { data: roles, error } = await supabase
+  .from('roles')
+  .select("*")
+
+  // Filters
+  .eq('column', 'Equal to')
+  .gt('column', 'Greater than')
+  .lt('column', 'Less than')
+  .gte('column', 'Greater than or equal to')
+  .lte('column', 'Less than or equal to')
+  .like('column', '%CaseSensitive%')
+  .ilike('column', '%CaseInsensitive%')
+  .is('column', null)
+  .in('column', ['Array', 'Values'])
+  .neq('column', 'Not equal to')
+
+  // Arrays
+  .contains('array_column', ['array', 'contains'])
+  .containedBy('array_column', ['contained', 'by'])
+
+  // Logical operators
+  .not('column', 'like', 'Negate filter')
+  .or('some_column.eq.Some value, other_column.eq.Other value')
+
+Insert a row
+const { data, error } = await supabase
+  .from('roles')
+  .insert([
+    { some_column: 'someValue', other_column: 'otherValue' },
+  ])
+  .select()
+Insert many rows
+const { data, error } = await supabase
+  .from('roles')
+  .insert([
+    { some_column: 'someValue' },
+    { some_column: 'otherValue' },
+  ])
+  .select()
+Upsert matching rows
+const { data, error } = await supabase
+  .from('roles')
+  .upsert({ some_column: 'someValue' })
+  .select()
+
+Update matching rows
+const { data, error } = await supabase
+  .from('roles')
+  .update({ other_column: 'otherValue' })
+  .eq('some_column', 'someValue')
+  .select()
+
+Delete matching rows
+const { error } = await supabase
+  .from('roles')
+  .delete()
+  .eq('some_column', 'someValue')
+
+Read all rows
+let { data: users, error } = await supabase
+  .from('users')
+  .select('*')
+Read specific columns
+let { data: users, error } = await supabase
+  .from('users')
+  .select('some_column,other_column')
+Read referenced tables
+let { data: users, error } = await supabase
+  .from('users')
+  .select(`
+    some_column,
+    other_table (
+      foreign_key
+    )
+  `)
+With pagination
+let { data: users, error } = await supabase
+  .from('users')
+  .select('*')
+  .range(0, 9)
+With filtering
+let { data: users, error } = await supabase
+  .from('users')
+  .select("*")
+
+  // Filters
+  .eq('column', 'Equal to')
+  .gt('column', 'Greater than')
+  .lt('column', 'Less than')
+  .gte('column', 'Greater than or equal to')
+  .lte('column', 'Less than or equal to')
+  .like('column', '%CaseSensitive%')
+  .ilike('column', '%CaseInsensitive%')
+  .is('column', null)
+  .in('column', ['Array', 'Values'])
+  .neq('column', 'Not equal to')
+
+  // Arrays
+  .contains('array_column', ['array', 'contains'])
+  .containedBy('array_column', ['contained', 'by'])
+
+  // Logical operators
+  .not('column', 'like', 'Negate filter')
+  .or('some_column.eq.Some value, other_column.eq.Other value')
+
+Insert a row
+const { data, error } = await supabase
+  .from('users')
+  .insert([
+    { some_column: 'someValue', other_column: 'otherValue' },
+  ])
+  .select()
+Insert many rows
+const { data, error } = await supabase
+  .from('users')
+  .insert([
+    { some_column: 'someValue' },
+    { some_column: 'otherValue' },
+  ])
+  .select()
+Upsert matching rows
+const { data, error } = await supabase
+  .from('users')
+  .upsert({ some_column: 'someValue' })
+  .select()
+
+Update matching rows
+const { data, error } = await supabase
+  .from('users')
+  .update({ other_column: 'otherValue' })
+  .eq('some_column', 'someValue')
+  .select()
+
+Delete matching rows
+const { error } = await supabase
+  .from('users')
+  .delete()
+  .eq('some_column', 'someValue')
