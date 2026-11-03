@@ -31,13 +31,29 @@ Match scores are decision-support information, not automatic hiring decisions. R
 
 ### Start
 
-1. Open `HireAI/backend/.env.docker` and `HireAI/database/sqlserver.env`. Create them if absent, using the templates below. Set private values for your installation; never reuse the example password.
-2. From the `HireAI` folder, run `Run_HireAI.bat`.
-3. Open [http://localhost:3000](http://localhost:3000).
+The default Docker stack uses Supabase for the backend and frontend:
 
-The API is available at [http://localhost:5001](http://localhost:5001). The first start initializes SQL Server and the application schema; allow it time to finish. Candidate matching downloads its language model the first time it is used and needs internet access unless the model is already cached.
+```powershell
+cd HireAI
+docker compose up --build
+```
 
-### Required environment files
+Open [http://localhost:3000](http://localhost:3000). Configure the Supabase connection in
+`HireAI/backend_supabase/.env` before starting the stack.
+
+The API is available at [http://localhost:5001](http://localhost:5001).
+
+To run the legacy SQL Server stack instead:
+
+```powershell
+docker compose --profile legacy up --build
+```
+
+The legacy stack requires the environment setup below and is available at
+[http://localhost:3002](http://localhost:3002), with its API at
+[http://localhost:5003](http://localhost:5003).
+
+### Legacy SQL Server environment files
 
 `backend/.env.docker` configures the API’s SQL Server connection and token signing key:
 

@@ -2,6 +2,7 @@
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    profiles: ["legacy"]
     container_name: hireai-sqlserver
     env_file:
       - ./database/sqlserver.env
@@ -14,6 +15,7 @@ services:
 
   db-init:
     image: hireai-backend:1.0
+    profiles: ["legacy"]
     container_name: hireai-db-init
     env_file:
       - ./database/sqlserver.env
@@ -24,17 +26,18 @@ services:
       - sqlserver
     restart: "no"
 
-  backend:
+  backend-legacy:
     image: hireai-backend:1.0
+    profiles: ["legacy"]
     build:
       context: ./backend
-    container_name: hireai-backend
+    container_name: hireai-backend-legacy
     env_file:
       - ./backend/.env.docker
     volumes:
       - ./backend/uploads:/app/uploads
     ports:
-      - "5001:5001"
+      - "5003:5001"
     depends_on:
       sqlserver:
         condition: service_started
@@ -42,11 +45,11 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
-  backend-supabase:
+  backend:
     image: hireai-backend-supabase:1.0
     build:
       context: ./backend_supabase
-    container_name: hireai-backend-supabase
+    container_name: hireai-backend
     env_file:
       - ./backend_supabase/.env
     environment:
@@ -55,34 +58,35 @@ services:
     volumes:
       - ./backend_supabase/uploads:/app/uploads
     ports:
-      - "5002:5001"
+      - "5001:5001"
     restart: unless-stopped
 
   
-  frontend:
+  frontend-legacy:
     image: hireai-frontend:1.0
+    profiles: ["legacy"]
     build:
       context: ./frontend
       args:
-        VITE_API_BASE_URL: ${FRONTEND_API_BASE_URL:-http://localhost:5001}
+        VITE_API_BASE_URL: http://localhost:5003
+    container_name: hireai-frontend-legacy
+    ports:
+      - "3002:80"
+    depends_on:
+      - backend-legacy
+    restart: unless-stopped
+
+  frontend:
+    image: hireai-frontend-supabase:1.0
+    build:
+      context: ./frontend_supabase
+      args:
+        VITE_API_BASE_URL: http://localhost:5001
     container_name: hireai-frontend
     ports:
       - "3000:80"
     depends_on:
       - backend
-    restart: unless-stopped
-
-  frontend-supabase:
-    image: hireai-frontend-supabase:1.0
-    build:
-      context: ./frontend_supabase
-      args:
-        VITE_API_BASE_URL: http://localhost:5002
-    container_name: hireai-frontend-supabase
-    ports:
-      - "3001:80"
-    depends_on:
-      - backend-supabase
     restart: unless-stopped
 
 volumes:
