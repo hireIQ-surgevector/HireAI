@@ -1,50 +1,5 @@
 
 services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    profiles: ["legacy"]
-    container_name: hireai-sqlserver
-    env_file:
-      - ./database/sqlserver.env
-    ports:
-      - "1433:1433"
-    volumes:
-      - sqlserver_data:/var/opt/mssql
-      - ./database:/var/opt/mssql/backup:ro
-    restart: unless-stopped
-
-  db-init:
-    image: hireai-backend:1.0
-    profiles: ["legacy"]
-    container_name: hireai-db-init
-    env_file:
-      - ./database/sqlserver.env
-    volumes:
-      - ./database/init:/database-init:ro
-    command: ["python", "/database-init/init_db.py"]
-    depends_on:
-      - sqlserver
-    restart: "no"
-
-  backend-legacy:
-    image: hireai-backend:1.0
-    profiles: ["legacy"]
-    build:
-      context: ./backend
-    container_name: hireai-backend-legacy
-    env_file:
-      - ./backend/.env.docker
-    volumes:
-      - ./backend/uploads:/app/uploads
-    ports:
-      - "5003:5001"
-    depends_on:
-      sqlserver:
-        condition: service_started
-      db-init:
-        condition: service_completed_successfully
-    restart: unless-stopped
-
   backend:
     image: hireai-backend-supabase:1.0
     build:
@@ -60,22 +15,6 @@ services:
     ports:
       - "5001:5001"
     restart: unless-stopped
-
-  
-  frontend-legacy:
-    image: hireai-frontend:1.0
-    profiles: ["legacy"]
-    build:
-      context: ./frontend
-      args:
-        VITE_API_BASE_URL: http://localhost:5003
-    container_name: hireai-frontend-legacy
-    ports:
-      - "3002:80"
-    depends_on:
-      - backend-legacy
-    restart: unless-stopped
-
   frontend:
     image: hireai-frontend-supabase:1.0
     build:
@@ -88,6 +27,3 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-
-volumes:
-  sqlserver_data:

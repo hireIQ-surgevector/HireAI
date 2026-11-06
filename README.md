@@ -43,16 +43,6 @@ Open [http://localhost:3000](http://localhost:3000). Configure the Supabase conn
 
 The API is available at [http://localhost:5001](http://localhost:5001).
 
-To run the legacy SQL Server stack instead:
-
-```powershell
-docker compose --profile legacy up --build
-```
-
-The legacy stack requires the environment setup below and is available at
-[http://localhost:3002](http://localhost:3002), with its API at
-[http://localhost:5003](http://localhost:5003).
-
 ### Legacy SQL Server environment files
 
 `backend/.env.docker` configures the API’s SQL Server connection and token signing key:

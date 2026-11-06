@@ -389,11 +389,11 @@ function DashboardPage() {
                         className="avatar [background:#e8f0fb] [color:#133f7d] [width:34px] [height:34px] [border-radius:50%] [display:flex] [align-items:center] [justify-content:center] [font-weight:700] [font-size:12px]"
 
                       >
-                        {getInitials(candidate.name)}
+                        {getInitials(candidate.name || candidate.full_name)}
                       </div>
 
                       <span className="font-bold">
-                        {candidate.name || "Unknown Candidate"}
+                        {candidate.name || candidate.full_name || "Unknown Candidate"}
                       </span>
                     </div>
                   </td>

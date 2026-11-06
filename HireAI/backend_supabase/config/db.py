@@ -360,6 +360,11 @@ class SupabaseCursor:
                     (value for key, value in nested.items() if key.lower() == column.lower()),
                     None,
                 )
+                if selected is None and column.lower() == 'full_name':
+                    selected = next(
+                        (value for key, value in nested.items() if key.lower() == 'name'),
+                        None,
+                    )
                 if selected is None and column.lower() in {
                     'id', 'role_id', 'user_id', 'job_id', 'candidate_id', 'interview_id', 'offer_id'
                 }:

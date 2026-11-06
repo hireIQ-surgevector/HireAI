@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from config.db import get_connection
+from config.db import get_backend, get_connection
 
 from utils.schema import ensure_schema
 
@@ -100,26 +100,44 @@ def dashboard_summary():
         # RECENT CANDIDATES
         # ==========================================
 
-        cursor.execute("""
-            SELECT TOP 3
-                c.full_name,
-                c.applied_role,
-                c.current_status,
-                c.ai_score
-            FROM dbo.Candidates c
-            ORDER BY c.created_at DESC
-        """)
+        if get_backend() == 'supabase':
+            cursor.execute("""
+                SELECT *
+                FROM dbo.Candidates
+                ORDER BY created_at DESC
+            """)
+            recent_rows = cursor.fetchall()
+            recent_candidates = []
+            for row in recent_rows[:3]:
+                recent_candidates.append({
+                    'name': (
+                        getattr(row, 'full_name', None)
+                        or getattr(row, 'name', None)
+                        or getattr(row, 'candidate_name', None)
+                    ),
+                    'role': getattr(row, 'applied_role', None),
+                    'status': getattr(row, 'current_status', None),
+                    'score': getattr(row, 'ai_score', None),
+                })
+        else:
+            cursor.execute("""
+                SELECT TOP 3
+                    c.full_name,
+                    c.applied_role,
+                    c.current_status,
+                    c.ai_score
+                FROM dbo.Candidates c
+                ORDER BY c.created_at DESC
+            """)
 
-        recent_candidates = []
-
-        for row in cursor.fetchall():
-
-            recent_candidates.append({
-                'name': row.full_name,
-                'role': row.applied_role,
-                'status': row.current_status,
-                'score': row.ai_score,
-            })
+            recent_candidates = []
+            for row in cursor.fetchall():
+                recent_candidates.append({
+                    'name': row.full_name,
+                    'role': row.applied_role,
+                    'status': row.current_status,
+                    'score': row.ai_score,
+                })
 
         # ==========================================
         # UPCOMING INTERVIEWS
