@@ -1,52 +1,24 @@
 
 services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: hireai-sqlserver
-    env_file:
-      - ./database/sqlserver.env
-    ports:
-      - "1433:1433"
-    volumes:
-      - sqlserver_data:/var/opt/mssql
-      - ./database:/var/opt/mssql/backup:ro
-    restart: unless-stopped
-
-  db-init:
-    image: hireai-backend:1.0
-    container_name: hireai-db-init
-    env_file:
-      - ./database/sqlserver.env
-    volumes:
-      - ./database/init:/database-init:ro
-    command: ["python", "/database-init/init_db.py"]
-    depends_on:
-      - sqlserver
-    restart: "no"
-
   backend:
-    image: hireai-backend:1.0
+    image: hireai-backend-supabase:1.0
     build:
-      context: ./backend
+      context: ./backend_supabase
     container_name: hireai-backend
     env_file:
-      - ./backend/.env.docker
+      - ./backend_supabase/.env
+    environment:
+      DB_BACKEND: supabase
+      SUPABASE_URL: ${SUPABASE_URL:-https://uiyhoiutvagzyukwziat.supabase.co}
     volumes:
-      - ./backend/uploads:/app/uploads
+      - ./backend_supabase/uploads:/app/uploads
     ports:
       - "5001:5001"
-    depends_on:
-      sqlserver:
-        condition: service_started
-      db-init:
-        condition: service_completed_successfully
     restart: unless-stopped
-
-  
   frontend:
-    image: hireai-frontend:1.0
+    image: hireai-frontend-supabase:1.0
     build:
-      context: ./frontend
+      context: ./frontend_supabase
       args:
         VITE_API_BASE_URL: http://localhost:5001
     container_name: hireai-frontend
@@ -55,6 +27,3 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-
-volumes:
-  sqlserver_data:

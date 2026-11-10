@@ -1,0 +1,17 @@
+beautifulsoup4==4.15.0
+Flask==3.0.3
+Flask-Bcrypt==1.0.1
+Flask-Cors==4.0.0
+Flask-JWT-Extended==4.6.0
+gunicorn==23.0.0
+lxml==6.1.2
+pdfplumber==0.11.10
+playwright==1.62.0
+pyodbc==5.2.0
+pytesseract==0.3.13
+python-docx==1.2.0
+python-dotenv==1.0.1
+requests==2.34.2
+scikit-learn==1.9.0
+sentence-transformers==6.0.1
+torch==2.14.0+cpu
