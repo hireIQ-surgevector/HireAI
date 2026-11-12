@@ -2,8 +2,8 @@ DB_SERVER=AIPLLTH655\SQLEXPRESS
 
 DB_NAME=TalentSyncDB
 
-DB_USER=
-DB_PASSWORD=
+DB_USER=sa
+DB_PASSWORD=sa@12345
 
 DB_CONNECTION_STRING=DRIVER={ODBC Driver 18 for SQL Server};SERVER=AIPLLTH655\SQLEXPRESS;DATABASE=TalentSyncDB;Trusted_Connection=yes;Encrypt=no;TrustServerCertificate=yes;Connection Timeout=30;
 

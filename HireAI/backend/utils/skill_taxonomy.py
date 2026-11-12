@@ -17,6 +17,8 @@ Design principles:
 # ---------------------------------------------------------------------------
 # SKILL_ALIASES
 # ---------------------------------------------------------------------------
+import re
+
 from .skill_aliases_business import SKILL_ALIASES as BUSINESS_SKILLS
 from .skill_aliases_domains import SKILL_ALIASES as DOMAIN_SKILLS
 from .skill_aliases_technical import SKILL_ALIASES as TECHNICAL_SKILLS
@@ -26,6 +28,616 @@ SKILL_ALIASES = {
     **BUSINESS_SKILLS,
     **DOMAIN_SKILLS,
 }
+
+
+def _alias_key(value):
+    """Same normalisation resume_skills._clean uses, so "already claimed"
+    means exactly what the matcher means by it."""
+    value = value.casefold().strip()
+    value = value.replace("&", " and ")
+    value = re.sub(r"[\u2010-\u2015]", "-", value)
+    value = re.sub(r"[^a-z0-9+#./-]+", " ", value)
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def _merge_additive(base, extra):
+    """
+    Add `extra` skills to `base` WITHOUT changing anything that already works:
+      - a skill that already exists gets only the aliases it doesn't have yet
+      - an alias already owned by a different skill is skipped (existing wins)
+      - a skill whose own name is already owned by another skill is skipped
+    Returns a report so the result can be inspected.
+    """
+    owner = {}
+    for canonical, aliases in base.items():
+        owner[_alias_key(canonical)] = canonical
+        for alias in aliases:
+            owner[_alias_key(alias)] = canonical
+
+    report = {
+        "new_skills": [],
+        "extended_skills": [],
+        "skipped_skills": [],    # (skill, already owned by)
+        "skipped_aliases": [],   # (alias, wanted for, already owned by)
+    }
+
+    for canonical, aliases in extra.items():
+        ckey = _alias_key(canonical)
+        if ckey in owner and owner[ckey] != canonical:
+            report["skipped_skills"].append((canonical, owner[ckey]))
+            continue
+
+        is_new = canonical not in base
+        merged = list(base.get(canonical, []))
+        owner[ckey] = canonical
+
+        for alias in aliases:
+            akey = _alias_key(alias)
+            if akey in owner and owner[akey] != canonical:
+                report["skipped_aliases"].append((alias, canonical, owner[akey]))
+                continue
+            if alias not in merged:
+                merged.append(alias)
+            owner[akey] = canonical
+
+        base[canonical] = merged
+        report["new_skills" if is_new else "extended_skills"].append(canonical)
+
+    return report
+
+
+# ---------------------------------------------------------------------------
+# DIGITAL MARKETING & SALES SKILLS
+# Sits below the data-engineering / technical / business / domain aliases above.
+# Additive: merged in by _merge_additive() and never overrides an existing skill
+# or alias. Keys use spaces to match the rest of the taxonomy. Near-duplicates were
+# folded into skills that already exist (ab testing -> a/b testing, cross selling ->
+# cross-selling, crm tools -> crm, hubspot crm -> hubspot, value selling ->
+# value-based selling). Aliases marked '# review' may false-match on other resumes.
+# ---------------------------------------------------------------------------
+MARKETING_SALES_SKILLS = {
+    "digital marketing": [
+        "online marketing",
+        "internet marketing",
+    ],
+    "seo": [
+        "search engine optimization",
+        "search engine optimisation",
+    ],
+    "on page seo": [
+        "on-page seo",
+        "onpage seo",
+    ],
+    "off page seo": [
+        "off-page seo",
+        "offpage seo",
+    ],
+    "technical seo": [
+    ],
+    "keyword research": [
+        "keyword analysis",
+    ],
+    "local seo": [
+        "local search optimization",
+    ],
+    "sem": [
+        "search engine marketing",
+        "ppc",  # review: short acronym
+        "pay per click",
+    ],
+    "google ads": [
+        "google adwords",
+        "adwords",
+    ],
+    "youtube ads": [
+        "youtube advertising",
+    ],
+    "facebook ads": [
+        "facebook advertising",
+    ],
+    "instagram ads": [
+        "instagram advertising",
+    ],
+    "meta ads": [
+        "meta advertising",
+    ],
+    "linkedin ads": [
+        "linkedin advertising",
+    ],
+    "social media marketing": [
+        "smm",  # review: short acronym
+        "social media management",
+    ],
+    "digital marketing campaigns": [
+        "digital campaigns",
+        "marketing campaigns",
+    ],
+    "content marketing": [
+        "content strategy",
+    ],
+    "content writing": [
+        "web content writing",
+    ],
+    "blog writing": [
+        "blogs",  # review: very generic word
+        "blog creation",
+    ],
+    "article writing": [
+        "articles",  # review: very generic word
+    ],
+    "copywriting": [
+        "ad copy",
+        "advertising copy",
+    ],
+    "whitepaper": [
+        "white papers",
+    ],
+    "ebook": [
+        "ebooks",
+        "e-book",
+        "e-books",
+    ],
+    "case studies": [
+        "case study",
+    ],
+    "newsletter": [
+        "email newsletter",
+    ],
+    "webinars": [
+        "webinar",
+        "online seminars",
+    ],
+    "email marketing": [
+    ],
+    "email automation": [
+        "drip campaigns",
+    ],
+    "google analytics": [
+        "ga4",
+        "google analytics 4",
+    ],
+    "google search console": [
+        "gsc",  # review: short acronym
+        "search console",
+    ],
+    "conversion rate optimization": [
+        "cro",  # review: short acronym
+        "conversion rate optimisation",
+    ],
+    "a/b testing": [
+        "ab testing",
+        "split testing",
+    ],
+    "lead generation": [
+        "lead gen",
+        "demand generation",
+        "lead sourcing",
+        "lead acquisition",
+        "lead mining",
+    ],
+    "performance marketing": [
+        "paid media",
+    ],
+    "affiliate marketing": [
+        "partner marketing",
+    ],
+    "influencer marketing": [
+        "creator marketing",
+    ],
+    "marketing analytics": [
+        "campaign analytics",
+    ],
+    "brand management": [
+        "brand awareness",
+        "brand positioning",
+    ],
+    "market research": [
+        "industry research",
+        "market analysis",
+        "market intelligence",
+    ],
+    "ecommerce marketing": [
+        "e-commerce marketing",
+    ],
+    "marketing reporting": [
+        "campaign reporting",
+        "roi analysis",
+        "roas",
+        "return on ad spend",
+    ],
+    "inside sales": [
+        "inbound sales",
+        "telephone sales",
+    ],
+    "sales prospecting": [
+        "prospecting",
+        "lead prospecting",
+        "outbound prospecting",
+    ],
+    "database building": [
+        "lead database",
+        "prospect database",
+    ],
+    "linkedin sourcing": [
+        "linkedin prospecting",
+        "linkedin lead generation",
+    ],
+    "communication skills": [
+        "communication",  # review: on almost every resume
+        "verbal communication",
+        "written communication",
+        "business communication",
+    ],
+    "active listening": [
+        "listening skills",
+    ],
+    "email etiquette": [
+        "professional email etiquette",
+        "business email writing",
+    ],
+    "presentation skills": [
+        "sales presentations",
+        "client presentations",
+    ],
+    "cold calling": [
+        "cold calls",
+        "outbound calling",
+    ],
+    "outbound sales": [
+        "outbound selling",
+    ],
+    "email campaigns": [
+        "sales email campaigns",
+        "outbound email campaigns",
+        "email outreach",
+    ],
+    "linkedin outreach": [
+        "linkedin messaging",
+        "sales outreach on linkedin",
+    ],
+    "appointment setting": [
+        "meeting scheduling",
+        "meeting booking",
+    ],
+    "lead qualification": [
+        "prospect qualification",
+        "sales qualification",
+    ],
+    "bant qualification": [
+        "bant",
+        "budget authority need timeline",
+    ],
+    "need analysis": [
+        "needs analysis",
+        "customer needs assessment",
+        "requirement analysis",
+    ],
+    "opportunity identification": [
+        "sales opportunity identification",
+    ],
+    "relationship management": [
+        "customer relationship management",
+        "client relationship management",
+    ],
+    "customer engagement": [
+        "client engagement",
+    ],
+    "rapport building": [
+        "building rapport",
+    ],
+    "stakeholder management": [
+        "stakeholder engagement",
+    ],
+    "follow up management": [
+        "follow-up management",
+        "sales follow ups",
+    ],
+    "sales negotiation": [
+        "negotiation",
+        "price negotiation",
+    ],
+    "objection handling": [
+        "handling objections",
+    ],
+    "value-based selling": [
+        "value selling",
+        "value based selling",
+    ],
+    "persuasion skills": [
+        "persuasion",
+        "persuasive selling",
+    ],
+    "sales closing": [
+        "closing techniques",
+        "deal closing",
+        "closing deals",
+    ],
+    "crm": [
+        "crm management",
+        "customer relationship management software",
+    ],
+    "salesforce": [
+        "salesforce crm",
+    ],
+    "zoho crm": [
+        "zoho",  # review: also an employer name on many resumes
+    ],
+    "hubspot": [
+        "hubspot crm",
+    ],
+    "pipeline management": [
+        "sales pipeline",
+        "pipeline tracking",
+    ],
+    "sales reporting": [
+        "sales reports",
+        "sales performance reporting",
+    ],
+    "data management": [
+        "sales data management",
+        "customer data management",
+    ],
+    "sales forecasting": [
+        "revenue forecasting",
+        "sales projections",
+    ],
+    "pipeline analysis": [
+        "sales funnel analysis",
+    ],
+    "data interpretation": [
+        "sales data interpretation",
+    ],
+    "performance tracking": [
+        "sales performance tracking",
+        "target tracking",
+    ],
+    "business development": [
+        "business growth",
+        "new business development",
+    ],
+    "client acquisition": [
+        "customer acquisition",
+        "new client acquisition",
+    ],
+    "client pitching": [
+        "business pitching",
+    ],
+    "networking": [
+        "business networking",
+        "professional networking",
+    ],
+    "sales pitching": [
+        "sales pitch",
+        "product pitching",
+    ],
+    "product demonstration": [
+        "product demo",
+        "product presentation",
+    ],
+    "solution selling": [
+        "solution based selling",
+    ],
+    "value proposition": [
+        "value proposition articulation",
+    ],
+    "consultative selling": [
+        "consultative sales",
+        "needs based selling",
+    ],
+    "deal closure": [
+        "sales closure",
+    ],
+    "contract negotiation": [
+        "contract discussions",
+    ],
+    "account management": [
+        "client account management",
+    ],
+    "customer retention": [
+        "client retention",
+        "customer loyalty",
+    ],
+    "trust building": [
+        "building customer trust",
+    ],
+    "revenue generation": [
+        "revenue growth",
+    ],
+    "target achievement": [
+        "sales target achievement",
+        "quota attainment",
+    ],
+    "sales planning": [
+        "sales plan development",
+    ],
+    "conversion optimization": [
+        "lead conversion",
+        "sales conversion optimization",
+    ],
+    "upselling": [
+        "up selling",
+        "upsell",
+    ],
+    "cross-selling": [
+        "cross selling",
+        "cross sell",
+    ],
+    "competitor analysis": [
+        "competitive analysis",
+        "competitor tracking",
+    ],
+    "industry awareness": [
+        "industry knowledge",
+        "industry trends",
+    ],
+    "customer insights": [
+        "customer behavior analysis",
+    ],
+    "b2b sales": [
+        "b2b",
+        "business to business",
+        "business to business sales",
+    ],
+    "saas sales": [
+        "software sales",
+        "it sales",
+        "technology sales",
+    ],
+    "key account management": [
+        "key accounts",
+        "strategic account management",
+    ],
+    "territory management": [
+        "sales territory management",
+        "territory planning",
+    ],
+    "strategic partnerships": [
+        "partnership development",
+        "business partnerships",
+    ],
+    "sales strategy": [
+        "sales strategy development",
+    ],
+    "fintech sales": [
+        "financial technology sales",
+        "financial products sales",
+        "financial solutions sales",
+    ],
+    "financial products": [
+        "financial product sales",
+        "banking products",
+        "investment products",
+        "insurance products",
+        "loan products",
+    ],
+    "financial solutions": [
+        "fintech solutions",
+        "financial technology solutions",
+        "digital financial solutions",
+    ],
+    "fintech": [
+        "financial technology",
+    ],
+}
+
+# Category for each skill added above (used only if the skill had no category already).
+MARKETING_SALES_CATEGORIES = {
+    "digital marketing": "Marketing & Communications",
+    "seo": "Marketing & Communications",
+    "on page seo": "Marketing & Communications",
+    "off page seo": "Marketing & Communications",
+    "technical seo": "Marketing & Communications",
+    "keyword research": "Marketing & Communications",
+    "local seo": "Marketing & Communications",
+    "sem": "Marketing & Communications",
+    "google ads": "Marketing & Communications",
+    "youtube ads": "Marketing & Communications",
+    "facebook ads": "Marketing & Communications",
+    "instagram ads": "Marketing & Communications",
+    "meta ads": "Marketing & Communications",
+    "linkedin ads": "Marketing & Communications",
+    "social media marketing": "Marketing & Communications",
+    "digital marketing campaigns": "Marketing & Communications",
+    "content marketing": "Marketing & Communications",
+    "content writing": "Marketing & Communications",
+    "blog writing": "Marketing & Communications",
+    "article writing": "Marketing & Communications",
+    "copywriting": "Marketing & Communications",
+    "whitepaper": "Marketing & Communications",
+    "ebook": "Marketing & Communications",
+    "case studies": "Marketing & Communications",
+    "newsletter": "Marketing & Communications",
+    "webinars": "Marketing & Communications",
+    "email marketing": "Marketing & Communications",
+    "email automation": "Marketing & Communications",
+    "google analytics": "Marketing & Communications",
+    "google search console": "Marketing & Communications",
+    "conversion rate optimization": "Marketing & Communications",
+    "a/b testing": "Marketing & Communications",
+    "lead generation": "Marketing & Communications",
+    "performance marketing": "Marketing & Communications",
+    "affiliate marketing": "Marketing & Communications",
+    "influencer marketing": "Marketing & Communications",
+    "marketing analytics": "Marketing & Communications",
+    "brand management": "Marketing & Communications",
+    "market research": "Marketing & Communications",
+    "ecommerce marketing": "Marketing & Communications",
+    "marketing reporting": "Marketing & Communications",
+    "inside sales": "Sales, Pre-Sales & Customer Success",
+    "sales prospecting": "Sales, Pre-Sales & Customer Success",
+    "database building": "Sales, Pre-Sales & Customer Success",
+    "linkedin sourcing": "Sales, Pre-Sales & Customer Success",
+    "communication skills": "Transferable, Soft Skills & Consulting",
+    "active listening": "Transferable, Soft Skills & Consulting",
+    "email etiquette": "Transferable, Soft Skills & Consulting",
+    "presentation skills": "Transferable, Soft Skills & Consulting",
+    "cold calling": "Sales, Pre-Sales & Customer Success",
+    "outbound sales": "Sales, Pre-Sales & Customer Success",
+    "email campaigns": "Sales, Pre-Sales & Customer Success",
+    "linkedin outreach": "Sales, Pre-Sales & Customer Success",
+    "appointment setting": "Sales, Pre-Sales & Customer Success",
+    "lead qualification": "Sales, Pre-Sales & Customer Success",
+    "bant qualification": "Sales, Pre-Sales & Customer Success",
+    "need analysis": "Sales, Pre-Sales & Customer Success",
+    "opportunity identification": "Sales, Pre-Sales & Customer Success",
+    "relationship management": "Sales, Pre-Sales & Customer Success",
+    "customer engagement": "Sales, Pre-Sales & Customer Success",
+    "rapport building": "Transferable, Soft Skills & Consulting",
+    "stakeholder management": "Transferable, Soft Skills & Consulting",
+    "follow up management": "Sales, Pre-Sales & Customer Success",
+    "sales negotiation": "Sales, Pre-Sales & Customer Success",
+    "objection handling": "Sales, Pre-Sales & Customer Success",
+    "value-based selling": "Sales, Pre-Sales & Customer Success",
+    "persuasion skills": "Transferable, Soft Skills & Consulting",
+    "sales closing": "Sales, Pre-Sales & Customer Success",
+    "crm": "Sales, Pre-Sales & Customer Success",
+    "salesforce": "Sales, Pre-Sales & Customer Success",
+    "zoho crm": "Sales, Pre-Sales & Customer Success",
+    "hubspot": "Sales, Pre-Sales & Customer Success",
+    "pipeline management": "Sales, Pre-Sales & Customer Success",
+    "sales reporting": "Sales, Pre-Sales & Customer Success",
+    "data management": "Sales, Pre-Sales & Customer Success",
+    "sales forecasting": "Sales, Pre-Sales & Customer Success",
+    "pipeline analysis": "Sales, Pre-Sales & Customer Success",
+    "data interpretation": "Sales, Pre-Sales & Customer Success",
+    "performance tracking": "Sales, Pre-Sales & Customer Success",
+    "business development": "Sales, Pre-Sales & Customer Success",
+    "client acquisition": "Sales, Pre-Sales & Customer Success",
+    "client pitching": "Sales, Pre-Sales & Customer Success",
+    "networking": "Transferable, Soft Skills & Consulting",
+    "sales pitching": "Sales, Pre-Sales & Customer Success",
+    "product demonstration": "Sales, Pre-Sales & Customer Success",
+    "solution selling": "Sales, Pre-Sales & Customer Success",
+    "value proposition": "Sales, Pre-Sales & Customer Success",
+    "consultative selling": "Sales, Pre-Sales & Customer Success",
+    "deal closure": "Sales, Pre-Sales & Customer Success",
+    "contract negotiation": "Sales, Pre-Sales & Customer Success",
+    "account management": "Sales, Pre-Sales & Customer Success",
+    "customer retention": "Sales, Pre-Sales & Customer Success",
+    "trust building": "Transferable, Soft Skills & Consulting",
+    "revenue generation": "Sales, Pre-Sales & Customer Success",
+    "target achievement": "Sales, Pre-Sales & Customer Success",
+    "sales planning": "Sales, Pre-Sales & Customer Success",
+    "conversion optimization": "Sales, Pre-Sales & Customer Success",
+    "upselling": "Sales, Pre-Sales & Customer Success",
+    "cross-selling": "Sales, Pre-Sales & Customer Success",
+    "competitor analysis": "Sales, Pre-Sales & Customer Success",
+    "industry awareness": "Sales, Pre-Sales & Customer Success",
+    "customer insights": "Sales, Pre-Sales & Customer Success",
+    "b2b sales": "Sales, Pre-Sales & Customer Success",
+    "saas sales": "Sales, Pre-Sales & Customer Success",
+    "key account management": "Sales, Pre-Sales & Customer Success",
+    "territory management": "Sales, Pre-Sales & Customer Success",
+    "strategic partnerships": "Sales, Pre-Sales & Customer Success",
+    "sales strategy": "Sales, Pre-Sales & Customer Success",
+    "fintech sales": "Domain — BFSI",
+    "financial products": "Domain — BFSI",
+    "financial solutions": "Domain — BFSI",
+    "fintech": "Domain — BFSI",
+}
+
+# Merge into SKILL_ALIASES. Inspect what was added/skipped with MARKETING_SALES_MERGE_REPORT.
+MARKETING_SALES_MERGE_REPORT = _merge_additive(SKILL_ALIASES, MARKETING_SALES_SKILLS)
 
 
 SKILL_CATEGORIES = {
@@ -434,6 +1046,12 @@ SKILL_CATEGORIES = {
 }
 
 
+# Categories for the Digital Marketing & Sales skills. setdefault keeps any
+# category a skill already had.
+for _skill, _category in MARKETING_SALES_CATEGORIES.items():
+    SKILL_CATEGORIES.setdefault(_skill, _category)
+
+
 # ---------------------------------------------------------------------------
 # SKILL_MAPPINGS — umbrella groups for UI/reporting only. Never award
 # individual skills from an umbrella match.
@@ -527,5 +1145,3 @@ SKILL_MAPPINGS = {
         "demand forecasting", "loyalty programs",
     ],
 }
-
-

@@ -76,6 +76,31 @@ const skillsMatch = (candidateSkill, jobSkill) => {
   );
 };
 
+/*
+  Job skills this candidate is missing.
+
+  Uses the matched/missing breakdown the backend calculated, so the red/blue
+  "missing" chips always agree with the points that were taken off the score.
+  If the backend sent no breakdown, fall back to comparing the skills here.
+*/
+const getMissingJobSkills = (candidate, jobSkills) => {
+  const matched = normalizeSkills(candidate.matched_skills);
+  const missing = normalizeSkills(candidate.missing_skills);
+
+  if (matched.length === 0 && missing.length === 0) {
+    const candidateSkills = normalizeSkills(candidate.skills);
+
+    return jobSkills.filter(
+      (skill) =>
+        !candidateSkills.some((candidateSkill) =>
+          skillsMatch(candidateSkill, skill),
+        ),
+    );
+  }
+
+  return jobSkills.filter((skill) => !matched.includes(skill));
+};
+
 function MissingSkillGroup({ label, skills, variant }) {
   const tagClass =
     variant === "primary"
@@ -279,32 +304,19 @@ function CandidateMatcherPage() {
     const secondarySkills = getJobSecondarySkills(selectedJob);
 
     return candidates
-      .map((candidate) => {
-        const matchedSkills = normalizeSkills(candidate.matched_skills);
+      .map((candidate) => ({
+        ...candidate,
 
-        return {
-          ...candidate,
+        matchScore: Number(candidate.ai_score) || 0,
 
-          matchScore: candidate.ai_score ?? 0,
+        matchDetails: {
+          label: candidate.match_category || "Low Match",
+          className: getMatchClassName(candidate.match_category),
+        },
 
-          matchDetails: {
-            label: candidate.match_category || "Low Match",
-            className: getMatchClassName(candidate.match_category),
-          },
-
-          // Primary (mandatory) / secondary (required) job skills the
-          // candidate does NOT have. Uses the backend's matched_skills
-          // so this always agrees with the score / category the
-          // backend calculated.
-          missingPrimarySkills: primarySkills.filter(
-            (skill) => !matchedSkills.includes(skill),
-          ),
-
-          missingSecondarySkills: secondarySkills.filter(
-            (skill) => !matchedSkills.includes(skill),
-          ),
-        };
-      })
+        missingPrimarySkills: getMissingJobSkills(candidate, primarySkills),
+        missingSecondarySkills: getMissingJobSkills(candidate, secondarySkills),
+      }))
       .sort((a, b) => b.matchScore - a.matchScore);
   }, [candidates, selectedJob]);
 
@@ -610,6 +622,13 @@ function CandidateMatcherPage() {
             {filteredCandidates.map((candidate) => {
               const decision = candidateDecisions[candidate.candidate_id] || {};
 
+              /*
+                  Candidate skills
+                */
+
+              const primaryMissing = candidate.missingPrimarySkills;
+              const secondaryMissing = candidate.missingSecondarySkills;
+
               return (
                 <div
                   key={candidate.candidate_id}
@@ -619,62 +638,47 @@ function CandidateMatcherPage() {
                         CANDIDATE INFO
                     ===================================== */}
 
-                  <div className="matcher-candidate-info">
-                    <div className="matcher-avatar">
-                      <UserRound size={22} />
+                  <div className="matcher-candidate-info [display:flex] [align-items:flex-start] [gap:11px]">
+                    <div className="matcher-avatar [width:40px] [height:40px] [display:flex] [align-items:center] [justify-content:center] [border-radius:50%] [background:#f3f4f6] [color:#475569]">
+                      <UserRound size={19} />
                     </div>
-
-                    <div className="matcher-candidate-text">
-                      <h3 className="matcher-candidate-name">
+                    <div className="min-w-0">
+                      <h3 className="matcher-candidate-name [.card_&]:[font-size:15px] [.card_&]:[font-weight:700] [.card_&]:[color:#1e293b] [.card_&]:[margin-bottom:16px] [.matcher-candidate-info_&]:[margin:0] [.matcher-candidate-info_&]:[font-size:15px] [.matcher-candidate-info_&]:[font-weight:700] [.matcher-candidate-info_&]:[color:#1e293b] [overflow-wrap:anywhere]">
                         {candidate.name || candidate.full_name || "Candidate"}
                       </h3>
-
-                      {/* Opens the full candidate-detail page */}
                       <Link
                         to={`/candidate-detail/${candidate.candidate_id}`}
-                        className="btn btn-secondary btn-sm matcher-more-details"
+                        className="mt-1 inline-flex min-h-7 items-center rounded-md border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-[#133f7d] no-underline transition hover:border-[#133f7d] hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
                       >
-                        More details
+                        Show details
                       </Link>
                     </div>
                   </div>
 
-                  {/* =====================================
-                        MISSING SKILLS
-
-                        One heading, both primary (red) and
-                        secondary (orange) gaps shown together as
-                        chips - no sub-headings.
-                    ===================================== */}
-
-                  <div className="matcher-missing-primary">
-                    <span className="matcher-missing-heading">
-                      Missing Skills
+                  <div className="min-w-0">
+                    <span className="mb-2 block text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                      Missing required skills
                     </span>
-
-                    <div className="matcher-skills">
-                      {candidate.missingPrimarySkills.map((skill) => (
-                        <span
-                          key={`primary-${skill}`}
-                          className="matcher-skill matcher-skill-missing"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-
-                      {candidate.missingSecondarySkills.map((skill) => (
-                        <span
-                          key={`secondary-${skill}`}
-                          className="matcher-skill matcher-skill-missing-secondary"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-
-                      {candidate.missingPrimarySkills.length === 0 &&
-                        candidate.missingSecondarySkills.length === 0 && (
-                          <span className="matcher-none-missing">
-                            None missing
+                    <div className="flex flex-wrap gap-x-4 gap-y-2">
+                      {primaryMissing.length > 0 && (
+                        <MissingSkillGroup
+                          label="Primary"
+                          skills={primaryMissing}
+                          variant="primary"
+                        />
+                      )}
+                      {secondaryMissing.length > 0 && (
+                        <MissingSkillGroup
+                          label="Secondary"
+                          skills={secondaryMissing}
+                          variant="secondary"
+                        />
+                      )}
+                      {primaryMissing.length === 0 &&
+                        secondaryMissing.length === 0 && (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+                            <CheckCircle2 size={14} />
+                            No required skills missing
                           </span>
                         )}
                     </div>

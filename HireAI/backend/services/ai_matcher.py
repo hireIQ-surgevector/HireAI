@@ -16,7 +16,6 @@ below changes that.
 The 80-point matcher budget starts as `ai_score * 80`, where
 ai_score is semantic (embedding) similarity between the candidate's
 profile text and the job's text, 0-1. That starting number is then
-<<<<<<< HEAD
 reduced by two kinds of penalties, each skill's "weight" being an
 equal share of a 100-point pool for its category:
 
@@ -32,18 +31,6 @@ equal share of a 100-point pool for its category:
     e.g. 6 secondary skills -> 16.67 each -> /3 = 5.56 -> * 0.8
          = 4.44 points off the matcher budget per missing
          secondary skill.
-=======
-reduced by penalties from one shared skill-weight pool. Each
-mandatory (primary) skill has weight 3; each secondary (required)
-skill has weight 1. For 4 mandatory and 6 secondary skills:
-
-  total skill weight = (4 * 3) + (6 * 1) = 18
-  points per weight = 100 / 18 = 5.56
-  missing mandatory skill penalty = 3 * 5.56 = 16.67
-  missing secondary skill penalty = 1 * 5.56 = 5.56
-
-If a skill category is empty, it contributes no weight to the pool.
->>>>>>> 4aec53425961a728af20ed9ba5e6d790e2d95dcf
 
 final_score = max(0, 80*ai_score - mandatory_penalties - secondary_penalties)
               + (20 if experience_score else 0)
@@ -60,6 +47,7 @@ job title + skills + description.
 """
 
 import re
+import threading
 
 
 _model = None
@@ -102,6 +90,52 @@ def _get_model():
     return _model
 
 
+# Embedding cache. The same skill names and job text come up for every candidate,
+# so each string is encoded once and reused.
+_EMBEDDING_CACHE = {}
+_EMBEDDING_CACHE_LIMIT = 20000
+_EMBEDDING_CACHE_MODEL = None
+_EMBED_LOCK = threading.Lock()
+
+
+def _embed(texts):
+    """
+    Unit-length embeddings for `texts`, in the same order.
+
+    Everything not seen before is encoded together in ONE model call and
+    remembered. Encoding one skill pair at a time (hundreds of calls per
+    candidate) was slow enough to hit the web server's timeout, which the
+    browser reports as "Failed to fetch".
+    """
+    global _EMBEDDING_CACHE_MODEL
+
+    if not texts:
+        return []
+
+    import numpy as np
+
+    with _EMBED_LOCK:
+        model = _get_model()
+
+        # A different model object means old vectors don't apply.
+        if _EMBEDDING_CACHE_MODEL is not model or len(_EMBEDDING_CACHE) > _EMBEDDING_CACHE_LIMIT:
+            _EMBEDDING_CACHE.clear()
+            _EMBEDDING_CACHE_MODEL = model
+
+        missing = [text for text in dict.fromkeys(texts) if text not in _EMBEDDING_CACHE]
+
+        if missing:
+            vectors = np.asarray(model.encode(missing), dtype="float32")
+            norms = np.linalg.norm(vectors, axis=1, keepdims=True)
+            norms[norms == 0] = 1.0
+            vectors = vectors / norms
+
+            for text, vector in zip(missing, vectors):
+                _EMBEDDING_CACHE[text] = vector
+
+        return [_EMBEDDING_CACHE[text] for text in texts]
+
+
 def normalize_skills(skills):
     """
     Accepts either a list of skills or a delimited string
@@ -132,52 +166,63 @@ def normalize_skills(skills):
 def _skill_is_match(candidate_skill, job_skill, threshold=0.6):
     """
     Two skills match if one is a substring of the other (handles
-    'gcp' vs 'google cloud platform' style variants), or — for
-    skills phrased differently — if their embeddings are close
-    enough. The substring check is cheap and catches most real
-    cases; the embedding fallback catches paraphrases without a
-    hand-maintained synonym table.
+    'gcp' vs 'google cloud platform' style variants), or - for
+    skills phrased differently - if their embeddings are close
+    enough.
     """
 
-    if not candidate_skill or not job_skill:
-        return False
+    matched, _missing = _match_skill_lists([candidate_skill], [job_skill], threshold)
 
-    if candidate_skill in job_skill or job_skill in candidate_skill:
-        return True
-
-    from sklearn.metrics.pairwise import cosine_similarity
-
-    model = _get_model()
-
-    embeddings = model.encode([candidate_skill, job_skill])
-
-    similarity = cosine_similarity(
-        [embeddings[0]],
-        [embeddings[1]],
-    )[0][0]
-
-    return similarity >= threshold
+    return bool(matched)
 
 
-def _match_skill_lists(candidate_skills, job_skills):
+def _match_skill_lists(candidate_skills, job_skills, threshold=0.6):
     """
     Returns (matched, missing) job_skills, checked against
     candidate_skills.
+
+    Same rules as before (substring first, embedding similarity as the
+    fallback), but the fallback is done for ALL unmatched job skills at
+    once with a single batched model call, instead of one model call per
+    (candidate skill, job skill) pair.
     """
+
+    found = {}
+    pending = []
+
+    for job_skill in job_skills:
+        if not job_skill:
+            found[job_skill] = False
+            continue
+
+        if any(
+            candidate_skill and (candidate_skill in job_skill or job_skill in candidate_skill)
+            for candidate_skill in candidate_skills
+        ):
+            found[job_skill] = True
+        else:
+            found[job_skill] = False
+            pending.append(job_skill)
+
+    usable_candidate_skills = [skill for skill in candidate_skills if skill]
+
+    if pending and usable_candidate_skills:
+        import numpy as np
+
+        vectors = _embed(usable_candidate_skills + pending)
+        candidate_matrix = np.asarray(vectors[: len(usable_candidate_skills)])
+        job_matrix = np.asarray(vectors[len(usable_candidate_skills):])
+
+        best_similarity = (job_matrix @ candidate_matrix.T).max(axis=1)
+
+        for job_skill, similarity in zip(pending, best_similarity):
+            found[job_skill] = bool(similarity >= threshold)
 
     matched = []
     missing = []
 
     for job_skill in job_skills:
-        found = any(
-            _skill_is_match(candidate_skill, job_skill)
-            for candidate_skill in candidate_skills
-        )
-
-        if found:
-            matched.append(job_skill)
-        else:
-            missing.append(job_skill)
+        (matched if found[job_skill] else missing).append(job_skill)
 
     return matched, missing
 
@@ -193,16 +238,11 @@ def _semantic_similarity(candidate_text, job_text):
     if not candidate_text.strip() or not job_text.strip():
         return 0.0
 
-    from sklearn.metrics.pairwise import cosine_similarity
+    import numpy as np
 
-    model = _get_model()
+    candidate_vector, job_vector = _embed([candidate_text, job_text])
 
-    embeddings = model.encode([candidate_text, job_text])
-
-    similarity = cosine_similarity(
-        [embeddings[0]],
-        [embeddings[1]],
-    )[0][0]
+    similarity = float(np.dot(candidate_vector, job_vector))
 
     # Cosine similarity can dip slightly negative for unrelated
     # text — clamp to 0-1, same as treating it as a plain fraction.
@@ -320,6 +360,30 @@ def calculate_match(candidate, job):
     mandatory_skills = normalize_skills(job.get("mandatory_skills"))
     required_skills = normalize_skills(job.get("required_skills"))
 
+    # ---- Texts used for the semantic score ----
+
+    candidate_text = " ".join(filter(None, [
+        candidate.get("current_role"),
+        candidate.get("applied_role"),
+        ", ".join(candidate_skills),
+    ]))
+
+    job_text = " ".join(filter(None, [
+        job.get("title"),
+        ", ".join(mandatory_skills + required_skills),
+        job.get("description"),
+    ]))
+
+    # ---- One batched model call for everything this candidate needs ----
+    # (their skills, the job's skills, and both texts). The steps below are
+    # then answered from the cache instead of calling the model again.
+
+    _embed([
+        text
+        for text in candidate_skills + mandatory_skills + required_skills + [candidate_text, job_text]
+        if text
+    ])
+
     # ---- Skills: matched/missing breakdown ----
 
     matched_mandatory, missing_mandatory = _match_skill_lists(
@@ -333,18 +397,6 @@ def calculate_match(candidate, job):
     has_all_mandatory = len(missing_mandatory) == 0
 
     # ---- ai_score: semantic similarity (0-1) ----
-
-    candidate_text = " ".join(filter(None, [
-        candidate.get("current_role"),
-        candidate.get("applied_role"),
-        ", ".join(candidate_skills),
-    ]))
-
-    job_text = " ".join(filter(None, [
-        job.get("title"),
-        ", ".join(mandatory_skills + required_skills),
-        job.get("description"),
-    ]))
 
     ai_score = _semantic_similarity(candidate_text, job_text)
 
